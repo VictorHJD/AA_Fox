@@ -14,7 +14,11 @@ fastqFiles <- list.files(path, pattern=".fastq.gz$", full.names=TRUE) #take all 
 fastqF <- grep("_R1_001.fastq.gz", fastqFiles, value = TRUE) #separate the forward reads
 fastqR <- grep("_R2_001.fastq.gz", fastqFiles, value = TRUE) #separate the reverse reads 
 
-samples <- gsub("_R1_001.fastq\\.gz", "\\1", basename(fastqF))
+#samples <- gsub("_R1_001.fastq\\.gz", "\\1", basename(fastqF))
+
+samples <- gsub("_S[0-9]*_L001_R1_001.fastq\\.gz", "\\1", basename(fastqF)) #works but still is necessary to take out the first number
+samples <- gsub("[0-9]*-Ch", "Ch", basename(samples))
+samples
 
 #Extra step in the pipeline: quality plots of the reads 
 plotQualityProfile(fastqF[[1]])
