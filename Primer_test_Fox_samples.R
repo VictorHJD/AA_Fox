@@ -119,8 +119,8 @@ if(doTax){
     library(taxonomizr)
     library(taxize)
 
-    Biostrings::writeXStringSet(DNAStringSet(unlist(sequences)),
-                                 "/SAN/Victors_playground/Metabarcoding/FoxTest_seq_final.fasta")
+    ## Biostrings::writeXStringSet(DNAStringSet(unlist(sequences)),
+    ##                             "/SAN/Victors_playground/Metabarcoding/FoxTest_seq_final.fasta")
 
     ## clusters <- plotAmpliconNumbers(MA) 
 
@@ -152,13 +152,15 @@ if(doTax){
     
     blt <- merge(blast, blast.tax, by="staxid", all=TRUE)
 
-    blt <- blt[,.(bitsum=sum(bitscore),
-                  superkingdom, phylum, class, order, family, genus, species),
-               by=c("query", "subject")]
+    ## ## ## We need to be more clever if we want to use multiple
+    ## ## ## hsps, this does not work for whole genome subjects eg.
+    ### blt <- blt[,.(bitsum=sum(bitscore),
+    ###              superkingdom, phylum, class, order, family, genus, species),
+    ###           by=c("query", "subject")]
 
-    blt <- unique(blt)
+    ###    blt <- unique(blt)
     
-    blt <- blt[,.(bitdiff= bitsum - max(bitsum),
+    blt <- blt[,.(bitdiff= bitscore - max(bitscore),
                   superkingdom, phylum, class, order, family, genus, species),
                by=c("query")]
 
@@ -169,22 +171,22 @@ if(doTax){
         if(length(ux)==1){return(ux)} else {as.character(NA)}
     }
 
-    genus <- blt[bitdiff>-10, .(genus=get.unique.or.na(genus)),
+    genus <- blt[bitdiff>-2, .(genus=get.unique.or.na(genus)),
                  by=query]
 
-    family <- blt[bitdiff>-20, .(family=get.unique.or.na(family)),
+    family <- blt[bitdiff>-7, .(family=get.unique.or.na(family)),
                   by=query]
 
-    order <- blt[bitdiff>-30, .(order=get.unique.or.na(order)),
+    order <- blt[bitdiff>-12, .(order=get.unique.or.na(order)),
                  by=query]
 
-    class <- blt[bitdiff>-40, .(class=get.unique.or.na(class)),
+    class <- blt[bitdiff>-20, .(class=get.unique.or.na(class)),
                  by=query]
 
-    phylum <- blt[bitdiff>-50, .(phylum=get.unique.or.na(phylum)),
+    phylum <- blt[bitdiff>-30, .(phylum=get.unique.or.na(phylum)),
                   by=query]
 
-    superkingdom <- blt[bitdiff>-100, .(superkingdom=get.unique.or.na(superkingdom)),
+    superkingdom <- blt[bitdiff>-50, .(superkingdom=get.unique.or.na(superkingdom)),
                         by=query]
 
     annot <- cbind(superkingdom[,c("query", "superkingdom")],
@@ -198,8 +200,7 @@ if(doTax){
     seqnametab <- merge(seqnametab, annot)
 
     dupseq <- seqnametab$sequences[duplicated(seqnametab$sequences)]
-    seqnametab[sequences%in%dupseq,]
-
+    
     seqnametab <- seqnametab[!duplicated(seqnametab$sequences),]
 
     annot.list <- lapply(STNC, function (x) {
@@ -253,6 +254,8 @@ lapply(annot.list, function (x) tabulate.taxa(x,  "genus", "Apicomplexa"))
 lapply(annot.list, function (x) tabulate.taxa(x, "genus",  "Platyhelminthes"))
 lapply(annot.list, function (x) tabulate.taxa(x, "genus", "Streptophyta"))
 
+lapply(annot.list, function (x) tabulate.taxa(x, "family", "Chordata"))
+
 
 ### all.annot <- Reduce(rbind, annot.list)
 
@@ -260,6 +263,10 @@ library(phyloseq)
 
 ## now we can add the sample information
 sample.data <- read.csv("/SAN/Victors_playground/Metabarcoding/Metabarcoding_Chip1_Chip2_CS_20180824.csv")
+
+sample.dataFox <- read.csv("/SAN/Victors_playground/Metabarcoding/Fox_Info.csv")
+
+sample.data <- merge(sample.data, sample.dataFox, all.x=TRUE)
 
 ## including the urbanization indices
 urban <- read.table("/SAN/Victors_playground/Metabarcoding/Fox_urbanization_20181029.csv", sep=";", header=TRUE)
@@ -354,6 +361,14 @@ PS <- phyloseq(otu_table(ALL.u, taxa_are_rows=TRUE),
                sample_data(sample.data[rownames(ALL), ]),
                tax_table(all.tax))
 
+prune_both_zero <- function (ps) {
+    p <- prune_samples(sample_sums(ps) > 0 , ps)
+    prune_taxa(taxa_sums(p) > 0 , p)
+}
+
+PS <- prune_both_zero(PS)
+PS.l <- lapply(PS.l, prune_both_zero)
+
 ################# ## HOW TO GO ON FROM HERE (Madeleine) ## ######################
 #### PS is now a single Phyloseq object over all amplicons. 
 
@@ -362,3 +377,4 @@ PS <- phyloseq(otu_table(ALL.u, taxa_are_rows=TRUE),
 
 saveRDS(PS.l, file="/SAN/Victors_playground/Metabarcoding/PhyloSeqList.Rds")
 saveRDS(PS, file="/SAN/Victors_playground/Metabarcoding/PhyloSeqCombi.Rds")
+
