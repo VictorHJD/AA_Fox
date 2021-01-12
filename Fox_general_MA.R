@@ -6,6 +6,7 @@
 
 library(ggplot2)
 library(MultiAmplicon)
+library(dada2)
 library(reshape)
 library(phyloseq)
 library(data.table)
@@ -79,29 +80,34 @@ names(primerF) <- as.character(ptable[, "corrected.NameF"])
 names(primerR) <- as.character(ptable[, "corrected.NameR"])
 
 primer <- PrimerPairsSet(primerF, primerR)
+MAF <- MultiAmplicon(primer, files)
 
 ##Multi amplicon pipeline
 if(doMultiAmp){
-  MAF <- MultiAmplicon(primer, files)
-  filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_complete"
+  filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_new"
   if(dir.exists(filedir)) unlink(filedir, recursive=TRUE)
   MAF <- sortAmplicons(MAF, n=1e+05, filedir=filedir)
+  ##Old pipeline
+  #filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_complete"
   
   errF <-  learnErrors(unlist(getStratifiedFilesF(MAF)), nbase=1e8,
                        verbose=0, multithread = 12)
   errR <- learnErrors(unlist(getStratifiedFilesR(MAF)), nbase=1e8,
                       verbose=0, multithread = 12)
   
-  MAF <- derepMulti(MAF, mc.cores=12) 
+  #MAF <- derepMulti(MAF, mc.cores=12) 
   MAF <- dadaMulti(MAF, Ferr=errF, Rerr=errR,  pool=FALSE,
                   verbose=0, mc.cores=12)
   MAF <- mergeMulti(MAF, mc.cores=12) 
   
   propMerged <- MultiAmplicon::calcPropMerged(MAF)
   
+  summary(propMerged)
+  table(propMerged<0.8)
+  
   MAF <- mergeMulti(MAF, justConcatenate=propMerged<0.8, mc.cores=12) 
   
-  MAF <- makeSequenceTableMulti(MAF, mc.cores=12) ## FIXME in package!!!
+  MAF <- makeSequenceTableMulti(MAF, mc.cores=12)
   
   MAF <- removeChimeraMulti(MAF, mc.cores=12)
   
