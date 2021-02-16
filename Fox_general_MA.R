@@ -66,7 +66,6 @@ if(doFilter){
   })
 }
 
-
 names(filtFs) <- names(filtRs) <- samples
 files <- PairedReadFileSet(filtFs, filtRs)
 
@@ -84,20 +83,18 @@ MAF <- MultiAmplicon(primer, files)
 
 ##Multi amplicon pipeline
 if(doMultiAmp){
-  filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_new"
+  filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_complete"
   if(dir.exists(filedir)) unlink(filedir, recursive=TRUE)
   MAF <- sortAmplicons(MAF, n=1e+05, filedir=filedir)
-  ##Old pipeline
-  #filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_complete"
   
   errF <-  learnErrors(unlist(getStratifiedFilesF(MAF)), nbase=1e8,
                        verbose=0, multithread = 12)
   errR <- learnErrors(unlist(getStratifiedFilesR(MAF)), nbase=1e8,
                       verbose=0, multithread = 12)
   
-  #MAF <- derepMulti(MAF, mc.cores=12) 
   MAF <- dadaMulti(MAF, Ferr=errF, Rerr=errR,  pool=FALSE,
-                  verbose=0, mc.cores=12)
+                   verbose=0, mc.cores=12)
+
   MAF <- mergeMulti(MAF, mc.cores=12) 
   
   propMerged <- MultiAmplicon::calcPropMerged(MAF)
@@ -111,22 +108,15 @@ if(doMultiAmp){
   
   MAF <- removeChimeraMulti(MAF, mc.cores=12)
   
+  tracking <- getPipelineSummary(MAF)
+  plotPipelineSummary(tracking)
+  
   saveRDS(MAF, "/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF_complete.RDS")
 } else{
   MAF <- readRDS("/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF_complete.RDS") ###START from here now! 
 }
 
-## When loading an old MA object that lacks sample data, simply:
-MAF <- addSampleData(MAF)
-
-trackingF <- getPipelineSummary(MAF) 
-## doesn't work for now
-
 plotAmpliconNumbers(MAF) ### 
-
-
-## plotPipelineSummary(trackingF) 
-## plotPipelineSummary(trackingF) + scale_y_log10()
 
 ###Extract sequences to do taxonomic assignment 
 
