@@ -1,4 +1,4 @@
-## Please uncomment the first time you run this and re-install packages
+## Please un comment the first time you run this and re-install packages
 
 ## require(devtools)
 ## devtools::install_github("derele/MultiAmplicon", force= T)
@@ -34,9 +34,7 @@ fastqFiles <- list.files(path, pattern=".fastq.gz$", full.names=TRUE) #take all 
 fastqF <- grep("_R1_001.fastq.gz", fastqFiles, value = TRUE) #separate the forward reads
 fastqR <- grep("_R2_001.fastq.gz", fastqFiles, value = TRUE) #separate the reverse reads 
 
-#samples <- gsub("s\\d+_", "\\1", basename(fastqF))
 samples <- gsub("_L001_R1_001.fastq\\.gz", "\\1", basename(fastqF))
-#samples<- gsub("-", "_", basename(samples))
 
 #Extra step in the pipeline: quality plots of the reads 
 ## plotQualityProfile(fastqF[[205]])
@@ -118,16 +116,7 @@ if(doMultiAmp){
 
 plotAmpliconNumbers(MAF) ### 
 
-###Extract sequences to do taxonomic assignment 
-
-STNCF <- getSequenceTableNoChime(MAF)
-
-sequences <- unlist(lapply(STNCF, colnames))
-names(sequences) <- paste0("asv_", 1:length(sequences))
-
 ###New taxonomic assignment 
-#MAF <- blastTaxAnnot(MAF,  dataBaseDir = Sys.getenv("BLASTDB"), negative_gilist = "/SAN/db/blastdb/uncultured.gi", num_threads = 15)
-
 if (doTax){ ## simply save the blast files, that's even faster than
   ## setting doTax to FALSE and re-loading the object
   MAF2 <- blastTaxAnnot(MAF,  
@@ -141,28 +130,26 @@ if (doTax){ ## simply save the blast files, that's even faster than
   MAF2 <- readRDS(file="/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF2.Rds")
 }
 
+###Couple of checks before phyloseq
+lapply(getTaxonTable(MAF2), function (x) table(as.vector(x[, "phylum"])))
+lapply(getTaxonTable(MAF2), function (x) table(as.vector(x[, "genus"])))
+lapply(getTaxonTable(MAF2), function (x) table(as.vector(x[, "species"])))
+
+##to phyloseq
+
+PS.l <- toPhyloseq(MAF2, samples=colnames(MAF2), multi2Single=FALSE)
+
+PS <- toPhyloseq(MAF2, samples=colnames(MAF2), multi2Single=TRUE)
+
 ##Add real sample data
 sample.data <- read.csv("/SAN/Victors_playground/Metabarcoding/AA_Fox/Fox_data.csv", dec=",", stringsAsFactors=FALSE)
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
 rownames(sample.data) <- sample.data$IZW_ID
-MAF3 <- addSampleData(MAF2, sample.data)
-saveRDS(MAF3, file="/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF3.Rds")
 
-MAF3 <- readRDS(file="/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF3.Rds")
-
-###Couple of checks before phyloseq
-lapply(getTaxonTable(MAF3), function (x) table(as.vector(x[, "phylum"])))
-lapply(getTaxonTable(MAF3), function (x) table(as.vector(x[, "genus"])))
-lapply(getTaxonTable(MAF3), function (x) table(as.vector(x[, "species"])))
-
-##to phyloseq
-
-PS.l <- toPhyloseq(MAF3, samples=colnames(MAF3), multi2Single=FALSE)
-
-PS <- toPhyloseq(MAF3, samples=colnames(MAF3), multi2Single=TRUE)
+PS@sam_data<- sample_data(sample.data)
 
 #pdf(file = "~/AA_Primer_evaluation/Figures/Fox_Rowreads.pdf", width = 10, height = 20)
-plotAmpliconNumbers(MAF3, cluster_cols= T, cluster_row=F,cutree_cols= 2)
+plotAmpliconNumbers(MAF2, cluster_cols= T, cluster_row=F,cutree_cols= 2)
 #dev.off()
 
 saveRDS(PS.l, file="/SAN/Victors_playground/Metabarcoding/AA_Fox/PhyloSeqList.Rds") ###For primer analysis (Victor)
