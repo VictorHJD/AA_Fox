@@ -4,8 +4,12 @@
 #devtools::install_github("derele/MultiAmplicon", force= T)
 ## devtools::install_github("derele/dada2", force= T)
 
+## library(MultiAmplicon)
+
+## using the development version
+devtools::load_all("../MultiAmplicon")
+
 library(ggplot2)
-library(MultiAmplicon)
 library(reshape)
 library(taxize)
 library(parallel)
@@ -15,9 +19,9 @@ library(phyloseq)
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
 doFilter <- FALSE
 
-doMultiAmp <- FALSE
+doMultiAmp <- TRUE
 
-doTax <- FALSE
+doTax <- TRUE
 ## But remember: if you change the MultiAmplicon Analysis, the
 ## taxonomic annotation might be out of sync...
 
@@ -78,23 +82,23 @@ primers <- PrimerPairsSet(primerF, primerR)
 ##Multi amplicon pipeline
 if(doMultiAmp){
     MA <- MultiAmplicon(primers, files)
-    filedir <- "/SAN/Victors_playground/Metabarcoding/stratified_files"
+    filedir <- "/SAN/Metabarcoding/AA_Fox/stratified_files"
     if(dir.exists(filedir)) unlink(filedir, recursive=TRUE)
-    MA <- sortAmplicons(MA, n=1e+05, filedir=filedir)
+    MA <- sortAmplicons(MA, filedir=filedir)
 
     errF <-  learnErrors(unlist(getStratifiedFilesF(MA)), nbase=1e8,
-                         verbose=0, multithread = 12)
+                         verbose=0, multithread = 48)
     errR <- learnErrors(unlist(getStratifiedFilesR(MA)), nbase=1e8,
-                        verbose=0, multithread = 12)
+                        verbose=0, multithread = 48)
 
-    MA <- derepMulti(MA, mc.cores=12) 
+    MA <- derepMulti(MA, mc.cores=48) 
     MA <- dadaMulti(MA, Ferr=errF, Rerr=errR,  pool=FALSE,
-                    verbose=0, mc.cores=12)
-    MA <- mergeMulti(MA, mc.cores=12) 
+                    verbose=0, mc.cores=48)
+    MA <- mergeMulti(MA, mc.cores=48) 
 
     propMerged <- MultiAmplicon::calcPropMerged(MA)
         
-    MA <- mergeMulti(MA, justConcatenate=propMerged<0.8, mc.cores=12) 
+    MA <- mergeMulti(MA, justConcatenate=propMerged<0.8, mc.cores=48) 
 
     MA <- makeSequenceTableMulti(MA, mc.cores=12) ## FIXME in package!!!
 

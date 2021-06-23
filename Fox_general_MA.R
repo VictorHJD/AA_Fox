@@ -4,8 +4,12 @@
 ## devtools::install_github("derele/MultiAmplicon", force= T)
 ## devtools::install_github("derele/dada2", force= T)
 
+## library(MultiAmplicon)
+
+
+devtools::load_all("../MultiAmplicon")
+
 library(ggplot2)
-library(MultiAmplicon)
 library(dada2)
 library(reshape)
 library(phyloseq)
@@ -81,76 +85,133 @@ MAF <- MultiAmplicon(primer, files)
 
 ##Multi amplicon pipeline
 if(doMultiAmp){
-  filedir <- "/SAN/Victors_playground/Metabarcoding/AA_Fox/Stratified_files_complete"
-  if(dir.exists(filedir)) unlink(filedir, recursive=TRUE)
-  MAF <- sortAmplicons(MAF, n=1e+05, filedir=filedir)
+    filedir <- "/SAN/Metabarcoding/AA_Fox/stratified_files/"
+    if(dir.exists(filedir)) unlink(filedir, recursive=TRUE)
+    MAF <- sortAmplicons(MAF, filedir=filedir)
   
-  errF <-  learnErrors(unlist(getStratifiedFilesF(MAF)), nbase=1e8,
-                       verbose=0, multithread = 12)
-  errR <- learnErrors(unlist(getStratifiedFilesR(MAF)), nbase=1e8,
-                      verbose=0, multithread = 12)
+    errF <-  learnErrors(unlist(getStratifiedFilesF(MAF)), 
+                         verbose=0, multithread = 48)
+    errR <- learnErrors(unlist(getStratifiedFilesR(MAF)), 
+                        verbose=0, multithread = 48)
   
-  MAF <- dadaMulti(MAF, Ferr=errF, Rerr=errR,  pool=FALSE,
-                   verbose=0, mc.cores=12)
+    MAF <- dadaMulti(MAF, Ferr=errF, Rerr=errR,  pool=FALSE,
+                     verbose=0, mc.cores=48)
 
-  MAF <- mergeMulti(MAF, mc.cores=12) 
+    MAF <- mergeMulti(MAF, mc.cores=48) 
   
-  propMerged <- MultiAmplicon::calcPropMerged(MAF)
+    propMerged <- MultiAmplicon::calcPropMerged(MAF)
   
-  summary(propMerged)
-  table(propMerged<0.8)
+    summary(propMerged)
+    table(propMerged<0.8)
   
-  MAF <- mergeMulti(MAF, justConcatenate=propMerged<0.8, mc.cores=12) 
+    MAF <- mergeMulti(MAF, justConcatenate=propMerged<0.8, mc.cores=48) 
   
-  MAF <- makeSequenceTableMulti(MAF, mc.cores=12)
+    MAF <- makeSequenceTableMulti(MAF, mc.cores=48)
+    
+
+    ## fill it, bind it, coerce it to integer
+    STF <- getSequenceTable(MAF, dropEmpty=FALSE)
+    STFU <- do.call(cbind, STF)
+    mode(STFU) <- "integer"
+
+    ## and very very harsh chimera removal
+    isCruelBimera <- dada2::isBimeraDenovoTable(STFU, multithread=TRUE,
+                                                minSampleFraction=0.5,
+                                                allowOneOff=TRUE, maxShift = 32,
+                                                ignoreNNegatives=4)
+
+    ## the same pooled over all samples
+    isPooledBimera <- dada2::isBimeraDenovo(STFU, multithread=TRUE, 
+                                            allowOneOff=TRUE, maxShift = 32)
+
+    saveRDS(isCruelBimera, "/SAN/Metabarcoding/AA_Fox/cruelBimera.Rds")
+    saveRDS(isPooledBimera, "/SAN/Metabarcoding/AA_Fox/pooledBimera.Rds")
+
+    table(isCruelBimera ,  isPooledBimera)
+    
+    superCruel <- isCruelBimera | isPooledBimera
+
+    sum(STFU[, !superCruel])
+    sum(STFU[, !isCruelBimera])
+    sum(STFU[, !isPooledBimera])
+    
+    NoBimeras <- colnames(STFU[, !superCruel])
   
-  MAF <- removeChimeraMulti(MAF, mc.cores=12)
-  
-  tracking <- getPipelineSummary(MAF)
-  plotPipelineSummary(tracking)
-  
-  saveRDS(MAF, "/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF_complete.RDS")
+    foo <- lapply(getSequenceTable(MAF), function (x) {
+        noBim <- intersect(NoBimeras, colnames(x))
+        x[, noBim]
+    })
+    MAF@sequenceTableNoChime <- foo
+    
+    saveRDS(MAF, "/SAN/Metabarcoding/AA_Fox/MAF_complete.RDS")
 } else{
-  MAF <- readRDS("/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF_complete.RDS") ###START from here now! 
+    MAF <- readRDS("/SAN/Metabarcoding/AA_Fox/MAF_complete.RDS") 
 }
+
+
+###  TO FIX IN PACKAGE
+## tracking <- getPipelineSummaryX(MAF)
+## plotPipelineSummary(tracking)
 
 plotAmpliconNumbers(MAF) ### 
 
+
+
 ###New taxonomic assignment 
 if (doTax){ ## simply save the blast files, that's even faster than
-  ## setting doTax to FALSE and re-loading the object
-  MAF2 <- blastTaxAnnot(MAF,  
-                        negative_gilist = "/SAN/db/blastdb/uncultured.gi",
-                        db = "/SAN/db/blastdb/nt/nt",
-                        infasta = "/SAN/Victors_playground/Metabarcoding/AA_Fox/in.fasta",
-                        outblast = "/SAN/Victors_playground/Metabarcoding/AA_Fox/out.blt",
-                        num_threads = 22)
-  saveRDS(MAF2, file="/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF2.Rds")
-} else {
-  MAF2 <- readRDS(file="/SAN/Victors_playground/Metabarcoding/AA_Fox/MAF2.Rds")
+    unlink("/SAN/Metabarcoding/AA_Fox/in.fasta")
+    unlink("/SAN/Metabarcoding/AA_Fox/out.blt")
 }
 
-###Couple of checks before phyloseq
-lapply(getTaxonTable(MAF2), function (x) table(as.vector(x[, "phylum"])))
-lapply(getTaxonTable(MAF2), function (x) table(as.vector(x[, "genus"])))
-lapply(getTaxonTable(MAF2), function (x) table(as.vector(x[, "species"])))
 
+## setting doTax to FALSE and re-loading the object
+MAF2 <- blastTaxAnnot(MAF,  
+                      negative_gilist = "/SAN/db/blastdb/uncultured.gi",
+                      db = "/SAN/db/blastdb/nt/nt",
+                      infasta = "/SAN/Metabarcoding/AA_Fox/in.fasta",
+                      outblast = "/SAN/Metabarcoding/AA_Fox/out.blt",
+                      num_threads = 96)
 ##to phyloseq
 
-PS.l <- toPhyloseq(MAF2, samples=colnames(MAF2), multi2Single=FALSE)
+### PACKAGE PROBLEM WITH NULL SLOTs
+exclude <- unlist(lapply(getSequenceTableNoChime(MAF2),
+                         function (x) is.null(dim(x))))
 
-PS <- toPhyloseq(MAF2, samples=colnames(MAF2), multi2Single=TRUE)
+## but also problem with empty tables
+exclude <- unlist(lapply(getSequenceTableNoChime(MAF2),
+                         function (x) {
+                             dix <- dim(x)
+                             is.null(dix)|!all(dix>0)
+                         }
+                         ))
+include <- rownames(MAF2)[!exclude]
+
+
+### NAME selection doesn't work PACKAGE!!!
+PS.l <- toPhyloseq(MAF2[which(!exclude),],
+                   samples=colnames(MAF2[which(!exclude),]),
+                   multi2Single=FALSE)
+
+
+PS <- toPhyloseq(MAF2[which(!exclude),],
+                 samples=colnames(MAF2[which(!exclude),]),
+                 multi2Single=TRUE)
 
 ##Add real sample data
-sample.data <- read.csv("/SAN/Victors_playground/Metabarcoding/AA_Fox/Fox_data.csv", dec=",", stringsAsFactors=FALSE)
+sample.data <- read.csv(
+    "/SAN/Victors_playground/Metabarcoding/AA_Fox/Fox_data.csv",
+    dec=",", stringsAsFactors=FALSE)
+
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
+
 rownames(sample.data) <- sample.data$IZW_ID
 
-PS@sam_data<- sample_data(sample.data)
+### OUCH THIS seems to have been completely unaligned in previous data!
+rownames(sample_data(PS)) <- gsub("b", "", rownames(sample_data(PS)))
 
-#pdf(file = "~/AA_Primer_evaluation/Figures/Fox_Rowreads.pdf", width = 10, height = 20)
-plotAmpliconNumbers(MAF2, cluster_cols= T, cluster_row=F,cutree_cols= 2)
-#dev.off()
+## align and cbind to get the combinded sample data
+PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
 
-saveRDS(PS.l, file="/SAN/Victors_playground/Metabarcoding/AA_Fox/PhyloSeqList.Rds") ###For primer analysis (Victor)
-saveRDS(PS, file="/SAN/Victors_playground/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds") ###For Fox analysis (Caro and Sophia)
+
+saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") ###For primer analysis (Victor)
+saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds") ###For Fox analysis (Caro and Sophia)
