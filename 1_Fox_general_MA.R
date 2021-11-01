@@ -213,5 +213,11 @@ rownames(sample_data(PS)) <- gsub("b", "", rownames(sample_data(PS)))
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
 
 
-saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") ###For primer analysis (Victor)
-saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds") ###For Fox analysis (Caro and Sophia)
+###For primer analysis (Victor), still stored on our server 
+## saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") 
+
+## For Caro and the paper, previously on the server, 
+## saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds")
+
+## now directly in the repository (for reproducibilty)
+saveRDS(PS, file="data/PhyloSeqCombi.Rds")
