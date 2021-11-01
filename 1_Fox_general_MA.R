@@ -199,7 +199,7 @@ PS <- toPhyloseq(MAF2[which(!exclude),],
 
 ##Add real sample data
 sample.data <- read.csv(
-    "/SAN/Victors_playground/Metabarcoding/AA_Fox/Fox_data.csv",
+    "data/Fox_data.csv",
     dec=",", stringsAsFactors=FALSE)
 
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
