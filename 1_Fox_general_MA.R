@@ -195,10 +195,16 @@ exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
 ## We exclude like this
 MAFinal <- MAF2[which(!exclude.primers), which(!exclude.samples)]
 
+plotAmpliconNumbers(MAFinal)
 
 PS.l <- toPhyloseq(MAFinal,
                    samples=colnames(MAFinal),
                    multi2Single=FALSE)
+
+### how many of these have Nematodes and Platyhelminthes
+lapply(PS.l, function(x) {
+    any(tax_table(x)[,"phylum"]%in%c("Nematoda", "Platyhelminthes"))
+}) %>% unlist() %>% table()
 
 
 PS <- toPhyloseq(MAFinal,
