@@ -6,7 +6,7 @@
 
 ## library(MultiAmplicon)
 
-
+## using the dev version!
 devtools::load_all("../MultiAmplicon")
 
 library(ggplot2)
@@ -22,9 +22,9 @@ library(parallel)
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
 doFilter <- FALSE
 
-doMultiAmp <- TRUE
+doMultiAmp <- FALSE
 
-doTax <- TRUE
+doTax <- FALSE
 ## But remember: if you change the MultiAmplicon Analysis, the
 ## taxonomic annotation might be out of sync...
 
@@ -74,7 +74,7 @@ files <- PairedReadFileSet(filtFs, filtRs)
 #Preparation of primer file 
 
 #Primers used in the arrays 
-ptable <- read.csv(file = "/SAN/Victors_playground/Metabarcoding/AA_Fox/primer_file_foxes.csv", sep=",", header=TRUE, stringsAsFactors=FALSE)
+ptable <- read.csv(file = "data/primer_file_foxes.csv", sep=",", header=TRUE, stringsAsFactors=FALSE)
 primerF <- ptable[, "TS.SequenceF"]
 primerR <- ptable[, "TS.SequenceR"]
 names(primerF) <- as.character(ptable[, "corrected.NameF"])
@@ -154,7 +154,6 @@ if(doMultiAmp){
 ## plotPipelineSummary(tracking)
 
 plotAmpliconNumbers(MAF) ### 
-
 
 
 ###New taxonomic assignment 
