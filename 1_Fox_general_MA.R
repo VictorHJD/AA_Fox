@@ -153,7 +153,14 @@ if(doMultiAmp){
 ## tracking <- getPipelineSummaryX(MAF)
 ## plotPipelineSummary(tracking)
 
-plotAmpliconNumbers(MAF) ### 
+sumPheatmap <- plotAmpliconNumbers(MAF) ### 
+
+## everything clustering with Negative controls should be excluded!!
+SampleClusters <- cutree(sumPheatmap$tree_col, 2)
+
+## but we exclude later
+exclude.samples <- names(SampleClusters)[SampleClusters==2]
+exclude.samples <- colnames(MAF)%in%exclude.samples
 
 
 ###New taxonomic assignment 
@@ -173,27 +180,29 @@ MAF2 <- blastTaxAnnot(MAF,
 ##to phyloseq
 
 ### PACKAGE PROBLEM WITH NULL SLOTs
-exclude <- unlist(lapply(getSequenceTableNoChime(MAF2),
-                         function (x) is.null(dim(x))))
+## exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
+##                          function (x) is.null(dim(x))))
 
 ## but also problem with empty tables
-exclude <- unlist(lapply(getSequenceTableNoChime(MAF2),
+exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
                          function (x) {
                              dix <- dim(x)
                              is.null(dix)|!all(dix>0)
                          }
                          ))
-include <- rownames(MAF2)[!exclude]
-
 
 ### NAME selection doesn't work PACKAGE!!!
-PS.l <- toPhyloseq(MAF2[which(!exclude),],
-                   samples=colnames(MAF2[which(!exclude),]),
+## We exclude like this
+MAFinal <- MAF2[which(!exclude.primers), which(!exclude.samples)]
+
+
+PS.l <- toPhyloseq(MAFinal,
+                   samples=colnames(MAFinal),
                    multi2Single=FALSE)
 
 
-PS <- toPhyloseq(MAF2[which(!exclude),],
-                 samples=colnames(MAF2[which(!exclude),]),
+PS <- toPhyloseq(MAFinal,
+                 samples=colnames(MAFinal),
                  multi2Single=TRUE)
 
 ##Add real sample data
@@ -210,7 +219,6 @@ rownames(sample_data(PS)) <- gsub("b", "", rownames(sample_data(PS)))
 
 ## align and cbind to get the combinded sample data
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
-
 
 ###For primer analysis (Victor), still stored on our server 
 ## saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") 
