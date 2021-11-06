@@ -221,7 +221,7 @@ sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
 rownames(sample.data) <- sample.data$IZW_ID
 
 ### OUCH THIS seems to have been completely unaligned in previous data!
-rownames(sample_data(PS)) <- gsub("b", "", rownames(sample_data(PS)))
+rownames(PS@sam_data) <- gsub("b", "", rownames(sample_data(PS)))
 
 ## align and cbind to get the combinded sample data
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
