@@ -38,11 +38,10 @@ for each fox and writes them (together with the 'basic data') to
  
 ## 1) Sequencing data 
 We (Victor Jarquin-Diaz and Emanuel Heitlinger) process the raw
-sequencing data in 1_Fox_general_MA.R. This script processes the
-sequencing data based on matching of the primer sequences in
-'input_data/primer_file_foxes.csv' using the MultiAmplicon wrapper of
-the dada2 package to produce amplified sequence variant (ASV)
-abundances for each fox.
+sequencing data in 1_Fox_general_MA.R based on matching of the primer
+sequences in 'input_data/primer_file_foxes.csv'. We are using the
+MultiAmplicon wrapper of the dada2 package to produce amplified
+sequence variant (ASV) abundances for each fox.
 
 The sequencing data is most easiely available on the compute server of
 the Heitlinger group (harriet@biologie.hu-berlin.de). The script could
@@ -75,7 +74,7 @@ analysis/publication.
  
 AT THIS POINT WE HAVE ALL THE DATA collected and processed (in the
 phloseq object and the traits table) and the remaining two scripts are
-only analysing this data analysis.
+only analysing this.
  
 ## 3) JSDM analysis 
 JSDM_parasites_helminths_AP_20200828.Rmd (by Aimara
