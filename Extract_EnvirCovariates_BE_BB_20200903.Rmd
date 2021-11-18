@@ -50,7 +50,6 @@ fox_sp <- st_as_sf(foxsample_data, coords = c("long", "lat"), crs = 4236) %>%
 
 ### Load Environmental variables
 ```{r}
-
 tree_cover <- raster(paste0(rawdata_wd, "/tcd_bb_mv_b_20m_3035.tif")) 
 tree_cover <- clamp(tree_cover, upper = 200, useValues = FALSE)
 
