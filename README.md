@@ -51,8 +51,13 @@ intermediate_data/Fox_data_envir.RDS produced in
 0_Extract_Einvir_Covariates.R) to the central "phyloseq" object of the
 pipeline. The environmental covariates are stored as "sample_data" in
 this object.
+
+The script stores intermediate data on our server and is in the
+present not executable anywhere else. You can continue with it's
+output object. 
  
-We store this object in 'intermediate_data/PhyloSeqCombi.Rds'
+We store output as a phyloseq object in
+'intermediate_data/PhyloSeqCombi.Rds'
 
 2) Caro Scholz compiled helminth traits in
  
