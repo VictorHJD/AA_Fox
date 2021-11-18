@@ -200,13 +200,13 @@ AIC(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum)
 
 
 tab_model(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum,
-          file="tables/HillDiv.html")
+          file="tables/HillDiv.html", show.aic = TRUE)
 
 tab_model(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp,
-          DivModelSimpsonHum, file="tables/SimpsonDiv.html")
+          DivModelSimpsonHum, file="tables/SimpsonDiv.html", show.aic = TRUE)
 
 tab_model(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp,
-          DivModelShannonHum, file="tables/ShannonDiv.html")
+          DivModelShannonHum, file="tables/ShannonDiv.html", show.aic = TRUE)
 
 
 ## Now: the way Caro designed the analysis it distinguishes between
