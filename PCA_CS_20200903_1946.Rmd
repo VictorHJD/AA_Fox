@@ -1,0 +1,207 @@
+---
+title: "PCA"
+author: "Caro Scholz"
+date: "28 8 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, fig.showtext = T, fig.retina = 1)
+```
+
+# Doc preparation
+## Library load
+```{r prep, message=FALSE}
+library(here)
+library(vegan)
+library(dplyr)
+library(ggplot2)
+#library(devtools)
+# load ggbiplot
+library(ggbiplot)
+
+
+```
+
+## Data load
+```{r dataload}
+here()
+path_to_raw <- here::here("2_data/raw_data")
+path_to_data <- here::here("6_processed_data")
+
+master <- readRDS(paste0(path_to_raw,"/sampledata_OTU_diet.rds"))
+master <- master %>% rename(Aves = bird) %>% rename(Pisces = fish) # rename two columns
+BE_env <- read.csv(paste0(path_to_data,"/Berlin_foxes_envir_variables_epsg25833.csv"), header = T, sep = ",", stringsAsFactors = F)
+BB_BE_env <- readRDS(paste0(path_to_data,"/BE_BB_foxes_envir_variables_epsg3035.rds"))
+virus <- read.csv(paste0(path_to_raw,"/virus.csv"), header = T, sep = ",", stringsAsFactors = F)
+
+```
+
+## prepare data for NMDS (non-metric multidimensional scaling)
+
+```{r}
+
+str(BB_BE_env)
+pca.data <- BB_BE_env %>% select(c(1:5))
+str(master) 
+pca.data2 <- merge(pca.data, master[,c(1,16:97, 99:106)], by = "IZW_ID") # also including diet data
+pca.data2<- pca.data2[colSums(pca.data2[6:87]) != 0]# delete columns whitout observations/just absence data = 14 helminths  
+
+str(virus)
+pca.data3 <- merge(pca.data2, virus[,c(2,10:12)], by = "IZW_ID") # also including diet data
+pca.data3 <- pca.data3  %>% mutate(HEV_pool = as.numeric(HEV_pool)) %>% mutate(HAV_pool = as.numeric(HAV_pool)) %>%     mutate(Astro_pool = as.numeric(Astro_pool)) %>% mutate(Annelida = as.numeric(Annelida)) %>% mutate(Arthropoda = as.numeric(Arthropoda)) %>% mutate(Aves= as.numeric(Aves)) %>% mutate(Pisces = as.numeric(Pisces)) %>% mutate(Insectivora = as.numeric(Insectivora)) %>% mutate(Lagomorpha = as.numeric(Lagomorpha)) %>% mutate(Mollusca = as.numeric(Mollusca)) %>% mutate(Rodentia = as.numeric(Rodentia)) # transform everything into numeric
+str(pca.data3)
+
+pca.data3<- pca.data3[colSums(pca.data3[3:95]) != 0] # delete columns whitout observations/just absence data -> no HAV, no Lagomorpha
+
+
+aa <- rowSums(pca.data3[,6:81]) #foxes without any helmitnths (12 foxes)
+bb <- which(aa == 0)
+pca.data4 <- pca.data3[-bb,] 
+names(pca.data4)
+cc <- colSums(pca.data4[,6:81])
+dd <- which(cc == 0)
+pca.data5 <- pca.data4 %>%  select(-c("Metateratocephalus", "Rhabditophanes"))
+
+# cc <- rowSums(pca.data3[,83:84]) # foxes without any virus
+# dd <- which(cc == 0)
+# pca.data5 <- pca.data3[-dd,] # just 8 foxes in Berlin
+
+
+## -> pca.data4 now environmental variables, helminths and virus, but a lot of zeors in virus coumns (won't work for NMDS)
+## -> pca.data5 just positiv virus foxes (plus corresponding helminths and environmeltal variables)
+
+```
+
+## NMDS
+```{r}
+#mds.data <- pca.data5
+mds.data <- pca.data5[-c(9, 106), -16]# remove outlier 
+set.seed(2020) # The final configuration may differ depending on the initial configuration (which is often random), and the number of iterations, so it is advisable to run the NMDS multiple times and compare the interpretation from the lowest stress solutions and set a seed
+#str(mds.data) # dim 182x89
+
+mb.nmds <- metaMDS(mds.data[,6:79], distance = "jaccard", k = 2, trymax = 100, noshare= 0.1, center = T) # just helminths
+mb.nmds #stress < 0.05 provides an excellent representation in reduced dimensions, < 0.1 is great, < 0.2 is good/ok, and stress < 0.3 provides a poor representation.
+# here stress = 0.24
+
+
+plot(mb.nmds, type = "t")
+# gof <- goodness(mb.nmds)
+#
+# plot(mb.nmds, display = "sites", type = "n", ylab=c(-4,4))
+# points(mb.nmds, display = "sites", cex = 2*gof/mean(gof))
+#
+# stressplot(mb.nmds, pch = 19, cex=0.75, l.col = "tomato", p.col = "skyblue")
+#
+# stress_vec <- numeric(10)
+# for(i in seq(10)){
+#   stress_vec[i] <- metaMDS(pca.data4[,8:75], distance = "jaccard", k=i)$stress
+# }
+#
+# plot(seq(10),stress_vec, type = 'o', ylab = "Stress", xlab = "Number of dimensions",
+#      col="tomato", pch=19)
+# abline(h=0.2, lty=2)
+# abline(h=0.05, lty=3)
+
+# Additional note: The final configuration may differ depending on the initial configuration (which is often random), and the number of iterations, so it is advisable to run the NMDS multiple times and compare the interpretation from the lowest stress solutions.
+```
+
+biofit, envfit and dietfit
+```{r}
+
+bio.fit <- envfit(mb.nmds, mds.data[,6:78], perm = 1000)
+bio.fit 
+
+ef <- envfit(mb.nmds, mds.data[,3:5], permu = 1000)
+ef 
+
+diet.fit <- envfit(mb.nmds, mds.data[,79:85], permu = 1000)
+diet.fit 
+```
+
+
+## nice plot
+```{r}
+### prepare data for ggplot: extract relevant values
+mds.data1 <- merge(mds.data, master[,c(1,5)], by = "IZW_ID") # merge sex info
+#Get site information
+df_nmds<-scores(mb.nmds,display=c("sites")) # extract scores
+#Add grouping information
+df_nmds<-data.frame(df_nmds,area=mds.data1$area) # add area info
+
+#Get the vectors for env.fit
+df_envfit<-scores(ef,display=c("vectors"))
+df_envfit<-df_envfit*vegan:::ordiArrowMul(df_envfit)
+df_envfit<-as.data.frame(df_envfit)
+ 
+#Get the vectors for bioenv.fit
+df_biofit<-scores(bio.fit,display=c("vectors"))
+df_biofit<-df_biofit*vegan:::ordiArrowMul(df_biofit)
+df_biofit<-as.data.frame(df_biofit)
+pvals <- bio.fit$vectors$pvals
+df_biofit_sig <- cbind(df_biofit, pvals)
+df_biofit_sig <- df_biofit_sig %>% tibble::rownames_to_column (var="helminth") %>% filter(pvals < 0.05)
+  
+  #tibble::rownames_to_column (var="helminth") %>% filter(helminth == "Alaria"| helminth =="Ancylostoma"| helminth == "Angiostrongylus"| helminth == "Capillaria "| helminth == "Clonorchis"| helminth == "Crenosoma" | helminth == "Eucoleus" | helminth == "Heterakis" | helminth == "Hydatigera"| helminth == "Lamanema" | helminth == "Mesocestoides" | helminth == "Nematodirella"| helminth == "Oslerus"|helminth == "Passalurus" | helminth == "Sutarostrongylus" | helminth == "Taenia"| helminth == "Uncinaria")  #select just significant helminths for plotting
+
+
+
+#Get the vectors for diet.fit
+df_dietfit <- scores(diet.fit,display=c("vectors"))
+df_dietfit<-df_dietfit*vegan:::ordiArrowMul(df_dietfit)
+df_dietfit<-as.data.frame(df_dietfit)
+pvals_diet <- diet.fit$vectors$pvals
+df_dietfit_sig <- cbind(df_dietfit, pvals_diet)
+df_dietfit_sig <- df_dietfit_sig %>% tibble::rownames_to_column (var="diet") %>% filter(pvals_diet < 0.05)
+#df_dietfit_sig <- df_dietfit %>% tibble::rownames_to_column (var="diet") %>% filter(diet == "Arthropoda") #select just significant diet features for plotting
+
+
+
+ggplot(data = df_nmds, 
+       aes(x = NMDS1, y = NMDS2)) + 
+     geom_point(data = df_nmds, 
+                aes(colour = area), 
+                size = 4, 
+                alpha = 0.6) + 
+     scale_colour_manual(values = c("#948a54", "#a0af1f")) + 
+     geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
+       data = df_biofit_sig, 
+       size =1, alpha = 0.5, 
+       colour = "#808080", 
+       arrow = arrow(length = unit(0.2, "cm"))) +
+     ggrepel::geom_text_repel(data=as.data.frame(df_biofit_sig), 
+                              aes(NMDS1, NMDS2, label = helminth),
+                              color="grey30",
+                              alpha=0.8, 
+                              fontface = "italic",
+                              size = 8) +
+    geom_segment(data=df_dietfit_sig, 
+                 aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
+                  arrow = arrow(length = unit(0.2, "cm")),
+                 color="grey10",alpha=0.7)+
+   ggrepel::geom_text_repel(data=as.data.frame(df_dietfit_sig),
+                            aes(NMDS1, NMDS2, label = diet),
+                            color="grey10",
+                            alpha=0.8,
+                            fontface = "bold",
+                            size = 8)+
+     theme(axis.title = element_text(size = 16, 
+                                     face = "bold", 
+                                     colour = "grey30"), 
+     panel.background = element_blank(), 
+     panel.border = element_rect(fill = NA, colour = "grey30"), 
+     axis.ticks = element_blank(), 
+     axis.text = element_blank(), 
+     legend.key = element_blank(), 
+     legend.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+     legend.text = element_text(size = 9, colour = "grey30")) +
+          labs(colour = "area")
+
+
+```
+
+
+
