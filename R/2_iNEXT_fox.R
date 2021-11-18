@@ -90,7 +90,7 @@ EstimatesAsy <- filter(EstimatesAsy,
                        !is.na(human_fpi_1000m))
                        
 
-alphaCompared <- ggplot(EstimatesAsy, aes(area, Observed, color=area)) +
+alphaCompared <- ggplot(EstimatesAsy, aes(area, Estimator, color=area)) +
     geom_boxplot(outlier.shape = NA) +
     geom_jitter() +
     scale_y_continuous("") +
@@ -101,21 +101,21 @@ alphaCompared <- ggplot(EstimatesAsy, aes(area, Observed, color=area)) +
 
 ### Models for Shannon
 EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    lm(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelShannonArea
 
 summary(DivModelShannonArea)
 
 EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    lm(Observed~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelShannonTree
 
 summary(DivModelShannonTree)
 
 EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    lm(Observed~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelShannonHum
 
@@ -123,7 +123,7 @@ summary(DivModelShannonHum)
 
 
 EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    lm(Observed~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelShannonImp
 
@@ -134,21 +134,21 @@ AIC(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp, DivModelShanno
 ### Models for Simpson
 
 EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    lm(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelSimpsonArea
 
 summary(DivModelSimpsonArea)
 
 EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    lm(Observed~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelSimpsonTree
 
 summary(DivModelSimpsonTree)
 
 EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    lm(Observed~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelSimpsonHum
 
@@ -156,7 +156,7 @@ summary(DivModelSimpsonHum)
 
 
 EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    lm(Observed~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelSimpsonImp
 
@@ -168,21 +168,21 @@ AIC(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp, DivModelSimpso
 ### Models for Species richness
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelHillArea
 
 summary(DivModelHillArea)
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Observed~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelHillTree
 
 summary(DivModelHillTree)
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Observed~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelHillHum
 
@@ -190,7 +190,7 @@ summary(DivModelHillHum)
 
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Observed~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+    lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
        data=.) ->
     DivModelHillImp
 
@@ -212,6 +212,7 @@ tab_model(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp,
 ## Now: the way Caro designed the analysis it distinguishes between
 ## Berlin and Brandenburg as a whole (and between male and female,
 ## maybe?)
+
 
 HelmPres1 <- as.data.frame(HelmCounts>0)
 HelmPres1 <- apply(HelmPres1, 1, as.numeric)
