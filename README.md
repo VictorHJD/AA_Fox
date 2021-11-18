@@ -1,5 +1,6 @@
 # AA_Fox
 
+## Setup 
 For a fully reproducible analysis starting from raw sequencing files R
 script have to be executed in numerical order (starting with a "\\d_";
 e.g. 0_, 1_, ..), scripts prefixed with X_ are currently not used.
@@ -16,7 +17,9 @@ TRUE) or read it from 'intermediate_data'.
 For coauthors, here is how this was migrated from the Dropbox folder
 and how the data flows through the pipeline and analyses:
 
-0) Dropbox/Project_Canid_Metabarcoding/5_scripts/Extract_EnvirCovariates_BE_BB_20200903.Rmd
+## 0) Environmental variables
+
+Dropbox/Project_Canid_Metabarcoding/5_scripts/Extract_EnvirCovariates_BE_BB_20200903.Rmd
 (by Cedric Scherer)
  
 -> 0_Extract_Einvir_Covariates.R
@@ -33,7 +36,8 @@ The script reads data on the sampled foxes from
 for each fox and writes them (together with the 'basic data') to
 'intermediate_data/Fox_data_envir.RDS'.
  
-1) We (Victor Jarquin-Diaz and Emanuel Heitlinger) process the raw
+## 1) Sequencing data 
+We (Victor Jarquin-Diaz and Emanuel Heitlinger) process the raw
 sequencing data in 1_Fox_general_MA.R. This script processes the
 sequencing data based on matching of the primer sequences in
 'input_data/primer_file_foxes.csv' using the MultiAmplicon wrapper of
@@ -59,8 +63,8 @@ output object.
 We store output as a phyloseq object in
 'intermediate_data/PhyloSeqCombi.Rds'
 
-2) Caro Scholz compiled helminth traits in
- 
+## 2) Helminth trait data
+Caro Scholz compiled helminth traits in 
 Dropbox/Project_Canid_Metabarcoding/6_processed_data/traits_grouped.RDS
  
 -> input_data/traits_grouped.csv
@@ -73,12 +77,17 @@ AT THIS POINT WE HAVE ALL THE DATA collected and processed (in the
 phloseq object and the traits table) and the remaining two scripts are
 only analysing this data analysis.
  
-3) JSDM_parasites_helminths_AP_20200828.Rmd (by Aimara
- Planillo) runs the model, the model check and shows the results
+## 3) JSDM analysis 
+JSDM_parasites_helminths_AP_20200828.Rmd (by Aimara
+Planillo). 
  
 -> 3_JSDM_helminths.R
+
+Runs the model, the model check and shows the results
  
-4) NMDS: Dropbox/Project_Canid_Metabarcoding/5_scripts/PCA_CS_20200903_1946 
+## 4) Comunity composition analyses
+
+Dropbox/Project_Canid_Metabarcoding/5_scripts/PCA_CS_20200903_1946 
  
 -> 4_CommunityComposition.R
  
