@@ -12,7 +12,7 @@ library(sjlabelled)
 recomputeBioinfo <- FALSE
 
 if(!exists("PS")){
-    if(recompute){
+    if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
         PS <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
