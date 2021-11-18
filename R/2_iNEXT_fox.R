@@ -203,6 +203,11 @@ AIC(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum)
 tab_model(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum,
           file="tables/HillDiv.html")
 
+tab_model(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp,
+          DivModelSimpsonHum, file="tables/SimpsonDiv.html")
+
+tab_model(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp,
+          DivModelShannonHum, file="tables/ShannonDiv.html")
 
 ## Now: the way Caro designed the analysis it distinguishes between
 ## Berlin and Brandenburg as a whole (and between male and female,
