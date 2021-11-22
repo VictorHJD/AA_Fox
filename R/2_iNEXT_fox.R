@@ -5,9 +5,11 @@ library(betapart)
 library(tidyverse)
 library(patchwork)
 
+library(MASS)
 library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
+
 
 recomputeBioinfo <- FALSE
 
@@ -171,30 +173,30 @@ AIC(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp, DivModelSimpso
 ### Models for Species richness
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
+    glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+       data=., family="poisson") ->
     DivModelHillArea
 
 summary(DivModelHillArea)
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
+    glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+           data=., family="poisson") ->
     DivModelHillTree
 
 summary(DivModelHillTree)
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
+    glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+       data=., family="poisson") ->
     DivModelHillHum
 
 summary(DivModelHillHum)
 
 
 EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-    lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
+    glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
+       data=., family="poisson") ->
     DivModelHillImp
 
 summary(DivModelHillImp)
