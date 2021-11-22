@@ -27,10 +27,12 @@ theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
 theme_update(
     axis.title.x = element_text(margin = margin(t = 12)),
     axis.title.y = element_text(margin = margin(r = 12)),
-    strip.text = element_text(face = "bold", color = "black", size = 15),
-    legend.text = element_text(size = 13),
+    strip.text = element_text(face = "bold", color = "black", size = 12, margin = margin(b = 10)),
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 12),
     panel.spacing.x = unit(2, "lines"),
-    panel.grid.minor = element_blank()
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(rep(12, 4))
 )
 
 ## font for numeric label
@@ -249,8 +251,14 @@ gammaDivFox <- ggiNEXT(Fox_inext_area1) +
     scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
     xlab("Number of sampled foxes") +
     ylab("Helminth diversity") +
+    ## need to repeat theme because it is overwritten by the wrapper
     theme_minimal(base_family = "Roboto", base_size = 12) +
-    theme(legend.position="none", axis.text = element_text(family = font_num))
+    theme(legend.position="none", 
+          axis.text = element_text(family = font_num),
+          axis.title.x = element_text(margin = margin(t = 12)),
+          axis.title.y = element_text(margin = margin(r = 12)),
+          panel.grid.minor = element_blank(),
+          plot.margin = margin(rep(12, 4)))
 
 
 
@@ -271,12 +279,12 @@ data.frame(distances=JaccGrups$distances,
              area=JaccGrups$group) %>%
     ggplot(aes(area, distances, color=area, fill = after_scale(lighten(color, .7)))) +
     geom_boxplot(outlier.shape = NA) +
-    geom_point(shape = 21, position = position_jitter(width = .3, seed = 2021), fill = "white", size = 2, stroke = .7) +
+    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021), fill = "white", size = 2, stroke = .7) +
     #geom_point(position = position_jitter(width = .3, seed = 2021)) +
     scale_y_continuous(name = "Distance to area centroid") +
     scale_x_discrete(name = NULL) +
-    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Area:") +
-    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Area:") +
+    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
     guides(fill = guide_legend(title.position = "top", title.hjust = .5),
            color = guide_legend(title.position = "top", title.hjust = .5)) +
     theme(legend.position="top", axis.text.y = element_text(family = font_num))->
@@ -302,11 +310,11 @@ wrap_plots(
     design = "AAABBB\n##CC##\nDDEEFF",
     ## by default all rows and columns have similar widths and heights but we
     ## don't want our legend to fill up 1/3 of the plot height
-    heights = c(20/45, 5/45, 20/45),
+    heights = c(21/45, 3/45, 21/45),
     ## this tells ggplot to just draw the legend once, not six times
     guides = "collect"
 ) +
 plot_annotation(tag_levels = 'a')
 
-ggsave("figures/Diversity.pdf", width=12, height=8, device=cairo_pdf)
+ggsave("figures/Diversity.pdf", width=13, height=9, device=cairo_pdf)
 
