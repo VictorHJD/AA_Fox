@@ -4,7 +4,7 @@ library(vegan)
 library(betapart)
 library(tidyverse)
 library(patchwork)
-
+library(colorspace)
 library(MASS)
 library(sjPlot)
 library(sjmisc)
@@ -27,7 +27,8 @@ theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
 theme_update(
     axis.title.x = element_text(margin = margin(t = 12)),
     axis.title.y = element_text(margin = margin(r = 12)),
-    strip.text = element_text(face = "bold", color = "black"),
+    strip.text = element_text(face = "bold", color = "black", size = 15),
+    legend.text = element_text(size = 13),
     panel.spacing.x = unit(2, "lines"),
     panel.grid.minor = element_blank()
 )
@@ -107,9 +108,9 @@ EstimatesAsy <- filter(EstimatesAsy,
                        !is.na(human_fpi_1000m))
                        
 
-alphaCompared <- ggplot(EstimatesAsy, aes(area, Estimator, color=area, fill = after_scale(colorspace::lighten(color, .7)))) +
+alphaCompared <- ggplot(EstimatesAsy, aes(area, Estimator, color=area, fill = after_scale(lighten(color, .7)))) +
     geom_boxplot(outlier.shape = NA) +
-    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021), fill = "white", size = 2, stroke = .7) +
+    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021), fill = "white", size = 1.3, stroke = .7) +
     scale_y_continuous(name = NULL) +
     scale_x_discrete(name = NULL) +
     facet_wrap(~Diversity, scales="free_y")+
@@ -248,6 +249,7 @@ gammaDivFox <- ggiNEXT(Fox_inext_area1) +
     scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
     xlab("Number of sampled foxes") +
     ylab("Helminth diversity") +
+    theme_minimal(base_family = "Roboto", base_size = 12) +
     theme(legend.position="none", axis.text = element_text(family = font_num))
 
 
@@ -267,7 +269,7 @@ anova(JaccGrups)
 
 data.frame(distances=JaccGrups$distances,
              area=JaccGrups$group) %>%
-    ggplot(aes(area, distances, color=area, fill = after_scale(colorspace::lighten(color, .7)))) +
+    ggplot(aes(area, distances, color=area, fill = after_scale(lighten(color, .7)))) +
     geom_boxplot(outlier.shape = NA) +
     geom_point(shape = 21, position = position_jitter(width = .3, seed = 2021), fill = "white", size = 2, stroke = .7) +
     #geom_point(position = position_jitter(width = .3, seed = 2021)) +
@@ -287,19 +289,13 @@ betaDivJacMulti <-
                              label = FALSE, sub="")))
 
 
-
-(alphaDivFox + alphaCompared) /
-    (betaDivJacMulti + betaDivJac  + gammaDivFox) +
-    plot_annotation(tag_levels = 'a')
-
-
 wrap_plots(
     ## place first two plots
     alphaDivFox, alphaCompared, ## -> A + B
     ## place the legend in the middle
     guide_area(), ## -> C
     ## ... then the other three plots
-    betaDivJacMulti, betaDivJac , gammaDivFox, ## -> D, E + F
+    betaDivJacMulti, betaDivJac, gammaDivFox, ## -> D, E + F
     ## you can build more complex layouzts by providing simple letters that are
     ## then filled accordingly by the plots you defined in the previous step;
     ## the plots are "named" as the appear here: the first one is A, the next B and so on...
