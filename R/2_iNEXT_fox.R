@@ -260,13 +260,10 @@ data.frame(distances=JaccGrups$distances,
     theme_minimal() -> betaDivJac
 
 
-old_par <- par(mar = c(0, 0, 0, 0), bg = NA)
 betaDivJacMulti <- 
     wrap_elements(full =
                       ~(plot(JaccGrups, col=c("#e7b800", "#2e6c61"), main="",
                              label = FALSE, sub="")))
-par(old_par)
-dev.off()
 
 
 pdf("figures/Diversity.pdf", width=12, height=8)
