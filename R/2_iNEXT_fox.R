@@ -76,7 +76,8 @@ alphaDivFox <- ggplot(zet, aes(x = x, y = y, colour = area, group=site)) +
     scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
     ylab("helminth diversity\n") +
     xlab("number of sequence reads\n") +
-    theme_bw()
+    theme_minimal() +
+    theme(legend.position="none")
 
 
 ## compare the asymptotic estimates between Berlin and Brandenburg
@@ -94,10 +95,12 @@ alphaCompared <- ggplot(EstimatesAsy, aes(area, Estimator, color=area)) +
     geom_boxplot(outlier.shape = NA) +
     geom_jitter() +
     scale_y_continuous("") +
+    scale_x_discrete("") +
     facet_wrap(~Diversity, scales="free_y")+
     scale_colour_manual(values = c("#e7b800", "#2e6c61")) +
     scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
-    theme_minimal()
+    theme_minimal() +
+    theme(legend.position="none")
 
 ### Models for Shannon
 EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
@@ -254,10 +257,12 @@ data.frame(distances=JaccGrups$distances,
     geom_boxplot(outlier.shape = NA) +
     geom_jitter() +
     scale_y_continuous("distance to area centroid") +
+    scale_x_discrete("") +
     scale_colour_manual(values = c("#e7b800", "#2e6c61")) +
     scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
-    theme(legend.position="none")+
-    theme_minimal() -> betaDivJac
+    theme_minimal() + 
+    theme(legend.position="top")->
+    betaDivJac
 
 
 betaDivJacMulti <- 
