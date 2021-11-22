@@ -1,0 +1,86 @@
+"t.genus","human.related","pet.related","livestock.related","transmission","detail","info"
+"Angiostrongylus",0,1,0,"diet","Mollusca","snail"
+"Eucoleus",1,1,0,"contaminated surface","contaminated surface",NA
+"Alaria",1,1,1,"diverse","diverse",NA
+"Mesocestoides",0,1,0,"diverse","diverse",NA
+"Ancylostoma",1,1,0,"contaminated surface","contaminated surface",NA
+"Mammomonogamus",1,1,1,NA,NA,NA
+"Trichuris",1,1,0,"contaminated surface","contaminated surface","monoxen"
+"Plectus",0,0,0,"fox-unspecific","soil",NA
+"Pearsonema",0,1,0,"diet","Annelida","earthworm"
+"Taenia",0,1,0,"diet","Rodentia","and Lagomorphas"
+"Metastrongylus",0,0,1,"diet","pigs","mainly wild boars,  transmission also via earthworm"
+"Crenosoma",0,1,0,"diet","Mollusca","snail"
+"Rhabditis",NA,NA,NA,NA,NA,NA
+"Oscheius",NA,NA,NA,NA,NA,NA
+"Diploscapter",NA,NA,NA,NA,NA,NA
+"Brachylaima",1,0,0,"diverse","diverse",NA
+"Stegelletina",NA,NA,NA,NA,NA,NA
+"Aphelenchoides",0,0,0,"fox-unspecific","plants","within diet, not fox-related"
+"Panagrolaimus",NA,NA,NA,NA,NA,NA
+"Steinernema",NA,NA,NA,NA,NA,NA
+"Travassostrongylus",NA,NA,NA,NA,NA,NA
+"Pristionchus",0,0,0,"fox-unspecific","soil","or Arthropoda"
+"Koerneria",NA,NA,NA,NA,NA,NA
+"Heterodera",0,0,0,"fox-unspecific","plants",NA
+"Rhabditophanes",NA,NA,NA,NA,NA,NA
+"Cucullanus",NA,NA,NA,NA,NA,NA
+"Tylocephalus",NA,NA,NA,NA,NA,NA
+"Oslerus",0,1,0,"diet","Rodentia","also slugs"
+"Lamanema",0,0,1,NA,NA,NA
+"Petrovinema",NA,NA,NA,NA,NA,NA
+"Phasmarhabditis",NA,NA,NA,NA,NA,NA
+"Bunonema",0,0,0,"fox-unspecific","plants",NA
+"Necator",NA,NA,NA,NA,NA,NA
+"Echinococcus",1,1,1,"contaminated surface","contaminated surface",NA
+"Clonorchis",1,1,0,"diet","fish",NA
+"Urogonimus",NA,NA,NA,NA,NA,NA
+"Raillietina",0,0,0,"diet","birds","beetles as intermediate host"
+"Heligmosomoides",0,0,0,"diet","Rodentia",NA
+"Aelurostrongylus",0,1,0,"diet","Rodentia","parasitize in the lungs of cats, martens and Rodentias"
+"Nippostrongylus",0,0,0,"diet","Rodentia","diet, transmission also via earthworm "
+"Proleptus",NA,NA,NA,NA,NA,NA
+"Passalurus",0,0,0,"diet","Lagomorpha",NA
+"Microvahine",NA,NA,NA,NA,NA,NA
+"Pelodera",NA,NA,NA,NA,NA,NA
+"Equinia",0,0,1,"fox-unspecific","horse","horse specific parasite"
+"Cylindrostoma",NA,NA,NA,NA,NA,NA
+"Uncinaria",0,1,0,"contaminated surface","contaminated surface","or Rodentias"
+"Capillaria",1,1,0,"contaminated surface","contaminated surface",NA
+"Sutarostrongylus",NA,NA,NA,NA,NA,"maybe wrong assignment"
+"Strongyloides",1,1,0,"diverse","diverse",NA
+"Toxocara",1,1,0,"diet","Rodentias",NA
+"Mastophorus",0,0,0,"diet","Rodentia",NA
+"Toxascaris",0,1,0,"diverse","diverse",NA
+"Catenotaenia",NA,NA,NA,NA,NA,NA
+"Malenchus",NA,NA,NA,NA,NA,NA
+"Paranoplocephala",NA,NA,NA,NA,NA,"maybe horse specific parasite"
+"Bathylaimus",NA,NA,NA,NA,NA,NA
+"Aonchotheca",0,0,0,NA,NA,NA
+"Fictor",NA,NA,NA,NA,NA,NA
+"Cephalenchus",NA,NA,NA,NA,NA,NA
+"Litoditis",NA,NA,NA,NA,NA,NA
+"Micoletzkya",0,0,0,"diet","Arthropoda","diet, transmission also via earthworm "
+"Trichostrongylus",0,0,1,"contaminated surface","contaminated surface","ruminant parasite"
+"Nematodirella",NA,NA,NA,NA,NA,NA
+"Bitylenchus",NA,NA,NA,NA,NA,NA
+"Filarinema",NA,NA,NA,NA,NA,NA
+"Holostephanus",NA,NA,NA,NA,NA,NA
+"Metateratocephalus",NA,NA,NA,NA,NA,"soil and fresh water"
+"Hydatigera",0,1,0,"diet","Rodentia",NA
+"Cyathocotyle",NA,NA,NA,NA,NA,NA
+"Rhinebothrium",NA,NA,NA,NA,NA,NA
+"Diplogasteroides",NA,NA,NA,NA,NA,NA
+"Heterakis",0,0,0,"diet","birds","diet, transmission also via earthworm "
+"Diplogastrellus",0,0,0,"diet","Arthropoda",NA
+"Cladotaenia",NA,NA,NA,NA,NA,NA
+"Brachylecithum",NA,NA,NA,NA,NA,NA
+"Angiostoma",NA,NA,NA,NA,NA,NA
+"Antechiniella",NA,NA,NA,NA,NA,NA
+"Syphacia",0,0,0,"diet","Rodentias","diet, transmission also via earthworm "
+"Ostertagia",0,0,1,"contaminated surface","contaminated surface",NA
+"Synhimantus",0,0,0,"diet","birds",NA
+"Ditylenchus",0,0,0,"fox-unspecific","plants",NA
+"Filenchus",NA,NA,NA,NA,NA,NA
+"Opisthorchis",0,1,0,"diet","fish",NA
+"Notocaryoplana",NA,NA,NA,NA,NA,NA

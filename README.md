@@ -78,7 +78,7 @@ distances) and gamma diversity (rarefied diversity by fox individual).
 Caro Scholz compiled helminth traits in 
 Dropbox/Project_Canid_Metabarcoding/6_processed_data/traits_grouped.RDS
  
--> input_data/traits_grouped.csv
+-> input_data/helminth_traits.csv
  
 This manual input data can be edited directly. It still contains many
 NAs we might want to add missing information as we progress with
