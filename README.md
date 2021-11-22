@@ -62,7 +62,19 @@ output object.
 We store output as a phyloseq object in
 'intermediate_data/PhyloSeqCombi.Rds'
 
-## 2) Helminth trait data
+## 2) Diversity analysis
+
+At this point we have all data to perform diversity analysis in
+'R/2_iNEXT_fox.R'
+
+We look at three differen masures for alpha (species [q=0], Shannon
+diversity [q=1] and Simpson diversity [q=2]), beta (jaccard centroid
+distances) and gamma diversity (rarefied diversity by fox individual).
+
+
+## 3) JSDM analysis 
+
+### a) Helminth trait data
 Caro Scholz compiled helminth traits in 
 Dropbox/Project_Canid_Metabarcoding/6_processed_data/traits_grouped.RDS
  
@@ -76,7 +88,6 @@ AT THIS POINT WE HAVE ALL THE DATA collected and processed (in the
 phloseq object and the traits table) and the remaining two scripts are
 only analysing this.
  
-## 3) JSDM analysis 
 JSDM_parasites_helminths_AP_20200828.Rmd (by Aimara
 Planillo). 
  
