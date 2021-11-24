@@ -112,6 +112,8 @@ foxes %>%
 ### and then create a predictor dataset (without non-predictor
 ### variables)
 foxes %>%
+    ## FOR NOW also removing the foxes from the same sites here
+    dplyr::filter(!duplicated(coords.x1, coords.x2)) %>%
     dplyr::select(IZW_ID, sex, weight_kg, imperv_1000m, human_fpi_1000m, 
                   tree_cover_1000m)  %>%
     mutate_at(c("IZW_ID", "sex"), as.factor) %>%
@@ -127,6 +129,10 @@ foxes %>%
     dplyr::filter(!duplicated(coords.x1, coords.x2)) %>%
     transmute(x.coord = coords.x1, y.coord = coords.x2) ->
     xyData 
+
+## FOR NOW also removing the foxes from the same sites here
+response_data <- response_data[rownames(envcov_data), ]
+
 
 studyDesign <- data.frame(site = envcov_data$IZW_ID)
 rL <- HmscRandomLevel(sData = xyData)
@@ -170,3 +176,6 @@ COModel <- Hmsc(Y = response_data, XData = envcov_data, XFormula = XFormula.Gene
 ### also try "lognormal poisson"!!??
 
 COModel <- sampleMcmc(COModel, thin = 10, samples = 20, verbose=TRUE)
+
+read.csv("input_data/Fox_data.csv") %>%     
+    dplyr::filter(duplicated(location_lat, location_long))
