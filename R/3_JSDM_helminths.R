@@ -101,6 +101,14 @@ all(rownames(traits)==colnames(response_data))
 foxes <- phyloseq::sample_data(PSHelmG)
 class(foxes) <- "data.frame"
 
+## some foxes are found at the same coordinates but for the
+## spatial random structure we use only unique geolocation
+foxes %>%
+    mutate(coords.x1 =ifelse(duplicated(coords.x1, coords.x2),
+                             coords.x1, coords.x1+1)) ->
+    foxes
+
+
 ### now we need to know how the environmental data for the foxes is
 ### correlated
 foxes %>%
@@ -113,7 +121,6 @@ foxes %>%
 ### variables)
 foxes %>%
     ## FOR NOW also removing the foxes from the same sites here
-    dplyr::filter(!duplicated(coords.x1, coords.x2)) %>%
     dplyr::select(IZW_ID, sex, weight_kg, imperv_1000m, human_fpi_1000m, 
                   tree_cover_1000m)  %>%
     mutate_at(c("IZW_ID", "sex"), as.factor) %>%
@@ -124,9 +131,6 @@ foxes %>%
 #### now the coordinates (in the coordinate system Cedric used) for
 #### the random structure
 foxes %>%
-    ## some foxes are found at the same coordinates but for the
-    ## spatial random structure we use only unique geolocations!
-    dplyr::filter(!duplicated(coords.x1, coords.x2)) %>%
     transmute(x.coord = coords.x1, y.coord = coords.x2) ->
     xyData 
 
@@ -164,8 +168,8 @@ PAModel <- Hmsc(Y = response_data>0, XData = envcov_data, XFormula = XFormula.Ge
 PAModel <- sampleMcmc(PAModel, thin = 10, samples = 20, verbose=TRUE)
 
 # the real model
-m <- sampleMcmc(PAModel, thin = thin, samples = samples, transient = transient, 
-                nChains = nChains, verbose = verbose, nParallel = nChains)
+PAModel <- sampleMcmc(PAModel, thin = thin, samples = samples, transient = transient, 
+                      nChains = nChains, verbose = verbose, nParallel = nChains)
 
 
 ## Fit models for COUNT data
@@ -177,5 +181,3 @@ COModel <- Hmsc(Y = response_data, XData = envcov_data, XFormula = XFormula.Gene
 
 COModel <- sampleMcmc(COModel, thin = 10, samples = 20, verbose=TRUE)
 
-read.csv("input_data/Fox_data.csv") %>%     
-    dplyr::filter(duplicated(location_lat, location_long))
