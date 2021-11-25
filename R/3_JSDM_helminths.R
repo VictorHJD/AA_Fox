@@ -9,7 +9,8 @@ library(reshape2)
 ## # JSDM model for fox parasites
 
 ## Explanatory variables:
-## - impervious surface (%): buffer 1000m around fox.
+## - impervious surface (%): buffer 1000m around fox. <- IS LEAFT OUT
+## AS HIGHLY CORRELATED WITH human footprint index
 ## - tree cover (%): buffer 1000m around fox.
 ## - human footprint index: buffer 1000m around fox
 ## (higher means more human influenc)
@@ -50,8 +51,9 @@ PSHelmG <- phyloseq::prune_taxa(taxa_sums(PSHelmG)>0, PSHelmG)
 ## variables
 PSHelmG <- phyloseq::prune_samples(
                          sample_sums(PSHelmG)>0 &
-                         !is.na(as.numeric(sample_data(PSHelmG)$weight_kg))&
-                         !is.na(sample_data(PSHelmG)$imperv_1000m),
+                         !is.na(as.numeric(sample_data(PSHelmG)$weight_kg)) &
+                         !is.na(sample_data(PSHelmG)$human_fpi_1000m) &
+                         !is.na(sample_data(PSHelmG)$tree_cover_1000m), 
                          PSHelmG)
 
 HelmCounts <- as.data.frame(otu_table(PSHelmG))
@@ -118,13 +120,14 @@ foxes %>%
     cor(x=., use = "pairwise.complete.obs") -> envcov_cor
 
 ### and then create a predictor dataset (without non-predictor
-### variables)
+### variables) and we leave out imperv_1000m as it's highly correlated
+### with human_fpi_1000m, which is more relevant (for diversity at least)
 foxes %>%
     ## FOR NOW also removing the foxes from the same sites here
-    dplyr::select(IZW_ID, sex, weight_kg, imperv_1000m, human_fpi_1000m, 
+    dplyr::select(IZW_ID, sex, weight_kg, human_fpi_1000m, 
                   tree_cover_1000m)  %>%
     mutate_at(c("IZW_ID", "sex"), as.factor) %>%
-    mutate_at(c("weight_kg", "imperv_1000m",
+    mutate_at(c("weight_kg",
                 "human_fpi_1000m", "tree_cover_1000m"), as.numeric) ->
     envcov_data
 
@@ -150,14 +153,13 @@ verbose <- 1000
 
 
 # Regression formula for environmental covariates
-XFormula.Genera = ~ sex + weight_kg + imperv_1000m + human_fpi_1000m + tree_cover_1000m 
+XFormula.Genera = ~ sex + weight_kg + human_fpi_1000m + tree_cover_1000m 
 #weight not included because NAs
 
 # Regression formula for traits
 TrFormula.Genera = ~ human.rel + pet.rel + transmission.3class
 
 ## *BINOMIAL DISTRIBUTION* ~> PROBIT MODEL
-
 ## Fit models for PRESENCE/ABSENCE  data 
 
 PAModel <- Hmsc(Y = response_data>0, XData = envcov_data, XFormula = XFormula.Genera,
@@ -172,6 +174,8 @@ PAModel <- sampleMcmc(PAModel, thin = thin, samples = samples, transient = trans
                       nChains = nChains, verbose = verbose, nParallel = nChains)
 
 
+## *POISSON  (or negative binomial?) DISTRIBUTION* ~> POISSON MODEL
+
 ## Fit models for COUNT data
 COModel <- Hmsc(Y = response_data, XData = envcov_data, XFormula = XFormula.Genera,
                 studyDesign=studyDesign, ranLevels=list(site=rL),
@@ -181,3 +185,6 @@ COModel <- Hmsc(Y = response_data, XData = envcov_data, XFormula = XFormula.Gene
 
 COModel <- sampleMcmc(COModel, thin = 10, samples = 20, verbose=TRUE)
 
+# the real model
+COModel <- sampleMcmc(COModel, thin = thin, samples = samples, transient = transient, 
+                      nChains = nChains, verbose = verbose, nParallel = nChains)
