@@ -50,7 +50,7 @@ Paranoplocephala,No,No,No,No,none,one.host,Okay
 Aonchotheca,No,No,No,No,none,one.host,Okay
 Fictor,No,No,No,No,none,one.host,Okay
 Cephalenchus,No,No,No,No,none,free.living,questionable
-Trichostrongylus,No,No,Yes,Yes,none,one.host,Okay
+Trichostrongylus,No,No,Yes,Yes,fecal-oral,one.host,Okay
 Nematodirella,No,No,No,No,none,one.host,Okay
 Holostephanus,No,No,No,No,none,three.host,Okay
 Metateratocephalus,No,No,No,No,none,free.living,Okay
@@ -59,9 +59,9 @@ Diplogasteroides,No,No,No,No,none,free.living,Okay
 Heterakis,No,No,No,No,none,one.host,Okay
 Diplogastrellus,No,No,No,No,none,one.host,Okay
 Cladotaenia,No,No,No,No,none,two.host,questionable
-Brachylecithum,No,No,No,No,None,two.host,Okay
-Angiostoma,No,No,No,No,None,one.host,Okay
-Synhimantus,No,No,No,No,None,two.host,Okay
+Brachylecithum,No,No,No,No,none,two.host,Okay
+Angiostoma,No,No,No,No,none,one.host,Okay
+Synhimantus,No,No,No,No,none,two.host,Okay
 Opisthorchis,Yes,Yes,No,Yes,trophic,two.host,Okay
 Notocaryoplana,No,No,No,No,none,free.living,questionable
 Citellinema,No,No,No,No,none,one.host,Okay
