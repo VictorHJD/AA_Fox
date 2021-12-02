@@ -67,7 +67,7 @@ HelmCounts %>%
 ## as in species matrix (columns)
 
 ## Helminth traits
-traits <- read.csv("input_data/helminth_traits_.csv")
+traits <- read.csv("input_data/helminth_traits.csv")
 
 traits %>%
     column_to_rownames("t.genus")  -> traits 
@@ -173,6 +173,8 @@ PAModel <- sampleMcmc(PAModel, thin = 10, samples = 20, verbose=TRUE)
 PAModel <- sampleMcmc(PAModel, thin = thin, samples = samples, transient = transient, 
                       nChains = nChains, verbose = verbose, nParallel = nChains)
 
+## save this as it takes very long to compute!
+saveRDS(PAModel, "intermediate_data/PAModel_jSDM.rds")
 
 ## *POISSON  (or negative binomial?) DISTRIBUTION* ~> POISSON MODEL
 
@@ -188,3 +190,8 @@ COModel <- sampleMcmc(COModel, thin = 10, samples = 20, verbose=TRUE)
 # the real model
 COModel <- sampleMcmc(COModel, thin = thin, samples = samples, transient = transient, 
                       nChains = nChains, verbose = verbose, nParallel = nChains)
+
+
+## save this as it takes very long to compute!
+saveRDS(COModel, "intermediate_data/COModel_jSDM.rds")
+
