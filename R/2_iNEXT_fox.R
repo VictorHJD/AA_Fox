@@ -76,6 +76,7 @@ table(Sdat$area, MoreOne=rowSums(HelmCounts>0)>1)
 
 ## 21 samples with less than 2 species. No significant differences in
 ## the areas
+table(Sdat$area, MoreOne=rowSums(HelmCounts>0)>1)
 fisher.test(table(Sdat$area, MoreOne=rowSums(HelmCounts>0)>1))
 
 OTU_inext_imp <- iNEXT(t(indHelmCounts), q =0, datatype = "abundance")
@@ -317,4 +318,104 @@ wrap_plots(
 plot_annotation(tag_levels = 'a')
 
 ggsave("figures/Diversity.pdf", width=13, height=9, device=cairo_pdf)
+
+
+## checking Apicoplexa
+PSApico <- phyloseq::subset_taxa(PS, phylum%in%c("Apicomplexa"))
+PSApicoG <- phyloseq::tax_glom(PSApico, "genus")
+ApicoCounts <- as.data.frame(otu_table(PSApicoG))
+
+Sdat <- as.data.frame(sample_data(PSApicoG))
+
+## 33 samples with less than 2 species
+table(Sdat$area, MoreOne=rowSums(ApicoCounts>0)>1)
+## Many more of those in Berlin (significantly so)
+fisher.test(table(Sdat$area, MoreOne=rowSums(ApicoCounts>0)>1))
+
+## 13 samples with 0 species
+table(Sdat$area, MoreOne=rowSums(ApicoCounts)>0)
+## All in Berlin, that's significant
+fisher.test(table(Sdat$area, MoreOne=rowSums(ApicoCounts)>0))
+
+
+PSArthro <- phyloseq::subset_taxa(PS, phylum%in%c("Arthropoda"))
+PSArthroG <- phyloseq::tax_glom(PSArthro, "genus")
+ArthroCounts <- as.data.frame(otu_table(PSArthroG))
+
+fisher.test(table(Sdat$area, MoreOne=rowSums(ArthroCounts>0)>1))
+fisher.test(table(Sdat$area, MoreOne=rowSums(ArthroCounts)>0))
+
+
+remove_geom <- function(ggplot2_object, geom_type) {
+    ## Delete layers that match the requested type.
+    layers <- lapply(ggplot2_object$layers, function(x) {
+        if (class(x$geom)[1] == geom_type) {
+            NULL
+        } else {
+            x
+        }
+    })
+    ## Delete the unwanted layers.
+    layers <- layers[!sapply(layers, is.null)]
+    ggplot2_object$layers <- layers
+    ggplot2_object
+}
+
+
+apicoRichness <- plot_richness(PSApicoG, measures=c("Observed", "Shannon"),
+                               color="area", x="area") + geom_boxplot(outlier.shape = NA)
+
+remove_geom(apicoRichness, "GeomPoint")  +
+    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
+               fill = "white", size = 2, stroke = .7) +
+    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_y_continuous("Study area") + 
+    ggtitle("Apicomplexa (incl. gregarina) diversity")
+ggsave("figures/suppl/ApicoDiversity.pdf", width=13, height=9, device=cairo_pdf)
+
+cbind(estimate_richness(PSApico, measures=c("Observed", "Shannon")),
+      sample_data(PSApicoG))  %>% 
+    lm(Shannon~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+        data=.) ->
+    ModDivApicoShannon
+
+summary(ModDivApicoShannon)
+
+library(MASS)
+cbind(estimate_richness(PSApico, measures=c("Observed", "Shannon")),
+      sample_data(PSApicoG))  %>% 
+    glm.nb(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+        data=.) ->
+    ModDivApicoObserved
+
+summary(ModDivApicoObserved)
+
+arthroRichness <- plot_richness(PSArthroG, measures=c("Observed", "Shannon"),
+                               color="area", x="area") + geom_boxplot(outlier.shape = NA)
+
+remove_geom(arthroRichness, "GeomPoint")  +
+    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
+               fill = "white", size = 2, stroke = .7) +
+    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    ggtitle("Arthropoda diversity")
+
+
+cbind(estimate_richness(PSArthro, measures=c("Observed", "Shannon")),
+      sample_data(PSApicoG))  %>% 
+    lm(Shannon~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+       data=.) ->
+    ModDivArthroShannon
+
+summary(ModDivArthroShannon)
+
+
+cbind(estimate_richness(PSArthro, measures=c("Observed", "Shannon")),
+      sample_data(PSApicoG))  %>% 
+    glm.nb(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+       data=.) ->
+    ModDivArthroObserved
+
+summary(ModDivArthroObserved)
 
