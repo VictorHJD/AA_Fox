@@ -181,7 +181,7 @@ mean(modelr2.explanatory$AUC, na.rm=TRUE)
 postGamma <- getPostEstimate(PAModel, parName = "Gamma")
 
 
-pdf("figures/suppl/jSDM_PA_GammaEffects.pdf", width=10, height=5)
+pdf("figures/suppl/jSDM_PA_GammaEffects.pdf", width=10, height=20)
 ## ## don't understand this strange "heatmap"
 ##plotGamma(hM = PAModel, post = postGamma, param = "Support", supportLevel = 0.95)
 MCMCplot(PAMpost$Gamma, ref_ovl = TRUE)
