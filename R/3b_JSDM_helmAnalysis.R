@@ -189,6 +189,14 @@ dev.off()
 
 
 
+
+
+pdf("figures/suppl/jSDM_PA_BetaEffects.pdf", width=10, height=20)
+## ## don't understand this strange "heatmap"
+MCMCplot(PAMpost$Beta, ref_ovl = TRUE)
+dev.off()
+
+
 ## MCMCplot(PAMpost$Omega, ref_ovl = TRUE)
 
 ## MCMCplot(PAMpost$Beta, ref_ovl = TRUE)

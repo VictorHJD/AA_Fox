@@ -147,4 +147,4 @@ AreaModellsPA <- data.frame(cbind(effect.size=
 
 AreaModellsPA <- merge(AreaModellsPA, traits, by=0)
 
-
+AreaModellsPA[order(AreaModellsPA["effect.size"]), ]
