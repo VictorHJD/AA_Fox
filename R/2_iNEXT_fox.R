@@ -42,7 +42,8 @@ font_num <- "Roboto Condensed"
 ## Subsetting for Helminths:
 
 ## WHY do we only look a helminths not acutally at protozoa
-## (e.g. Coccidia) too?
+## (e.g. Coccidia) too? --> NOW see below they are also more diverse
+## in Brandenburg
 
 PSHelm <- phyloseq::subset_taxa(PS, phylum%in%c("Nematoda", "Platyhelminthes"))
 PSHelmG <- phyloseq::tax_glom(PSHelm, "genus")

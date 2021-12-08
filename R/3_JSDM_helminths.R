@@ -59,8 +59,8 @@ PSHelmG <- phyloseq::prune_samples(
 HelmCounts <- as.data.frame(otu_table(PSHelmG))
 colnames(HelmCounts) <- phyloseq::tax_table(PSHelmG)[, "genus"]
     
-HelmCounts %>%
-    as.matrix()  -> 
+HelmCounts[, colSums(HelmCounts)>0] %>%
+    as.matrix() ->
     response_data 
 
 ## 2. a trait data frame with the genus in rows, same name and order
@@ -69,32 +69,13 @@ HelmCounts %>%
 ## Helminth traits
 traits <- read.csv("input_data/helminth_traits.csv")
 
+
 traits %>%
     column_to_rownames("t.genus")  -> traits 
 
+
 ## making sure the two are aligned
 traits <- traits[colnames(response_data),]
-rownames(traits) <- colnames(response_data)
-
-traits %>%
-  mutate(human.rel = case_when(
-    human.related == 0 ~ "No",
-    human.related == 1 ~ "Yes",
-    TRUE ~ "Unknown")) %>%
-  mutate(pet.rel = case_when(
-    pet.related == 0 ~ "No",
-    pet.related == 1 ~ "Yes",
-    TRUE ~ "Unknown")) %>%
-  mutate(livestock.rel = case_when(
-    livestock.related == 0 ~ "No",
-    livestock.related == 1 ~ "Yes",
-    TRUE ~ "Unknown")) %>%
-  mutate(transmission.3class = case_when(
-    transmission == "diet" ~ "diet", 
-    is.na(transmission) ~ "Unknown", 
-    TRUE ~ "Others")) %>%
-    dplyr::select(human.rel, pet.rel, transmission.3class) ->
-  traits
 
 all(rownames(traits)==colnames(response_data))
 
@@ -157,7 +138,7 @@ XFormula.Genera = ~ sex + weight_kg + human_fpi_1000m + tree_cover_1000m
 #weight not included because NAs
 
 # Regression formula for traits
-TrFormula.Genera = ~ human.rel + pet.rel + transmission.3class
+TrFormula.Genera = ~ zoonotic + pet.infecting + transmission.fox
 
 ## *BINOMIAL DISTRIBUTION* ~> PROBIT MODEL
 ## Fit models for PRESENCE/ABSENCE  data 
