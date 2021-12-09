@@ -74,7 +74,7 @@ files <- PairedReadFileSet(filtFs, filtRs)
 #Preparation of primer file 
 
 #Primers used in the arrays 
-ptable <- read.csv(file = "data/primer_file_foxes.csv", sep=",", header=TRUE, stringsAsFactors=FALSE)
+ptable <- read.csv(file = "input_data/primer_file_foxes.csv", sep=",", header=TRUE, stringsAsFactors=FALSE)
 primerF <- ptable[, "TS.SequenceF"]
 primerR <- ptable[, "TS.SequenceR"]
 names(primerF) <- as.character(ptable[, "corrected.NameF"])
@@ -212,9 +212,7 @@ PS <- toPhyloseq(MAFinal,
                  multi2Single=TRUE)
 
 ##Add real sample data
-sample.data <- read.csv(
-    "data/Fox_data.csv",
-    dec=",", stringsAsFactors=FALSE)
+sample.data <- readRDS("intermediate_data/Fox_data_envir.RDS")
 
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
 
@@ -233,4 +231,4 @@ PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(P
 ## saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds")
 
 ## now directly in the repository (for reproducibilty)
-saveRDS(PS, file="data/PhyloSeqCombi.Rds")
+saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
