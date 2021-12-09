@@ -44,11 +44,30 @@ font_num <- "Roboto Condensed"
 
 ## Subsetting for Helminths:
 
+
+## "parasites" plus other nematoda
+helminths <- c("Nematoda", "Platyhelminthes")
+
 ## WHY do we only look a helminths not acutally at protozoa
 ## (e.g. Coccidia) too? --> NOW see below they are also more diverse
 ## in Brandenburg
 
-PSHelm <- phyloseq::subset_taxa(PS, phylum%in%c("Nematoda", "Platyhelminthes"))
+## unicellular "parasites" (incl. Gregarina)
+protist.phyla <- c("Microsporidia", "Apicomplexa")
+## and more by genus (see
+## http://tolweb.org/accessory/Parasitic_Protists?acc_id=53) searched
+## the list of "weird (no identity developed" protist genera there
+## against the taxon table")
+protist.genera <- c("Acanthamoeba",
+                    "Dermocystidium",
+                    "Ichthyophonus")
+
+## or here an idea for diet:
+diet <- c("Annelida", "Arthropoda", "Chordata", "Mollusca")
+
+
+PSHelm <- phyloseq::subset_taxa(PS, phylum%in%helminths)
+
 PSHelmG <- phyloseq::tax_glom(PSHelm, "genus")
 HelmCounts <- as.data.frame(otu_table(PSHelmG))
 
@@ -235,9 +254,60 @@ tab_model(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp,
           DivModelShannonHum, file="tables/ShannonDiv.html", show.aic = TRUE)
 
 
+### Let's see whether there's a non-linear "ecotone" effect of any of
+### the continuous environmental variables!
+
+EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
+    ggplot(aes(human_fpi_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
+    ggplot(aes(human_fpi_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
+    ggplot(aes(human_fpi_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
+    ggplot(aes(imperv_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
+    ggplot(aes(imperv_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
+    ggplot(aes(imperv_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+
+EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
+    ggplot(aes(tree_cover_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
+    ggplot(aes(tree_cover_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
+    ggplot(aes(tree_cover_1000m, Estimator, color=area)) +
+    geom_point() +
+    stat_smooth()
+
+
+
 ## Now: the way Caro designed the analysis it distinguishes between
 ## Berlin and Brandenburg as a whole (and between male and female,
-## maybe?)
+## maybe?). I'd call this level gamma-diversity!
 
 
 HelmPres1 <- as.data.frame(HelmCounts>0)
@@ -324,7 +394,7 @@ plot_annotation(tag_levels = 'a')
 ggsave("figures/Diversity.pdf", width=13, height=9, device=cairo_pdf)
 
 
-## checking Apicoplexa
+## checking Apicomplexa
 PSApico <- phyloseq::subset_taxa(PS, phylum%in%c("Apicomplexa"))
 PSApicoG <- phyloseq::tax_glom(PSApico, "genus")
 ApicoCounts <- as.data.frame(otu_table(PSApicoG))
