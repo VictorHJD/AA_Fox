@@ -10,8 +10,11 @@ library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
 
-
-recomputeBioinfo <- FALSE
+## You can leave this at true here, as the "bioinformatics" script has
+## finer controls within itself for now. Re-executing this for now
+## adds only the (potentially new) sample data (created in
+## 0_Extract_Einvir_Covariates.R) to the PS object.
+recomputeBioinfo <- TRUE
 
 if(!exists("PS")){
     if(recomputeBioinfo){
