@@ -1,4 +1,4 @@
-library(dplyr)
+olibrary(dplyr)
 library(raster)
 library(sf)
 library(readr)
@@ -23,35 +23,37 @@ fox_sp
 #########################################################################
 
 ## Original raster not included in github because it is ~600Mb
+## to download it got to:
+
 
 ### Load Copernicus raster for the area
-tree_cover_cop <- raster(paste0(rawdata_dir, "TCD_2015_020m_eu_03035_d05_E40N30.tif"))
-tree_cover_cop
-plot(tree_cover_cop)
-summary(tree_cover_cop)
-unique(values(tree_cover_cop))
+## tree_cover_cop <- raster(paste0(rawdata_dir, "TCD_2015_020m_eu_03035_d05_E40N30.tif"))
+## tree_cover_cop
+## plot(tree_cover_cop)
+## summary(tree_cover_cop)
+## unique(values(tree_cover_cop))
 
 
-### To make the raster smaller, there are multiple options, here use the extent of another raster
-crop_ext <- extent(imperv)
+## ### To make the raster smaller, there are multiple options, here use the extent of another raster
+## crop_ext <- extent(imperv)
 
-# cut to selected extent
-tree_cover_bb <- crop(tree_cover_cop, crop_ext)
-tree_cover_bb <- clamp(tree_cover_bb, upper = 200, useValues = FALSE) # set NA values
-summary(tree_cover_bb)
-plot(tree_cover_bb)
-plot(st_geometry(fox_sp), add = TRUE, col = "red", pch = 16)
+## # cut to selected extent
+## tree_cover_bb <- crop(tree_cover_cop, crop_ext)
+## tree_cover_bb <- clamp(tree_cover_bb, upper = 200, useValues = FALSE) # set NA values
+## summary(tree_cover_bb)
+## plot(tree_cover_bb)
+## plot(st_geometry(fox_sp), add = TRUE, col = "red", pch = 16)
 
 
-# INTERACTIVE PLOTTING TO SEE BETTER THE POINTS
-tmap_mode("view")
-tm_shape(tree_cover_bb) +
-  tm_raster(palette = "Greens") +
-  tm_shape(fox_sp) +
-  tm_dots("red")
+## # INTERACTIVE PLOTTING TO SEE BETTER THE POINTS
+## tmap_mode("view")
+## tm_shape(tree_cover_bb) +
+##   tm_raster(palette = "Greens") +
+##   tm_shape(fox_sp) +
+##   tm_dots("red")
 
-# save raster for further use
-writeRaster(tree_cover_bb, filename = paste0(rawdata_dir, "NEW_TCD_2015_bb_020m_03035.tif"), overwrite = TRUE)
+## # save raster for further use
+## writeRaster(tree_cover_bb, filename = paste0(rawdata_dir, "NEW_TCD_2015_bb_020m_03035.tif"), overwrite = TRUE)
 
 
 #####################################
@@ -60,6 +62,8 @@ writeRaster(tree_cover_bb, filename = paste0(rawdata_dir, "NEW_TCD_2015_bb_020m_
 
 #######################################
 ### Load environmental rasters
+
+## from here (smaller raster files this is included directly in the repository). 
 
 tree_cover_bb <- raster(paste0(rawdata_dir, "NEW_TCD_2015_bb_020m_03035.tif"))
 
@@ -89,7 +93,7 @@ envcov_1000m_df <- raster::extract(human_fpi, envcov_2, buffer = 1000,
          imperv_1000m = imp_bb_mv_b_20m_3035, 
          human_fpi_1000m = HFP2009_int_3035)
 
-# 100m buffer 
+## 100m buffer 
 envcov_3 <- raster::extract(tree_cover_bb, fox_sp, buffer = 100,
                             fun = mean, na.rm = T, sp = TRUE)
 envcov_4 <- raster::extract(imperv, envcov_3, buffer = 100,
@@ -102,11 +106,11 @@ envcov_100m_df <- raster::extract(human_fpi, envcov_4, buffer = 100,
          human_fpi_100m = HFP2009_int_3035) %>% 
   dplyr::select(tree_cover_100m, imperv_100m, human_fpi_100m, IZW_ID)
 
-# Put together in one table
+## Put together in one table
 fox_envcov <-  left_join(envcov_1000m_df, envcov_100m_df, 
                          by = "IZW_ID")
 
-# checking everything looks fine
+####  checking everything looks fine
 nrow(envcov_1000m_df)
 nrow(envcov_100m_df)
 nrow(fox_envcov)
@@ -116,16 +120,18 @@ readr::write_rds(fox_envcov,
                  "intermediate_data/Fox_data_envir.RDS")
 
 ## double check values make sense in a map
-# make env cov spatial
+## make env cov spatial
 fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs = 3035)
 
-# interactive map. External circle represents the values at the 1000m buffer, the inner circle represents the values at the 100m buffer
-tm_shape(tree_cover_bb) +
-  tm_raster(palette = "Greens", alpha = 0.5) +
-  tm_shape(fox_envcov_sf) +
-  tm_dots("tree_cover_1000m", palette = "Greens", size = 0.1) +
-  tm_shape(fox_envcov_sf) +
-  tm_dots("tree_cover_100m", palette = "Greens", size = 0.04) 
+## ## interactive map. External circle represents the values at the
+## ## 1000m buffer, the inner circle represents the values at the 100m
+## ## buffer
+## tm_shape(tree_cover_bb) +
+##   tm_raster(palette = "Greens", alpha = 0.5) +
+##   tm_shape(fox_envcov_sf) +
+##   tm_dots("tree_cover_1000m", palette = "Greens", size = 0.1) +
+##   tm_shape(fox_envcov_sf) +
+##   tm_dots("tree_cover_100m", palette = "Greens", size = 0.04) 
 
 
 # Map to save to figure
@@ -142,7 +148,8 @@ map_tc <- tm_shape(tree_cover_bb, bbox = ) +
   tm_compass(position = c("right", "TOP")) +
   tm_layout(legend.frame = TRUE)
 
-map_tc
+## ## look at it
+## map_tc
 
 tmap_save(map_tc, filename = "figures/suppl/Map_treecover.pdf")
 
@@ -166,14 +173,14 @@ tree_cover <- ggplot(fox_envcov, aes(tree_cover_1000m, tree_cover_100m, color=ar
   )+
   geom_point() 
 
-imperv <- ggplot(fox_variables, aes(imperv_1000m, imperv_100m, color=area)) +
+imperv <- ggplot(fox_envcov, aes(imperv_1000m, imperv_100m, color=area)) +
   scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
   scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
   theme(legend.position="none", #axis.text.y = element_text(family = font_num)
   )+
   geom_point() 
 
-hfpi <- ggplot(fox_variables, aes(human_fpi_1000m, human_fpi_100m, color=area)) +
+hfpi <- ggplot(fox_envcov, aes(human_fpi_1000m, human_fpi_100m, color=area)) +
   scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
   scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
   geom_point()
