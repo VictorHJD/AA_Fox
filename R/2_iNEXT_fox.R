@@ -6,6 +6,7 @@ library(tidyverse)
 library(patchwork)
 library(colorspace)
 library(MASS)
+library(broom)
 library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
@@ -200,162 +201,129 @@ getAllDiversity <- function (PS, output_string) {
 }
 
 
-## HelmEstimateAsy <- getAllDiversity(
-##     subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes")),
-##     "Helminth")
+HelmEstimateAsy <- getAllDiversity(
+    subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes")),
+    "Helminth")
 
-## DietEstimateAsy <- getAllDiversity(
-##     subset_taxa(PS, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")),
-##     "Diet")
-
-
-## ### Models for Shannon
-##     EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-##         lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelShannonArea
-
-##     summary(DivModelShannonArea)
-
-##     EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-##         lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelShannonTree
-
-##     summary(DivModelShannonTree)
-
-##     EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-##         lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelShannonHum
-
-##     summary(DivModelShannonHum)
+DietEstimateAsy <- getAllDiversity(
+    subset_taxa(PS, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")),
+    "Diet")
 
 
-##     EstimatesAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-##         lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelShannonImp
+## ### Models for all diversity indices HELMINTHS
+HelmEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=.),
+       modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+                            sex + age,
+                        data=.),
+       modelTree = lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                          sex + age,
+                      data=.),
+       modelHFPI = lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                          sex + age,
+                      data=.)
+       ) -> lmHelm
 
-##     summary(DivModelShannonImp)
+HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=., family="poisson"),
+       modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+                             sex + age,
+                         data=., family="poisson"),
+       modelTree = glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                           sex + age,
+                       data=., family="poisson"),
+       modelHFPI = glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                           sex + age,
+                       data=., family="poisson")
+       ) -> glmHelm
+
+HelmModels<- rbind(lmHelm, glmHelm)
+
+## ### Models for all diversity indices DIET
+DietEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=.),
+       modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+                            sex + age,
+                        data=.),
+       modelTree = lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                          sex + age,
+                      data=.),
+       modelHFPI = lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                          sex + age,
+                      data=.)
+       ) -> lmDiet
+
+DietEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=., family="poisson"),
+       modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+                             sex + age,
+                         data=., family="poisson"),
+       modelTree = glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                           sex + age,
+                       data=., family="poisson"),
+       modelHFPI = glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                           sex + age,
+                       data=., family="poisson")
+       ) -> glmDiet
+
+DietModels<- rbind(lmDiet, glmDiet)
+
+DietModels %>%
+    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
+    mutate(tidied = map(model, tidy),
+           glanced = map(model, glance))
+
+HelmModels %>%
+    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
+    mutate(tidied = map(model, tidy),
+           glanced = map(model, glance))
+
+## ## haven't taulated the models yet. Here is how it was done before tidying them ... 
 
 ##     AIC(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp, DivModelShannonHum)
-
-## ### Models for Simpson
-
-##     EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-##         lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelSimpsonArea
-
-##     summary(DivModelSimpsonArea)
-
-##     EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-##         lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelSimpsonTree
-
-##     summary(DivModelSimpsonTree)
-
-##     EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-##         lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelSimpsonHum
-
-##     summary(DivModelSimpsonHum)
-
-
-##     EstimatesAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-##         lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##            data=.) ->
-##         DivModelSimpsonImp
-
-##     summary(DivModelSimpsonImp)
-
 ##     AIC(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp, DivModelSimpsonHum)
-
-
-## ### Models for Species richness
-
-##     EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-##         glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-##             data=., family="poisson") ->
-##         DivModelHillArea
-
-##     summary(DivModelHillArea)
-
-##     EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-##         glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##             data=., family="poisson") ->
-##         DivModelHillTree
-
-##     summary(DivModelHillTree)
-
-##     EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-##         glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##             data=., family="poisson") ->
-##         DivModelHillHum
-
-##     summary(DivModelHillHum)
-
-
-##     EstimatesAsy %>% filter(Diversity %in% "Species richness") %>%
-##         glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) + sex + age,
-##             data=., family="poisson") ->
-##         DivModelHillImp
-
-##     summary(DivModelHillImp)
-
-##     AIC(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum)
-
-##     f1 <- paste0("tables/HillDiv", output_string, ".html")
 
 ##     tab_model(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum,
 ##               file=deparse(substitute(f1)), show.aic = TRUE)
 
-##     f2 <- paste0("tables/SimpsonDiv", output_string, ".html")
-    
 ##     tab_model(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp,
 ##               DivModelSimpsonHum, file=deparse(substitute(f2)), show.aic = TRUE)
 
-##     f3 <- paste0("tables/ShannonDiv", output_string, ".html")
-    
 ##     tab_model(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp,
 ##               DivModelShannonHum, file=deparse(substitute(f3)), show.aic = TRUE)
 
 
+## CHECKING APICOMPLEXA 
 
+## ApicoEstimateAsy <- getAllDiversity(
+##     subset_taxa(PS, phylum %in% c("Apicomplexa")),
+##     "Apicomplexa")
 
+## problem is that there are more with ZERO AND ONE in BRANDENBURG
 
-## WHY do we only look a helminths not acutally at protozoa
-## (e.g. Coccidia) too? --> NOW see below they are also more diverse
-## in Brandenburg
+##  Significance of removed data:
+##              MoreOne
+##               FALSE TRUE
+##   Berlin         30   79
+##   Brandenburg     3   39
 
-## checking Apicomplexa
-PSApico <- phyloseq::subset_taxa(PS, phylum%in%c("Apicomplexa"))
-PSApicoG <- phyloseq::tax_glom(PSApico, "genus")
-ApicoCounts <- as.data.frame(otu_table(PSApicoG))
+## 	Fisher's Exact Test for Count Data
 
-Sdat <- as.data.frame(sample_data(PSApicoG))
+## data:  table(Sdat$area, MoreOne = rowSums(Counts > 0) > 1)
+## p-value = 0.00749
+## alternative hypothesis: true odds ratio is not equal to 1
+## 95 percent confidence interval:
+##   1.388368 26.606115
+## sample estimates:
+## odds ratio 
+##   4.895872 
 
-## 33 samples with less than 2 species
-table(Sdat$area, MoreOne=rowSums(ApicoCounts>0)>1)
-## Many more of those in Berlin (significantly so)
-fisher.test(table(Sdat$area, MoreOne=rowSums(ApicoCounts>0)>1))
-
-## 13 samples with 0 species
-table(Sdat$area, MoreOne=rowSums(ApicoCounts)>0)
-## All in Berlin, that's significant
-fisher.test(table(Sdat$area, MoreOne=rowSums(ApicoCounts)>0))
-
-
-PSArthro <- phyloseq::subset_taxa(PS, phylum%in%c("Arthropoda"))
-PSArthroG <- phyloseq::tax_glom(PSArthro, "genus")
-ArthroCounts <- as.data.frame(otu_table(PSArthroG))
-
-fisher.test(table(Sdat$area, MoreOne=rowSums(ArthroCounts>0)>1))
-fisher.test(table(Sdat$area, MoreOne=rowSums(ArthroCounts)>0))
-
+### Therefore we here compute diversity estimates without iNEXT hill
+### numbers
 
 remove_geom <- function(ggplot2_object, geom_type) {
     ## Delete layers that match the requested type.
@@ -373,6 +341,8 @@ remove_geom <- function(ggplot2_object, geom_type) {
 }
 
 
+PSApicoG <- phyloseq::tax_glom(subset_taxa(PS, phylum%in%"Apicomplexa"), "genus")
+
 apicoRichness <- plot_richness(PSApicoG, measures=c("Observed", "Shannon"),
                                color="area", x="area") + geom_boxplot(outlier.shape = NA)
 
@@ -385,16 +355,16 @@ remove_geom(apicoRichness, "GeomPoint")  +
     ggtitle("Apicomplexa (incl. gregarina) diversity")
 ggsave("figures/suppl/ApicoDiversity.pdf", width=13, height=9, device=cairo_pdf)
 
-cbind(estimate_richness(PSApico, measures=c("Observed", "Shannon")),
+cbind(estimate_richness(PSApicoG, measures=c("Observed", "Shannon")),
       sample_data(PSApicoG))  %>% 
     lm(Shannon~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-        data=.) ->
+       data=.) ->
     ModDivApicoShannon
 
 summary(ModDivApicoShannon)
 
 library(MASS)
-cbind(estimate_richness(PSApico, measures=c("Observed", "Shannon")),
+cbind(estimate_richness(PSApicoG, measures=c("Observed", "Shannon")),
       sample_data(PSApicoG))  %>% 
     glm.nb(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
         data=.) ->
@@ -402,83 +372,31 @@ cbind(estimate_richness(PSApico, measures=c("Observed", "Shannon")),
 
 summary(ModDivApicoObserved)
 
-arthroRichness <- plot_richness(PSArthroG, measures=c("Observed", "Shannon"),
-                               color="area", x="area") + geom_boxplot(outlier.shape = NA)
-
-remove_geom(arthroRichness, "GeomPoint")  +
-    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
-               fill = "white", size = 2, stroke = .7) +
-    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    ggtitle("Arthropoda diversity")
-
-
-cbind(estimate_richness(PSArthro, measures=c("Observed", "Shannon")),
-      sample_data(PSApicoG))  %>% 
-    lm(Shannon~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
-    ModDivArthroShannon
-
-summary(ModDivArthroShannon)
-
-
-cbind(estimate_richness(PSArthro, measures=c("Observed", "Shannon")),
-      sample_data(PSApicoG))  %>% 
-    glm.nb(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
-    ModDivArthroObserved
-
-summary(ModDivArthroObserved)
-
-
-
-
 ### Let's see whether there's a non-linear "ecotone" effect of any of
 ### the continuous environmental variables!
 
-HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>%
-    ggplot(aes(human_fpi_1000m, Estimator, color=area)) +
+HelmEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
+                                  tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
+    pivot_longer(cols=contains("1000m")) %>%
+    ggplot(aes(value, Estimator, color=area)) +
     geom_point() +
-    stat_smooth()
+    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    facet_wrap(name~Diversity, scales = "free") + 
+    stat_smooth() +
+    geom_smooth(aes(value, Estimator), color="black") +
+    ggtitle("Helminth diversity")
+ggsave("figures/suppl/HelmDiv_Conti_Env.pdf", width=25, height=15, device=cairo_pdf)
 
-HelmEstimateAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    ggplot(aes(human_fpi_1000m, Estimator, color=area)) +
+DietEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
+                                  tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
+    pivot_longer(cols=contains("1000m")) %>%
+    ggplot(aes(value, Estimator, color=area)) +
     geom_point() +
-    stat_smooth()
-
-HelmEstimateAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    ggplot(aes(human_fpi_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
-HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>%
-    ggplot(aes(imperv_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
-HelmEstimateAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    ggplot(aes(imperv_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
-HelmEstimateAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    ggplot(aes(imperv_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
-
-HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>%
-    ggplot(aes(tree_cover_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
-HelmEstimateAsy %>% filter(Diversity %in% "Shannon diversity") %>%
-    ggplot(aes(tree_cover_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
-HelmEstimateAsy %>% filter(Diversity %in% "Simpson diversity") %>%
-    ggplot(aes(tree_cover_1000m, Estimator, color=area)) +
-    geom_point() +
-    stat_smooth()
-
+    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    facet_wrap(name~Diversity, scales = "free") + 
+    stat_smooth() +
+    geom_smooth(aes(value, Estimator), color="black") +
+    ggtitle("Diet diversity")
+ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width=25, height=15, device=cairo_pdf)
