@@ -1,4 +1,4 @@
-olibrary(dplyr)
+library(dplyr)
 library(raster)
 library(sf)
 library(readr)
@@ -68,15 +68,8 @@ fox_sp
 tree_cover_bb <- raster(paste0(rawdata_dir, "NEW_TCD_2015_bb_020m_03035.tif"))
 
 imperv <- raster(paste0(rawdata_dir, "/imp_bb_mv_b_20m_3035.tif"))
-imperv
-summary(imperv)
-unique(values(imperv)) # this layer is correct, with values from 0 to 100.
-# imperv <- clamp(imperv, upper = 200, useValues = FALSE) # I removed this because it doesn't do anything.
 
 human_fpi <- raster(paste0(rawdata_dir, "/HFP2009_int_3035.tif"))
-#human_fpi <- clamp(human_fpi, upper = 200, useValues = FALSE)
-
-
 
 #######################################
 ## extract environmental variables
@@ -109,11 +102,6 @@ envcov_100m_df <- raster::extract(human_fpi, envcov_4, buffer = 100,
 ## Put together in one table
 fox_envcov <-  left_join(envcov_1000m_df, envcov_100m_df, 
                          by = "IZW_ID")
-
-####  checking everything looks fine
-nrow(envcov_1000m_df)
-nrow(envcov_100m_df)
-nrow(fox_envcov)
 
 ## Save environmental values 
 readr::write_rds(fox_envcov,
@@ -185,7 +173,7 @@ hfpi <- ggplot(fox_envcov, aes(human_fpi_1000m, human_fpi_100m, color=area)) +
   scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
   geom_point()
 
-pdf("figures/suppl/Env100_1000Cors_2.pdf", width=15, height=5)
+pdf("figures/suppl/Env100_1000Cors.pdf", width=15, height=5)
 tree_cover + imperv + hfpi
 dev.off()
 
