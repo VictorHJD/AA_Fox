@@ -42,14 +42,30 @@ theme_update(
 ## font for numeric label
 font_num <- "Roboto Condensed"
 
+## Helminth traits
+traits <- read.csv("input_data/helminth_traits.csv")
+
+traits %>%
+    column_to_rownames("t.genus")  -> traits 
+
+BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
+
+## collapse to genus level
+PSG <- phyloseq::tax_glom(PS, "genus")
+
+## only 3434 for bad taxa
+sum(otu_table(subset_taxa(PSG, genus%in%BADtaxa)))
+
+sum(otu_table(subset_taxa(PSG, !genus%in%BADtaxa)))
+## 4351733 (1000-fold more) for good taxa
+PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
-getAllDiversity <- function (PS, output_string) {
-    PSG <- phyloseq::tax_glom(PS, "genus")
-    Counts <- as.data.frame(otu_table(PSG))
+getAllDiversity <- function (ps, output_string) {
+    Counts <- as.data.frame(otu_table(ps))
 
-    colnames(Counts) <- tax_table(PSG)[, "genus"]
+    colnames(Counts) <- tax_table(ps)[, "genus"]
     rownames(Counts) <- paste("Fox", rownames(Counts))
 
     ## For inext diversity analysis we need to keep only samples with
@@ -57,7 +73,7 @@ getAllDiversity <- function (PS, output_string) {
     indCounts <- Counts[rowSums(Counts>0)>1, ]    
     
     ## Sample data in data frame
-    Sdat <- as.data.frame(sample_data(PSG))
+    Sdat <- as.data.frame(sample_data(ps))
     class(Sdat) <- "data.frame"
 
     ## same for the data
@@ -65,8 +81,9 @@ getAllDiversity <- function (PS, output_string) {
     
     ## produce ouptut for interactive review
     message("\n Significance of removed data:") 
-    print(table(Sdat$area, MoreOne=rowSums(Counts>0)>1))
-    print(fisher.test(table(Sdat$area, MoreOne=rowSums(Counts>0)>1)))
+    try(print(table(Sdat$area, MoreOne=rowSums(Counts>0)>1)))
+    try(print(fisher.test(table(Sdat$area,
+                                MoreOne=rowSums(Counts>0)>1))))
     message("\n")
     
     OTU_inext_imp <- iNEXT(t(indCounts), q =0, datatype = "abundance")
@@ -107,7 +124,8 @@ getAllDiversity <- function (PS, output_string) {
                             aes(area, Estimator, color=area,
                                 fill = after_scale(lighten(color, .7)))) +
         geom_boxplot(outlier.shape = NA) +
-        geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021), fill = "white", size = 1.3, stroke = .7) +
+        geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
+                   fill = "white", size = 1.3, stroke = .7) +
         scale_y_continuous(name = NULL) +
         scale_x_discrete(name = NULL) +
         facet_wrap(~Diversity, scales="free_y")+
@@ -158,8 +176,9 @@ getAllDiversity <- function (PS, output_string) {
                area=JaccGrups$group) %>%
         ggplot(aes(area, distances, color=area, fill = after_scale(lighten(color, .7)))) +
         geom_boxplot(outlier.shape = NA) +
-        geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021), fill = "white", size = 2, stroke = .7) +
-                                        #geom_point(position = position_jitter(width = .3, seed = 2021)) +
+        geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
+                   fill = "white", size = 2, stroke = .7) +
+        ##geom_point(position = position_jitter(width = .3, seed = 2021)) +
         scale_y_continuous(name = "Distance to area centroid") +
         scale_x_discrete(name = NULL) +
         scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
@@ -241,6 +260,15 @@ HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diver
 
 HelmModels<- rbind(lmHelm, glmHelm)
 
+HelmModels %>%
+    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
+    mutate(tidied = map(model, tidy),
+           glanced = map(model, glance)) %>%
+    mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
+    HelmModels
+
+
+
 ## ### Models for all diversity indices DIET
 DietEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
@@ -275,12 +303,11 @@ DietModels<- rbind(lmDiet, glmDiet)
 DietModels %>%
     pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
     mutate(tidied = map(model, tidy),
-           glanced = map(model, glance))
-
-HelmModels %>%
-    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
-    mutate(tidied = map(model, tidy),
-           glanced = map(model, glance))
+           glanced = map(model, glance)) %>%
+    mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
+    DietModels
+    
+bar <- 1
 
 ## ## haven't taulated the models yet. Here is how it was done before tidying them ... 
 
