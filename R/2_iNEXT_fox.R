@@ -50,15 +50,22 @@ traits %>%
 
 BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
 
+NOPara <- rownames(traits)[traits$fox.parasite%in%"No"]
+             
+
 ## collapse to genus level
 PSG <- phyloseq::tax_glom(PS, "genus")
 
-## only 3434 for bad taxa
+## only 3434 reads for bad taxa when excluding only the bad blast annotation
 sum(otu_table(subset_taxa(PSG, genus%in%BADtaxa)))
 
-sum(otu_table(subset_taxa(PSG, !genus%in%BADtaxa)))
+## only 9551 reads for non-parasitic taxa
+sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
+
 ## 4351733 (1000-fold more) for good taxa
-PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
+## and also 4343891 when only taking the parasites
+PSF <- subset_taxa(PSG, !genus%in%BADtaxa )##&
+##                        !genus%in%NOPara)
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
@@ -88,7 +95,21 @@ getAllDiversity <- function (ps, output_string) {
     
     OTU_inext_imp <- iNEXT(t(indCounts), q =0, datatype = "abundance")
 
-### Now the plot gets a bit messy redo by hand
+    ## UGLY set theme again within function
+    ## set theme for plots
+    theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
+    theme_update(
+        axis.title.x = element_text(margin = margin(t = 12)),
+        axis.title.y = element_text(margin = margin(r = 12)),
+        strip.text = element_text(face = "bold", color = "black", size = 12, margin = margin(b = 10)),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 12),
+        panel.spacing.x = unit(2, "lines"),
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(rep(12, 4))
+    )
+    
+   ### Now the plot gets a bit messy redo by hand
     zet <- fortify(OTU_inext_imp)
 
     Sdat$IZW_ID <- paste("Fox", Sdat$IZW_ID)
@@ -221,11 +242,11 @@ getAllDiversity <- function (ps, output_string) {
 
 
 HelmEstimateAsy <- getAllDiversity(
-    subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes")),
+    subset_taxa(PSF, phylum %in% c("Nematoda", "Platyhelminthes")),
     "Helminth")
 
 DietEstimateAsy <- getAllDiversity(
-    subset_taxa(PS, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")),
+    subset_taxa(PSF, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")),
     "Diet")
 
 
@@ -260,6 +281,7 @@ HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diver
 
 HelmModels<- rbind(lmHelm, glmHelm)
 
+
 HelmModels %>%
     pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
     mutate(tidied = map(model, tidy),
@@ -267,6 +289,7 @@ HelmModels %>%
     mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
     HelmModels
 
+HelmModels
 
 
 ## ### Models for all diversity indices DIET
