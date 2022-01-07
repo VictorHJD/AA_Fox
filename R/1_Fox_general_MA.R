@@ -224,6 +224,9 @@ rownames(PS@sam_data) <- gsub("b", "", rownames(sample_data(PS)))
 ## align and cbind to get the combinded sample data
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
 
+## make weight numeric
+PS@sam_data[, "weight_kg"] <- as.numeric(unlist(PS@sam_data[, "weight_kg"] ))
+
 ###For primer analysis (Victor), still stored on our server 
 ## saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") 
 
