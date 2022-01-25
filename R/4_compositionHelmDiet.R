@@ -1,6 +1,7 @@
 library(vegan)
 library(tidyverse)
 library(phyloseq)
+library(patchwork)
 
 recomputeBioinfo <- FALSE
 
@@ -47,11 +48,28 @@ colnames(HelmData) <- tax_table(PSHelm)[, "genus"]
 
 EnvData <- sample_data(PSHelm)
 class(EnvData) <- "data.frame"
-EnvData <- EnvData[, c("area", "weight_kg", "age", "sex", "condition")]
 EnvData$weight_kg <- as.numeric(EnvData$weight_kg)
 
 adonis2(HelmData ~ area + age + weight_kg + sex + condition,
         data=EnvData, na.action = na.omit, by="margin")
+
+### NO OTHER environmental variables are better explaining composition!
+
+adonis2(HelmData[!is.na(EnvData$tree_cover_1000m), ] ~ tree_cover_1000m + age + weight_kg
+        + sex + condition,
+        data=EnvData[!is.na(EnvData$tree_cover_1000m), ],
+        na.action = na.omit, by="margin")
+
+adonis2(HelmData[!is.na(EnvData$imperv_1000m), ] ~ imperv_1000m + age + weight_kg
+        + sex + condition,
+        data=EnvData[!is.na(EnvData$imperv_1000m), ],
+        na.action = na.omit, by="margin")
+
+### Even human fpi is barely as good as rural/urban!
+adonis2(HelmData[!is.na(EnvData$human_fpi_1000m), ] ~ human_fpi_1000m + age + weight_kg
+        + sex + condition,
+        data=EnvData[!is.na(EnvData$human_fpi_1000m), ],
+        na.action = na.omit, by="margin")
 
 
 ## how does diet influence Helminth occurence?
@@ -83,7 +101,9 @@ set.seed(123)
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE, try=1500, trymax=1500, k=3,
                     center = TRUE)
 
-HelmDietEnvFit <- envfit(nMDSHelm, cbind(DietCollapsed, EnvData), na.rm=TRUE)
+HelmDietEnvFit <- envfit(nMDSHelm, cbind(DietCollapsed,
+                                         EnvData[ , c("area", "age", "weight_kg", "sex", "condition")]),
+                         na.rm=TRUE)
 ### AMAZING! ThIs MAKeS SeNSe!!!!
 
 ## to see which helminths drive this
@@ -111,9 +131,9 @@ HelmDietEnvFitDf$Cat <- ifelse(rownames(HelmDietEnvFitDf)%in%colnames(DietCollap
                                "Environmental")
 
 ScoresHelm <-  as.data.frame(scores(nMDSHelm))
-ScoresHelm <- cbind(ScoresHelm, EnvData)
+ScoresHelm <- cbind(ScoresHelm, EnvData[, c("area", "age", "weight_kg", "sex", "condition")])
 
-theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
+## theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
 theme_update(
     axis.title.x = element_text(margin = margin(t = 12)),
     axis.title.y = element_text(margin = margin(r = 12)),
@@ -124,6 +144,8 @@ theme_update(
     panel.grid.minor = element_blank(),
     plot.margin = margin(rep(12, 4))
 )
+## font for numeric label
+## font_num <- "Roboto Condensed"
 
 
 ggHelmEnv <-  ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
@@ -142,14 +164,15 @@ ggHelmEnv +
 
 
 ggHelmEnv +
-    geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, size = 0.1-pvals),
-                 data = subset(HelmHelmDf, pvals<0.1),
+    geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, size = pvals),
+                 data = subset(HelmHelmDf, pvals<=0.1),
                  arrow = arrow(length = unit(0.04, "npc"), angle=23)) +
+    scale_size_binned(trans = 'reverse', range=c(0,3)) +
     geom_text(data = subset(HelmHelmDf, pvals<0.1), aes(x = NMDS1, y = NMDS2+0.04),
               label = row.names(subset(HelmHelmDf, pvals<0.1)), size=4.5,
               color="blue")+
-              scale_size_continuous(range=c(1, 3)) -> ggHelmEnvHelm
+    theme_bw() -> ggHelmEnvHelm
 
-
-library(patchwork)
+pdf("figures/composition_Diet_Helm.pdf", width=21, height=7)
 ggHelmEnvDiet + ggHelmEnvHelm
+dev.off()
