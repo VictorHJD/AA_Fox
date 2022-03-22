@@ -1,70 +1,70 @@
-t.genus,zoonotic,pet.infecting,livestock.infecting,fox.parasite,transmission.fox,lifecycle,BlastEvaluation
-Angiostrongylus,No,Yes,No,Yes,trophic,two.host,Okay
-Eucoleus,Yes,Yes,No,Yes,fecal-oral,one.host,Okay
-Alaria,Yes,Yes,Yes,Yes,trophic,three.host,Okay
-Mesocestoides,No,Yes,No,Yes,trophic,three.host,Okay
-Ancylostoma,Yes,Yes,No,Yes,fecal-oral,one.host,Okay
-Mammomonogamus,Yes,Yes,No,Yes,fecal-oral,one.host,is Ancylostoma
-Plectus,No,No,No,No,none,free.living,Okay
-Pearsonema,No,Yes,No,Yes,trophic,two.host,Okay
-Taenia,Yes,Yes,No,Yes,trophic,two.host,Okay
-Metastrongylus,No,No,Yes,No,none,two.host,questionable
-Crenosoma,No,Yes,No,Yes,trophic,two.host,Okay
-Rhabditis,No,No,No,No,none,free.living,Okay
-Diploscapter,No,No,No,No,none,free.living,Okay
-Brachylaima,Yes,Yes,No,Yes,trophic,two.host,Okay
-Stegelletina,No,No,No,No,none,free.living,Okay
-Aphelenchoides,No,No,No,No,none,free.living,Okay
-Panagrolaimus,No,No,No,No,none,free.living,Okay
-Steinernema,No,No,No,No,none,free.living,Okay
-Pristionchus,No,No,No,No,none,free.living,Okay
-Koerneria,No,No,No,No,none,free.living,Okay
-Heterodera,No,No,No,No,none,free.living,Okay
-Rhabditophanes,No,No,No,No,none,free.living,Okay
-Cucullanus,No,No,No,No,none,two.host,questionable
-Oslerus,No,Yes,No,Yes,trophic,two.host,is Crenosoma
-Lamanema,No,Yes,No,Yes,trophic,two.host,is Crenosoma
-Petrovinema,No,Yes,No,Yes,trophic,two.host,is Crenosoma
-Phasmarhabditis,No,No,No,No,none,free.living,Okay
-Bunonema,No,No,No,No,none,free.living,Okay
-Echinococcus,Yes,Yes,Yes,Yes,trophic,two.host,questionable
-Clonorchis,Yes,Yes,No,Yes,trophic,two.host,Okay
-Urogonimus,No,No,No,No,none,two.host,Okay
-Raillietina,No,No,No,No,none,three.host,questionable
-Heligmosomoides,No,No,No,No,none,one.host,Okay
-Aelurostrongylus,No,Yes,No,Yes,trophic,one.host,Okay
-Proleptus,No,No,No,No,none,two.host,questionable
-Pelodera,Yes,No,No,No,none,free.living,Okay
-Equinia,No,No,Yes,No,none,two.host,Okay
-Cylindrostoma,No,No,No,No,none,free.living,questionable
-Uncinaria,No,Yes,No,Yes,fecal-oral,one.host,Okay
-Capillaria,Yes,Yes,No,Yes,fecal-oral,one.host,Okay
-Sutarostrongylus,No,No,No,No,none,one.host,Okay
-Strongyloides,Yes,Yes,No,Yes,fecal-oral,one.host,Okay
-Toxocara,Yes,Yes,No,Yes,trophic,two.host,Okay
-Mastophorus,No,No,No,No,none,two.host,questionable
-Toxascaris,No,Yes,No,Yes,fecal-oral,one.host,Okay
-Catenotaenia,No,No,No,No,none,two.host,questionable
-Malenchus,No,No,No,No,none,free.living,questionable
-Paranoplocephala,No,No,No,No,none,one.host,Okay
-Aonchotheca,No,No,No,No,none,one.host,Okay
-Fictor,No,No,No,No,none,one.host,Okay
-Cephalenchus,No,No,No,No,none,free.living,questionable
-Trichostrongylus,No,No,Yes,Yes,fecal-oral,one.host,Okay
-Nematodirella,No,No,No,No,none,one.host,Okay
-Holostephanus,No,No,No,No,none,three.host,Okay
-Metateratocephalus,No,No,No,No,none,free.living,Okay
-Cyathocotyle,No,No,No,No,none,two.host,Okay
-Diplogasteroides,No,No,No,No,none,free.living,Okay
-Heterakis,No,No,No,No,none,one.host,Okay
-Diplogastrellus,No,No,No,No,none,one.host,Okay
-Cladotaenia,No,No,No,No,none,two.host,questionable
-Brachylecithum,No,No,No,No,none,two.host,Okay
-Angiostoma,No,No,No,No,none,one.host,Okay
-Synhimantus,No,No,No,No,none,two.host,Okay
-Opisthorchis,Yes,Yes,No,Yes,trophic,two.host,Okay
-Notocaryoplana,No,No,No,No,none,free.living,questionable
-Citellinema,No,No,No,No,none,one.host,Okay
-Protostrongylus,No,No,No,No,none,two.host,questionable
-Neogogatea,No,No,No,No,none,free.living,questionable
-Plagiostomum,No,No,No,No,none,free.living,questionable
+t.genus,exact.tax,zoonotic,pet.infecting,livestock.infecting,fox.parasite,transmission.fox,lifecycle,BlastEvaluation,host.range
+Angiostrongylus,Species: A. vasorum,No,Yes,No,Yes,trophic,two.host,Okay,moderate
+Eucoleus,Species: C. aerophila,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Alaria,Species: A. alata,Yes,Yes,Yes,Yes,trophic,three.host,Okay,wide
+Mesocestoides,Genus: two species,No,Yes,No,Yes,trophic,three.host,Okay,wide
+Ancylostoma,Species: A. caninum,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Mammomonogamus,,Yes,Yes,No,Yes,fecal-oral,one.host,is Ancylostoma,
+Plectus,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Pearsonema,Species: P. plica,No,Yes,No,Yes,trophic,two.host,Okay,wide
+Taenia,Genus: multiple species,Yes,Yes,No,Yes,trophic,two.host,Okay,wide
+Metastrongylus,,No,No,Yes,No,none,two.host,questionable,
+Crenosoma,Species: C. vulpis,No,Yes,No,Yes,trophic,two.host,Okay,narrow
+Rhabditis,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Diploscapter,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Brachylaima,Species: B. cribbi,Yes,Yes,No,Yes,trophic,two.host,Okay,wide
+Stegelletina,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Aphelenchoides,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Panagrolaimus,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Steinernema,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Pristionchus,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Koerneria,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Heterodera,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Rhabditophanes,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Cucullanus,,No,No,No,No,none,two.host,questionable,
+Oslerus,,No,Yes,No,Yes,trophic,two.host,is Crenosoma,
+Lamanema,,No,Yes,No,Yes,trophic,two.host,is Crenosoma,
+Petrovinema,,No,Yes,No,Yes,trophic,two.host,is Crenosoma,
+Phasmarhabditis,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Bunonema,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Echinococcus,,Yes,Yes,Yes,Yes,trophic,two.host,questionable,
+Clonorchis,Species: Metorchis bilis,Yes,Yes,No,Yes,trophic,two.host,Okay,wide
+Urogonimus,Genus: multiple species,No,No,No,No,none,two.host,Okay,NA
+Raillietina,,No,No,No,No,none,three.host,questionable,
+Heligmosomoides,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Aelurostrongylus,Species: A. abstrusus,No,Yes,No,Yes,trophic,two.host,Okay,wide
+Proleptus,,No,No,No,No,none,two.host,questionable,
+Pelodera,Genus: multiple species,Yes,No,No,No,none,free.living,Okay,NA
+Equinia,Genus: multiple species,No,No,Yes,No,none,two.host,Okay,NA
+Cylindrostoma,,No,No,No,No,none,free.living,questionable,
+Uncinaria,Species: U. stenocephala,No,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Capillaria,Species: C. aerophila,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Sutarostrongylus,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Strongyloides,Genus: multiple species,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,wide
+Toxocara,Species: T. canis,Yes,Yes,No,Yes,trophic,two.host,Okay,moderate
+Mastophorus,,No,No,No,No,none,two.host,questionable,
+Toxascaris,Species: T. leonina,No,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Catenotaenia,,No,No,No,No,none,two.host,questionable,
+Malenchus,,No,No,No,No,none,free.living,questionable,
+Paranoplocephala,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Aonchotheca,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Fictor,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Cephalenchus,,No,No,No,No,none,free.living,questionable,
+Trichostrongylus,Species: T. retortaeformis,No,No,Yes,No,fecal-oral,one.host,Okay,NA
+Nematodirella,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Holostephanus,Genus: multiple species,No,No,No,No,none,three.host,Okay,NA
+Metateratocephalus,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Cyathocotyle,Genus: multiple species,No,No,No,No,none,two.host,Okay,NA
+Diplogasteroides,Genus: multiple species,No,No,No,No,none,free.living,Okay,NA
+Heterakis,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Diplogastrellus,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Cladotaenia,,No,No,No,No,none,two.host,questionable,
+Brachylecithum,Genus: multiple species,No,No,No,No,none,two.host,Okay,NA
+Angiostoma,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Synhimantus,Genus: multiple species,No,No,No,No,none,two.host,Okay,NA
+Opisthorchis,Species: O. felineus,Yes,Yes,No,Yes,trophic,two.host,Okay,wide
+Notocaryoplana,,No,No,No,No,none,free.living,questionable,
+Citellinema,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
+Protostrongylus,,No,No,No,No,none,two.host,questionable,
+Neogogatea,,No,No,No,No,none,free.living,questionable,
+Plagiostomum,,No,No,No,No,none,free.living,questionable,
