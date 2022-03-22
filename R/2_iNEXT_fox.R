@@ -51,21 +51,18 @@ traits %>%
 BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
 
 NOPara <- rownames(traits)[traits$fox.parasite%in%"No"]
-             
+
 
 ## collapse to genus level
 PSG <- phyloseq::tax_glom(PS, "genus")
 
+## remove bad taxa
 ## only 3434 reads for bad taxa when excluding only the bad blast annotation
 sum(otu_table(subset_taxa(PSG, genus%in%BADtaxa)))
+PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
 
-## only 9551 reads for non-parasitic taxa
+## only 7842 reads for non-parasitic taxa
 sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
-
-## 4351733 (1000-fold more) for good taxa
-## and also 4343891 when only taking the parasites
-PSF <- subset_taxa(PSG, !genus%in%BADtaxa )##&
-##                        !genus%in%NOPara)
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
@@ -85,9 +82,17 @@ getAllDiversity <- function (ps, output_string) {
 
     ## same for the data
     SdatHPres <- Sdat[rowSums(Counts>0)>1, ]
+
+
+    ## produce ouptut for interactive review
+    message("\n Significance single observations:") 
+    try(print(table(Sdat$area, MoreZero=rowSums(Counts>0)>0)))
+    try(print(fisher.test(table(Sdat$area,
+                                MoreZero=rowSums(Counts>0)>0))))
+    message("\n")
     
     ## produce ouptut for interactive review
-    message("\n Significance of removed data:") 
+    message("\n Significance of removed data (less than tow observations):") 
     try(print(table(Sdat$area, MoreOne=rowSums(Counts>0)>1)))
     try(print(fisher.test(table(Sdat$area,
                                 MoreOne=rowSums(Counts>0)>1))))
@@ -240,14 +245,26 @@ getAllDiversity <- function (ps, output_string) {
     return(EstimatesAsy)
 }
 
+#### ### 
+#### ### 
+nonFoxParaEstimateAsy <- subset_taxa(PSG, genus%in%NOPara) %>%
+    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes")) %>%
+    getAllDiversity("non-fox helminth")
+### Rare non-fox parasite taxa are occuring more in
+### Brandenburg. Present gamma-diversity differences!
 
-HelmEstimateAsy <- getAllDiversity(
-    subset_taxa(PSF, phylum %in% c("Nematoda", "Platyhelminthes")),
-    "Helminth")
+DietEstimateAsy <- 
+    subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")) %>%
+    getAllDiversity("Diet")
+### Diet diversty differences are visible present also for higher
+### overall prevalece taxa, present complex models, see bolow
 
-DietEstimateAsy <- getAllDiversity(
-    subset_taxa(PSF, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")),
-    "Diet")
+HelmEstimateAsy <- subset_taxa(PSG, !genus%in%NOPara) %>%
+    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes")) %>%
+    getAllDiversity("Helminth")
+### specific fox helminth parasites show now diversity differences at
+### all! They are similar diverse (just different taxa as we'll see later.
+### We can look at this in models...
 
 
 ## ### Models for all diversity indices HELMINTHS
@@ -329,23 +346,8 @@ DietModels %>%
            glanced = map(model, glance)) %>%
     mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
     DietModels
-    
-bar <- 1
 
-## ## haven't taulated the models yet. Here is how it was done before tidying them ... 
-
-##     AIC(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp, DivModelShannonHum)
-##     AIC(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp, DivModelSimpsonHum)
-
-##     tab_model(DivModelHillArea, DivModelHillTree, DivModelHillImp, DivModelHillHum,
-##               file=deparse(substitute(f1)), show.aic = TRUE)
-
-##     tab_model(DivModelSimpsonArea, DivModelSimpsonTree, DivModelSimpsonImp,
-##               DivModelSimpsonHum, file=deparse(substitute(f2)), show.aic = TRUE)
-
-##     tab_model(DivModelShannonArea, DivModelShannonTree, DivModelShannonImp,
-##               DivModelShannonHum, file=deparse(substitute(f3)), show.aic = TRUE)
-
+DietModels
 
 ## CHECKING APICOMPLEXA 
 
