@@ -52,6 +52,9 @@ BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
 
 NOPara <- rownames(traits)[traits$fox.parasite%in%"No"]
 
+## other non-fox parasites
+OtherPara <- rownames(traits)[traits$fox.parasite%in%"No" &
+                              !traits$lifecycle%in%"free.living"]
 
 ## collapse to genus level
 PSG <- phyloseq::tax_glom(PS, "genus")
@@ -63,6 +66,33 @@ PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
 
 ## only 7842 reads for non-parasitic taxa
 sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
+
+#### TABLE 1 : WHATCHOUT!!! ###
+traits %>% dplyr::filter(BlastEvaluation%in%"Okay") %>%
+    dplyr::select(zoonotic, fox.parasite, transmission.fox) ->
+        outHelm
+
+helmData <- as.data.frame(otu_table(PSG))
+colnames(helmData) <- unname(tax_table(PSG)[, "genus"])
+
+helmData%>%dplyr::select(any_of(rownames(traits))) %>% t() -> helmData
+
+outHelm <- cbind(outHelm,
+                 foxesN=rowSums(helmData>0),
+                 prevalence=round(rowSums(helmData>0)/ncol(helmData) *100, 2),
+                 meanAbundance=round(rowMeans(helmData), 2))
+
+outHelm$meanIntensity <- round(apply(helmData, 1, function (x) mean(x[x>0])), 2)
+
+head(outHelm[order(outHelm$prevalence, decreasing=TRUE), ], n=50)
+
+table(colSums(helmData)==0) / ncol(helmData)
+
+### Results reporting:
+subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes"))
+subset_taxa(PSG, phylum %in% c("Nematoda", "Platyhelminthes"))
+
+
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
@@ -241,20 +271,21 @@ getAllDiversity <- function (ps, output_string) {
     f4 <- paste0("figures/Diversity", output_string, ".pdf")
     ggsave(f4, width=13, height=9, device=cairo_pdf)
 
-    ## we plot an return: 1. AsymptoticAlpaEstimates, 2. the beta Diversity Anova
+    ## we plot an return AsymptoticAlphaEstimates
     return(EstimatesAsy)
 }
 
 #### ### 
 #### ### 
-nonFoxParaEstimateAsy <- subset_taxa(PSG, genus%in%NOPara) %>%
+nonFoxParaEstimateAsy <- subset_taxa(PSG, genus%in%OtherPara) %>%
     subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes")) %>%
     getAllDiversity("non-fox helminth")
 ### Rare non-fox parasite taxa are occuring more in
-### Brandenburg. Present gamma-diversity differences!
+### Brandenburg. Present the presence/absence differences?? => dilution topic
 
 DietEstimateAsy <- 
-    subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca")) %>%
+    subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca") |
+                     genus %in% NOPara) %>% ## adding the non-fox-parasitic worms.
     getAllDiversity("Diet")
 ### Diet diversty differences are visible present also for higher
 ### overall prevalece taxa, present complex models, see bolow
@@ -452,3 +483,24 @@ DietEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
     geom_smooth(aes(value, Estimator), color="black") +
     ggtitle("Diet diversity")
 ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width=25, height=15, device=cairo_pdf)
+
+
+## ## obtaining diet diversity as a predictor for later models
+DietEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
+    dplyr::select(Estimator) -> divEst
+
+MdivEst <- merge(sample_data(PSG), divEst, by=0, all.x=TRUE)
+
+subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca") |
+                 genus %in% NOPara) %>% otu_table() -> DietData
+
+MdivEst$DDiv <- rowSums(DietData>0)
+
+## Estimator and observed are exactly the same!!!
+## ggplot(MdivEst, aes(Estimator, ObservedDDiv)) +
+##     geom_point()
+
+## -> the dataset was saturated for diet!!!
+
+
+
