@@ -289,27 +289,30 @@ nonFoxParaEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
     dplyr::select(Observed, Estimator)
 
 
-DietEstimateAsy <- 
-    subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca") |
-                     genus %in% NOPara) %>% ## adding the non-fox-parasitic worms.
-    getAllDiversity("Diet")
+PSG.diet <- subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata",
+                                            "Mollusca") |
+                              ## adding the non-fox-parasitic worms.
+                              genus %in% NOPara)
+
+DietEstimateAsy <-  getAllDiversity(PSG.diet, "Diet")
+
 ### Diet diversty differences are visible present also for higher
 ### overall prevalece taxa, present complex models, see bolow
+PSG.helm <- subset_taxa(PSG, !genus%in%NOPara) %>%
+    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes"))
 
-HelmEstimateAsy <- subset_taxa(PSG, !genus%in%NOPara) %>%
-    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes")) %>%
-    getAllDiversity("Helminth")
+HelmEstimateAsy <- getAllDiversity(PSG.helm, "Helminth")
+
 ### specific fox helminth parasites show no diversity differences at
 ### all! They are similar diverse (just different taxa as we'll see
 ### later.  We can look at this in models...!!!
 
+## all bacterial phyla!!
+PSG.bac <- subset_taxa(PSG, phylum %in% c("Actinobacteria", "Bacteroidetes",
+                                          "Deferribacteres", "Firmicutes", "Fusobacteria",
+                                          "Proteobacteria", "Spirochaetes", "Tenericutes"))
 
-BacterialEstimateAsy <-
-    ## all bacterial phyla!!
-    subset_taxa(PSG, phylum %in% c("Actinobacteria", "Bacteroidetes",
-                                   "Deferribacteres", "Firmicutes", "Fusobacteria",
-                                   "Proteobacteria", "Spirochaetes", "Tenericutes")) %>% 
-    getAllDiversity("Microbiome")
+BacterialEstimateAsy <- getAllDiversity(PSG.bac, "Microbiome")
 
 
 ## ### Models for all diversity indices HELMINTHS
@@ -541,22 +544,31 @@ DietEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
 ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width=25, height=15, device=cairo_pdf)
 
 
-## ## obtaining diet diversity as a predictor for later models
+## ## Obtaining diet diversity as a predictor for later models
+## ## Will add this to sample data!!!
 DietEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
-    dplyr::select(Estimator) -> divEst
+    dplyr::transmute(EstDietD = Estimator) %>% data.frame() %>%
+    merge(., rowSums(otu_table(PSG.diet) > 0), by=0, all=TRUE) -> Div
 
-MdivEst <- merge(sample_data(PSG), divEst, by=0, all.x=TRUE)
+colnames(Div)[colnames(Div)%in%"y"] <- "ObsDietD"
 
-subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca") |
-                 genus %in% NOPara) %>% otu_table() -> DietData
+HelmEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
+    dplyr::transmute(EstHelmD = Estimator) %>% data.frame()  %>%
+        merge(., Div , by.x= 0, by.y="Row.names", all=TRUE) %>%
+        merge(., rowSums(otu_table(PSG.helm) > 0), by.x="Row.names",
+              by=0, all=TRUE) -> Div
 
-MdivEst$DDiv <- rowSums(DietData>0)
+colnames(Div)[colnames(Div)%in%"y"] <- "ObsHelmD"
 
-## Estimator and observed are exactly the same!!!
-## ggplot(MdivEst, aes(Estimator, ObservedDDiv)) +
-##     geom_point()
+BacterialEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
+    dplyr::transmute(EstBacD = Estimator) %>% data.frame()  %>%
+        merge(., Div , by.x= 0, by.y="Row.names", all=TRUE) %>%
+        merge(., rowSums(otu_table(PSG.bac) > 0), by.x="Row.names",
+              by=0, all=TRUE) -> Div
+colnames(Div)[colnames(Div)%in%"y"] <- "ObsBacD"
 
-## -> the dataset was saturated for diet!!!
+cor(Div[, -1], use="pairwise.complete.obs")
 
-
+### observed and Estimated diversities are so close that we can use
+### observed to include low numers... now: add all this to sample-data!
 
