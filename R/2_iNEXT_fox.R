@@ -92,7 +92,7 @@ table(colSums(helmData)==0) / ncol(helmData)
 subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes"))
 subset_taxa(PSG, phylum %in% c("Nematoda", "Platyhelminthes"))
 
-
+### 5 samples don't have helminths!!!
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
@@ -276,12 +276,18 @@ getAllDiversity <- function (ps, output_string) {
 }
 
 #### ### 
-#### ### 
-nonFoxParaEstimateAsy <- subset_taxa(PSG, genus%in%OtherPara) %>%
-    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes")) %>%
-    getAllDiversity("non-fox helminth")
+#### ###
+nonFoxPara <- subset_taxa(PSG, genus%in%OtherPara) %>%
+    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes"))
+
+nonFoxParaEstimateAsy <- 
+    getAllDiversity(nonFoxPara, "non-fox helminth")
 ### Rare non-fox parasite taxa are occuring more in
 ### Brandenburg. Present the presence/absence differences?? => dilution topic
+
+nonFoxParaEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
+    dplyr::select(Observed, Estimator)
+
 
 DietEstimateAsy <- 
     subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata", "Mollusca") |
@@ -293,9 +299,17 @@ DietEstimateAsy <-
 HelmEstimateAsy <- subset_taxa(PSG, !genus%in%NOPara) %>%
     subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes")) %>%
     getAllDiversity("Helminth")
-### specific fox helminth parasites show now diversity differences at
-### all! They are similar diverse (just different taxa as we'll see later.
-### We can look at this in models...
+### specific fox helminth parasites show no diversity differences at
+### all! They are similar diverse (just different taxa as we'll see
+### later.  We can look at this in models...!!!
+
+
+BacterialEstimateAsy <-
+    ## all bacterial phyla!!
+    subset_taxa(PSG, phylum %in% c("Actinobacteria", "Bacteroidetes",
+                                   "Deferribacteres", "Firmicutes", "Fusobacteria",
+                                   "Proteobacteria", "Spirochaetes", "Tenericutes")) %>% 
+    getAllDiversity("Microbiome")
 
 
 ## ### Models for all diversity indices HELMINTHS
@@ -379,6 +393,48 @@ DietModels %>%
     DietModels
 
 DietModels
+
+
+BacterialEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=.),
+       modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+                            sex + age,
+                        data=.),
+       modelTree = lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                          sex + age,
+                      data=.),
+       modelHFPI = lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                          sex + age,
+                      data=.)
+       ) -> lmBacterial
+
+BacterialEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=., family="poisson"),
+       modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+                             sex + age,
+                         data=., family="poisson"),
+       modelTree = glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                           sex + age,
+                       data=., family="poisson"),
+       modelHFPI = glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                           sex + age,
+                       data=., family="poisson")
+       ) -> glmBacterial
+
+BacterialModels<- rbind(lmBacterial, glmBacterial)
+
+
+BacterialModels %>%
+    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
+    mutate(tidied = map(model, tidy),
+           glanced = map(model, glance)) %>%
+    mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
+    BacterialModels
+
+BacterialModels
+
 
 ## CHECKING APICOMPLEXA 
 
