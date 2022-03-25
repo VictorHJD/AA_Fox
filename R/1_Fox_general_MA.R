@@ -216,10 +216,15 @@ sample.data <- readRDS("intermediate_data/Fox_data_envir.RDS")
 
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
 
-rownames(sample.data) <- sample.data$IZW_ID
+### We have to fix the IZW sample names!
+setdiff(sample_names(PS), sample.data$IZW_ID)
+## they have these additional "b"s
 
-### OUCH THIS seems to have been completely unaligned in previous data!
-rownames(PS@sam_data) <- gsub("b", "", rownames(sample_data(PS)))
+## just add "b"s to all those
+sample.data$IZW_ID[!sample.data$IZW_ID%in%sample_names(PS)] <-
+    paste0(sample.data$IZW_ID[!sample.data$IZW_ID%in%sample_names(PS)], "b")
+
+rownames(sample.data) <- sample.data$IZW_ID
 
 ## align and cbind to get the combinded sample data
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
@@ -227,11 +232,15 @@ PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(P
 ## make weight numeric
 PS@sam_data[, "weight_kg"] <- as.numeric(unlist(PS@sam_data[, "weight_kg"] ))
 
+## now directly in the repository (for reproducibilty)
+saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
+
 ###For primer analysis (Victor), still stored on our server 
 ## saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") 
 
 ## For Caro and the paper, previously on the server, 
 ## saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds")
 
-## now directly in the repository (for reproducibilty)
-saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
+
+### Adding Categories to the taxonomy information!
+### We have to addd this to genus agglommerted data!
