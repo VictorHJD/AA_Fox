@@ -244,3 +244,85 @@ saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
 
 ### Adding Categories to the taxonomy information!
 ### We have to addd this to genus agglommerted data!
+## collapse to genus level
+PSG <- phyloseq::tax_glom(PS, "genus")
+
+## We take the helminth traits information from manually curated our
+## input data
+traits <- read.csv("input_data/helminth_traits.csv")
+
+traits %>%
+    column_to_rownames("t.genus")  -> traits 
+
+BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
+
+NOPara <- rownames(traits)[traits$fox.parasite%in%"No"]
+
+## other non-fox parasites
+OtherPara <- rownames(traits)[traits$fox.parasite%in%"No" &
+                              !traits$lifecycle%in%"free.living"]
+
+## remove bad taxa
+## only 3784 reads for bad taxa when excluding only the bad blast annotation
+sum(otu_table(subset_taxa(PSG, genus%in%BADtaxa)))
+
+## only 7842 reads for non-parasitic taxa ... 9939 with the new
+## samples previously lost in tables...
+sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
+
+## ## results reporting
+PS
+PSG
+subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes"))
+subset_taxa(PSG, phylum %in% c("Nematoda", "Platyhelminthes"))
+
+## Store the ASV naming in the taxtable itself (instead of only in the
+## rownames)
+tax_table(PSG) <- cbind(tax_table(PSG), ASVn=rownames(tax_table(PSG)))
+
+foo <- merge(tax_table(PSG), traits,
+             by.x="genus", by.y=0, all.x=TRUE)
+
+## let's use the genus name as rowname
+rownames(foo) <- foo$ASVn
+
+## add the "category" information to the taxonomy
+
+foo$category <-
+    ifelse(foo$phylum %in% c("Nematoda", "Platyhelminthes") &
+           foo$fox.parasite %in%"Yes", "Helminth", ### <- this is a helminth!
+    ifelse((foo$phylum %in% c("Nematoda", "Platyhelminthes") &
+            foo$fox.parasite %in%"No") |
+           (foo$phylum %in% c("Annelida", "Arthropoda", "Chordata",
+                              "Mollusca")&
+            !foo$genus%in%c("Vulpes", "Homo", "Globicephala",
+                            "Hylobates", "Procyon", "Canis")), 
+           "Diet", ## <- this is Diet
+    ifelse(foo$phylum%in%c("Actinobacteria", "Bacteroidetes",
+                           "Deferribacteres", "Firmicutes", "Fusobacteria",
+                           "Proteobacteria", "Spirochaetes", "Tenericutes"),
+           "Microbiome", ## <- this is the bacterial microbiome
+    ifelse(foo$order%in%"Eucoccidiorida",
+           "ApicoParasites", ## <- these are apicomplexan parasites
+    ifelse(foo$"phylum"%in% c("Ascomycota", "Basidiomycota", "Blastocladiomycota",
+                              "Chytridiomycota", "Cryptomycota", "Mucoromycota",
+                              "Zoopagomycota"),
+           "FungalMicrobiome",  ## <- this is the fungal microbiome
+           "noClue" ## <- undecided about everything else!!
+    )))))
+
+
+tax_table(PSG) <- as.matrix(foo)[rownames(tax_table(PSG)), ]
+
+## check that taxa were not messed up and we are still removing the
+## bad ones
+sum(otu_table(subset_taxa(PSG, genus%in%BADtaxa)))
+sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
+
+## Finally drop the "bad stuff" from our phyloseq object
+### Exclude the bad taxa
+PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
+
+table(tax_table(PSG)[, "category"])
+## and save PSG for further use 
+saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
