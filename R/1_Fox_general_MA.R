@@ -224,6 +224,10 @@ setdiff(sample_names(PS), sample.data$IZW_ID)
 sample.data$IZW_ID[!sample.data$IZW_ID%in%sample_names(PS)] <-
     paste0(sample.data$IZW_ID[!sample.data$IZW_ID%in%sample_names(PS)], "b")
 
+### Now in the other direction
+setdiff(sample.data$IZW_ID, sample_names(PS))
+## they have these additional "b"s
+
 rownames(sample.data) <- sample.data$IZW_ID
 
 ## align and cbind to get the combinded sample data

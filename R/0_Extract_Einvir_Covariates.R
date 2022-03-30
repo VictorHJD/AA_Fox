@@ -173,7 +173,7 @@ hfpi <- ggplot(fox_envcov, aes(human_fpi_1000m, human_fpi_100m, color=area)) +
   scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
   geom_point()
 
-pdf("figures/suppl/Env100_1000Cors.pdf", width=15, height=5)
+png("figures/suppl/Env100_1000Cors.png", width=15, height=5)
 tree_cover + imperv + hfpi
 dev.off()
 
