@@ -230,7 +230,10 @@ setdiff(sample.data$IZW_ID, sample_names(PS))
 
 rownames(sample.data) <- sample.data$IZW_ID
 
+## adding "Fox" for better names
 rownames(sample.data) <- paste("Fox", rownames(sample.data))
+rownames(PS@sam_data) <- paste("Fox", rownames(PS@sam_data))
+sample_names(PS) <- paste("Fox", sample_names(PS))
 
 ## align and cbind to get the combinded sample data
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
