@@ -255,8 +255,9 @@ PSG <- phyloseq::tax_glom(PS, "genus")
 ## input data
 traits <- read.csv("input_data/helminth_traits.csv")
 
+
 traits %>%
-    column_to_rownames("t.genus")  -> traits 
+    tibble::column_to_rownames("t.genus")  -> traits 
 
 BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
 

@@ -39,13 +39,6 @@ PSF <- subset_samples(PSF, !is.na(sample_data(PSF)[, "condition"]) &
 
 PSHelm <- subset_taxa(PSF, phylum %in% c("Nematoda", "Platyhelminthes"))
 
-DietData <- subset_taxa(PSG, phylum %in%
-                             c("Annelida", "Arthropoda", "Chordata", "Mollusca") |
-                             genus %in% NOPara) %>% otu_table() %>% as.data.frame()
-
-DietData$DDiv <- rowSums(DietData>0)
-
-
 ## only taxa with at lest 10 reads
 PSHelm <- prune_taxa(taxa_sums(PSHelm) > 0, PSHelm)
 PSHelm <- prune_samples(sample_sums(PSHelm) > 0, PSHelm)
@@ -59,24 +52,28 @@ EnvData$weight_kg <- as.numeric(EnvData$weight_kg)
 
 EnvData <- merge(EnvData, DietData[, "DDiv", drop=FALSE], by=0, all.x=TRUE)
 
-adonis2(HelmData ~ area + age + weight_kg + sex + condition + DDiv,
+EnvData <- merge(EnvData, BacDiv, by.x="Row.names", by.y=0, all.x=TRUE)
+
+EnvData <- merge(EnvData, HelmDiv, by.x="Row.names", by.y=0, all.x=TRUE)
+
+adonis2(HelmData ~ area + age + weight_kg + sex + condition + DDiv + BacDiv,
         data=EnvData, na.action = na.omit, by="margin")
 
 ### NO OTHER environmental variables are better explaining composition!
 
 adonis2(HelmData[!is.na(EnvData$tree_cover_1000m), ] ~ tree_cover_1000m + age + weight_kg
-        + sex + condition +DDiv,
+        + sex + condition +DDiv + BacDiv,
         data=EnvData[!is.na(EnvData$tree_cover_1000m), ],
         na.action = na.omit, by="margin")
 
 adonis2(HelmData[!is.na(EnvData$imperv_1000m), ] ~ imperv_1000m + age + weight_kg
-        + sex + condition + DDiv,
+        + sex + condition + DDiv + BacDiv,
         data=EnvData[!is.na(EnvData$imperv_1000m), ],
         na.action = na.omit, by="margin")
 
 ### Even human fpi is barely as good as rural/urban!
 adonis2(HelmData[!is.na(EnvData$human_fpi_1000m), ] ~ human_fpi_1000m + age + weight_kg
-        + sex + condition + DDiv,
+        + sex + condition + DDiv + BacDiv,
         data=EnvData[!is.na(EnvData$human_fpi_1000m), ],
         na.action = na.omit, by="margin")
 

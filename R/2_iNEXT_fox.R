@@ -17,13 +17,14 @@ library(sjlabelled)
 ## 0_Extract_Einvir_Covariates.R) to the PS object.
 recomputeBioinfo <- FALSE
 
-if(!exists("PS")){
+if(!exists("PSG")){
     if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
-        PS <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
+        PSG <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
     }
 }
+
 
 
 ## set theme for plots
@@ -42,93 +43,42 @@ theme_update(
 ## font for numeric label
 font_num <- "Roboto Condensed"
 
-## Helminth traits
-traits <- read.csv("input_data/helminth_traits.csv")
-
-traits %>%
-    column_to_rownames("t.genus")  -> traits 
-
-BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
-
-NOPara <- rownames(traits)[traits$fox.parasite%in%"No"]
-
-## other non-fox parasites
-OtherPara <- rownames(traits)[traits$fox.parasite%in%"No" &
-                              !traits$lifecycle%in%"free.living"]
-
-## collapse to genus level
-PSG <- phyloseq::tax_glom(PS, "genus")
-
-## remove bad taxa
-## only 3434 reads for bad taxa when excluding only the bad blast annotation
-sum(otu_table(subset_taxa(PSG, genus%in%BADtaxa)))
-PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
-
-## only 7842 reads for non-parasitic taxa
-sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
-
-#### TABLE 1 : WHATCHOUT!!! ###
-traits %>% dplyr::filter(BlastEvaluation%in%"Okay") %>%
-    dplyr::select(zoonotic, fox.parasite, transmission.fox) ->
-        outHelm
-
-helmData <- as.data.frame(otu_table(PSG))
-colnames(helmData) <- unname(tax_table(PSG)[, "genus"])
-
-helmData%>%dplyr::select(any_of(rownames(traits))) %>% t() -> helmData
-
-outHelm <- cbind(outHelm,
-                 foxesN=rowSums(helmData>0),
-                 prevalence=round(rowSums(helmData>0)/ncol(helmData) *100, 2),
-                 meanAbundance=round(rowMeans(helmData), 2))
-
-outHelm$meanIntensity <- round(apply(helmData, 1, function (x) mean(x[x>0])), 2)
-
-head(outHelm[order(outHelm$prevalence, decreasing=TRUE), ], n=50)
-
-table(colSums(helmData)==0) / ncol(helmData)
-
-### Results reporting:
-subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes"))
-subset_taxa(PSG, phylum %in% c("Nematoda", "Platyhelminthes"))
-
-### 5 samples don't have helminths!!!
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
 getAllDiversity <- function (ps, output_string) {
-    Counts <- as.data.frame(otu_table(ps))
-
-    colnames(Counts) <- tax_table(ps)[, "genus"]
-    rownames(Counts) <- paste("Fox", rownames(Counts))
-
+    Counts <- as(otu_table(ps), "matrix")
+    Counts <- as.data.frame(t(Counts))
+    rownames(Counts) <- tax_table(ps)[, "genus"]
+    colnames(Counts) <- paste("Fox", colnames(Counts))
+    
+    
     ## For inext diversity analysis we need to keep only samples with
     ## at least two species
-    indCounts <- Counts[rowSums(Counts>0)>1, ]    
+    indCounts <- Counts[, colSums(Counts>0)>1]    
     
     ## Sample data in data frame
-    Sdat <- as.data.frame(sample_data(ps))
-    class(Sdat) <- "data.frame"
+    Sdat <- as(sample_data(ps), "matrix")
 
     ## same for the data
     SdatHPres <- Sdat[rowSums(Counts>0)>1, ]
 
 
-    ## produce ouptut for interactive review
-    message("\n Significance single observations:") 
-    try(print(table(Sdat$area, MoreZero=rowSums(Counts>0)>0)))
-    try(print(fisher.test(table(Sdat$area,
-                                MoreZero=rowSums(Counts>0)>0))))
-    message("\n")
+    ## ## produce ouptut for interactive review
+    ## message("\n Significance single observations:") 
+    ## try(print(table(Sdat$area, MoreZero=rowSums(Counts>0)>0)))
+    ## try(print(fisher.test(table(Sdat$area,
+    ##                             MoreZero=rowSums(Counts>0)>0))))
+    ## message("\n")
     
-    ## produce ouptut for interactive review
-    message("\n Significance of removed data (less than tow observations):") 
-    try(print(table(Sdat$area, MoreOne=rowSums(Counts>0)>1)))
-    try(print(fisher.test(table(Sdat$area,
-                                MoreOne=rowSums(Counts>0)>1))))
-    message("\n")
+    ## ## produce ouptut for interactive review
+    ## message("\n Significance of removed data (less than tow observations):") 
+    ## try(print(table(Sdat$area, MoreOne=rowSums(Counts>0)>1)))
+    ## try(print(fisher.test(table(Sdat$area,
+    ##                             MoreOne=rowSums(Counts>0)>1))))
+    ## message("\n")
     
-    OTU_inext_imp <- iNEXT(t(indCounts), q =0, datatype = "abundance")
+    OTU_inext_imp <- iNEXT(indCounts, datatype = "abundance", q = 0)
 
     ## UGLY set theme again within function
     ## set theme for plots
@@ -164,17 +114,17 @@ getAllDiversity <- function (ps, output_string) {
         xlab("Number of sequence reads") +
         theme(legend.position="none", axis.text = element_text(family = font_num))
 
+    ##  get the the asymptotic diversity estimates
+    EstimatesAsy <- OTU_inext_imp$AsyEst
 
-    ## compare the asymptotic estimates between Berlin and Brandenburg
-    ## But iNext loses the rownames and all extra information, add back:
-    EstimatesAsy <- cbind(OTU_inext_imp$AsyEst, SdatHPres[rep(1:nrow(SdatHPres), each=3), ])
-
-    EstimatesAsy <- filter(EstimatesAsy,
-                           !is.na(area) &
-                           !is.na(tree_cover_1000m) &
-                           !is.na(imperv_1000m)&
-                           !is.na(human_fpi_1000m))
+    ## But iNext loses the rownames and all extra information, add back the IDs
+    ## only the sites "present" with more than 2 taxa 
+    EstimatesAsy$IZW_ID <- paste("Fox", SdatHPres[rep(1:nrow(SdatHPres), each=3), "IZW_ID"])
     
+    ## now also add back the pure observed diversity for all the excluded samples
+    SdatObs <- merge(data.frame(rawObs=rowSums(Counts>0), IZW_ID=rownames(Counts)), Sdat)
+
+    EstimatesAsy <- merge(EstimatesAsy, SdatObs, by="IZW_ID", all.y=TRUE)
 
     alphaCompared <- ggplot(EstimatesAsy,
                             aes(area, Estimator, color=area,
@@ -275,48 +225,19 @@ getAllDiversity <- function (ps, output_string) {
     return(EstimatesAsy)
 }
 
-#### ### 
-#### ###
-nonFoxPara <- subset_taxa(PSG, genus%in%OtherPara) %>%
-    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes"))
 
-nonFoxParaEstimateAsy <- 
-    getAllDiversity(nonFoxPara, "non-fox helminth")
-### Rare non-fox parasite taxa are occuring more in
-### Brandenburg. Present the presence/absence differences?? => dilution topic
+HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Helminth"),
+                                   "Helminth")
 
-nonFoxParaEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
-    dplyr::select(Observed, Estimator)
+BacterialEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Microbiome"),
+                                        "Microbiome")
 
-
-PSG.diet <- subset_taxa(PSG, phylum %in% c("Annelida", "Arthropoda", "Chordata",
-                                            "Mollusca") |
-                              ## adding the non-fox-parasitic worms.
-                              genus %in% NOPara)
-
-DietEstimateAsy <-  getAllDiversity(PSG.diet, "Diet")
-
-### Diet diversty differences are visible present also for higher
-### overall prevalece taxa, present complex models, see bolow
-PSG.helm <- subset_taxa(PSG, !genus%in%NOPara) %>%
-    subset_taxa(phylum %in% c("Nematoda", "Platyhelminthes"))
-
-HelmEstimateAsy <- getAllDiversity(PSG.helm, "Helminth")
-
-### specific fox helminth parasites show no diversity differences at
-### all! They are similar diverse (just different taxa as we'll see
-### later.  We can look at this in models...!!!
-
-## all bacterial phyla!!
-PSG.bac <- subset_taxa(PSG, phylum %in% c("Actinobacteria", "Bacteroidetes",
-                                          "Deferribacteres", "Firmicutes", "Fusobacteria",
-                                          "Proteobacteria", "Spirochaetes", "Tenericutes"))
-
-BacterialEstimateAsy <- getAllDiversity(PSG.bac, "Microbiome")
-
+DietEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Diet"),
+                                   "Diet")
 
 ## ### Models for all diversity indices HELMINTHS
 HelmEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    drop_na() %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=.),
        modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
@@ -331,6 +252,7 @@ HelmEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Dive
        ) -> lmHelm
 
 HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    drop_na() %>%
     do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=., family="poisson"),
        modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
@@ -356,9 +278,21 @@ HelmModels %>%
 
 HelmModels
 
+rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+              data=HelmEstimateAsy[!duplicated(HelmEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+              data=HelmEstimateAsy[!duplicated(HelmEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
 
 ## ### Models for all diversity indices DIET
 DietEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    drop_na() %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=.),
        modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
@@ -373,6 +307,7 @@ DietEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Dive
        ) -> lmDiet
 
 DietEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    drop_na() %>%
     do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=., family="poisson"),
        modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
@@ -397,8 +332,21 @@ DietModels %>%
 
 DietModels
 
+rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+              data=DietEstimateAsy[!duplicated(DietEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+              data=DietEstimateAsy[!duplicated(DietEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
 
 BacterialEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    drop_na() %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=.),
        modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
@@ -413,6 +361,7 @@ BacterialEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by
        ) -> lmBacterial
 
 BacterialEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+    drop_na() %>%
     do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=., family="poisson"),
        modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
@@ -439,7 +388,64 @@ BacterialModels %>%
 BacterialModels
 
 
+rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+                 data=BacterialEstimateAsy[!duplicated(BacterialEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+                 data=BacterialEstimateAsy[!duplicated(BacterialEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+
+
+
+
+
 ## CHECKING APICOMPLEXA 
+
+
+ApicoPEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"ApicoParasites"),
+                                     "ApicoParasites")
+
+rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+                 data=ApicoPEstimateAsy[!duplicated(ApicoPEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+
+rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+                 data=ApicoPEstimateAsy[!duplicated(ApicoPEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+
+ApicoXEstimateAsyy <- getAllDiversity(subset_taxa(PSG, category%in%"noClue" & 
+                                                      phylum%in%"Apicomplexa"),
+                                     "ApicoX")
+
+rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+                 data=ApicoXEstimateAsy[!duplicated(ApicoXEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+
+rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
+                     sex + age,
+                 data=ApicoXEstimateAsy[!duplicated(ApicoXEstimateAsy$IZW_ID), ])
+
+summary(rawGLM)
+
+
+
+
+
 
 ## ApicoEstimateAsy <- getAllDiversity(
 ##     subset_taxa(PS, phylum %in% c("Apicomplexa")),
@@ -544,6 +550,11 @@ DietEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
 ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width=25, height=15, device=cairo_pdf)
 
 
+#### Should do the same for bacteria!!!!
+
+
+
+
 ## ## Obtaining diet diversity as a predictor for later models
 ## ## Will add this to sample data!!!
 DietEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
@@ -572,3 +583,30 @@ cor(Div[, -1], use="pairwise.complete.obs")
 ### observed and Estimated diversities are so close that we can use
 ### observed to include low numers... now: add all this to sample-data!
 
+
+#### TABLE 1 : WHATCHOUT!!! ###
+
+## ## ## this is removed from the PS/PSG
+## traits %>% dplyr::filter(BlastEvaluation%in%"Okay") %>%
+
+## ## ## this is done on the talbe from tax_table data.
+##     dplyr::select(zoonotic, fox.parasite, transmission.fox) ->
+##         outHelm
+
+### this is not needed anymore
+## helmData <- as.data.frame(otu_table(PSG))
+## colnames(helmData) <- unname(tax_table(PSG)[, "genus"])
+
+## helmData%>%dplyr::select(any_of(rownames(traits))) %>% t() -> helmData
+
+### thi will be done in 2_ from the tax_table data
+## outHelm <- cbind(outHelm,
+##                  foxesN=rowSums(helmData>0),
+##                  prevalence=round(rowSums(helmData>0)/ncol(helmData) *100, 2),
+##                  meanAbundance=round(rowMeans(helmData), 2))
+
+## outHelm$meanIntensity <- round(apply(helmData, 1, function (x) mean(x[x>0])), 2)
+
+## head(outHelm[order(outHelm$prevalence, decreasing=TRUE), ], n=50)
+
+## table(colSums(helmData)==0) / ncol(helmData)

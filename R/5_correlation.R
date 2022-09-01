@@ -19,8 +19,13 @@ PSG.target <- subset_taxa(PSG, phylum %in% c("Nematoda", "Platyhelminthes",
                                              "Chordata", "Annelida", "Arthropoda","Mollusca"))
 
 
-PS.target <- subset_taxa(PS, phylum %in% c("Nematoda", "Platyhelminthes",
-                                           "Chordata", "Annelida", "Arthropoda","Mollusca"))
+PSG.target.bac <- subset_taxa(PSG, phylum %in% c("Nematoda", "Platyhelminthes",
+                                                 "Chordata", "Annelida", "Arthropoda",
+                                                 "Mollusca",
+                                                 "Actinobacteria", "Bacteroidetes",
+                                                 "Deferribacteres", "Firmicutes",
+                                                 "Fusobacteria", "Proteobacteria",
+                                                 "Spirochaetes", "Tenericutes"))
 
 
 
@@ -48,7 +53,7 @@ taxa_names(PSG.target) <- make.unique(tax_table(PSG.target)[, "genus"])
 reCreateNetwork <- FALSE
 
 if(!exists("seHelmDiet")){
-    if(reCreateNetwork){         
+    if(!reCreateNetwork){         
         seHelmDiet <- readRDS("intermediate_data/SE_networkd.Rds")
     } else {
         pargs <- list(rep.num=1000, seed=10010, ncores=20)
@@ -71,7 +76,7 @@ dev.off()
 
 
 ## Trichostrongylus is there because of a rabbit in the same sample!!!
-Trichostrongylus -- Oryctolagus
+### Trichostrongylus -- Oryctolagus
 
 
 
@@ -93,102 +98,126 @@ phyloseq::plot_network(HelmDietF.mb, PSG.targetF, type="taxa", label="species", 
 dev.off()
 
 
+######### Now with bacteria!!!! ######
 
-## LET'S do this for individual Amplicons!!!
 
-PS.targetF <- prune_taxa(colSums(otu_table(PS.target)>0)>3, PS.target)
-
-tax_table(PS.targetF)[, "species"] <- paste0(tax_table(PS.targetF)[, "genus"],
-                                             " R:",  colSums(otu_table(PS.targetF)),
-                                             " S:",  colSums(otu_table(PS.targetF)>0))
+PSG.targetB <- prune_taxa(colSums(otu_table(PSG.target.bac)>0)>3, PSG.target.bac)
 
 pargs <- list(rep.num=1000, seed=10010, ncores=20)
-seHelmDietSINGF  <- spiec.easi(PS.targetF, method="mb", pulsar.params=pargs)
+seHelmDietB  <- spiec.easi(PSG.targetB, method="mb", pulsar.params=pargs)
 
-HelmDietSINGF.mb <- adj2igraph(getRefit(seHelmDietSINGF),
-                               vertex.attr=list(name=taxa_names(PS.targetF),
-                                                nReads=colSums(otu_table(PS.targetF))))
+HelmDietB.mb <- adj2igraph(getRefit(seHelmDietB),
+                           vertex.attr=list(name=taxa_names(PSG.targetB),
+                                            nReads=colSums(otu_table(PSG.targetB))))
 
-png(filename = "figures/Diet_Helm_NetworkSINGF.png",
+png(filename = "figures/Bacteria_Helm_NetworkF.png",
         width =15, height = 15, units = "in", res= 300)
-phyloseq::plot_network(HelmDietSINGF.mb, PS.targetF, type="taxa", label="species", color="phylum")
+phyloseq::plot_network(HelmDietB.mb, PSG.targetB, type="taxa", label="species", color="phylum")
 dev.off()
 
 
-pdf("figures/Diet_Helm_NetworkSINGF.pdf", width =15, height = 15)
-phyloseq::plot_network(HelmDietSINGF.mb, PS.targetF, type="taxa", label="species", color="phylum")
-dev.off()
-
-
-wtc <- cluster_walktrap(HelmDietSINGF.mb)
-
-modularity(HelmDietSINGF.mb, membership(wtc))
-
-
-pdf("figures/Diet_Helm_MODUL_net.pdf", width = 15, height = 15)
-plot(wtc,
-     HelmDietSINGF.mb,
-     label="species",
-     vertex.size=1
-     )
-dev.off()
-
-
-### THIS IS AMAZING!!! WILL REVOLUTIONIZE MULTIAMPLICON (amplicon merging)!!!
-
-### To have a better look: remove vulpes and other fuzzy things!
-
-## how does diet influence Helminth occurence?
-PS.targetX <- subset_taxa(PS.targetF, !genus%in%c("Vulpes", "Procyon", "Canis"))
-
-
-tax_table(PS.targetX)[, "species"] <- paste0(tax_table(PS.targetX)[, "genus"],
-                                             " R:",  colSums(otu_table(PS.targetX)),
-                                             " S:",  colSums(otu_table(PS.targetX)>0))
-
-pargs <- list(rep.num=1000, seed=10010, ncores=20)
-seHelmDietSINGX  <- spiec.easi(PS.targetX, method="mb", pulsar.params=pargs)
-
-HelmDietSINGX.mb <-
-    adj2igraph(getRefit(seHelmDietSINGX),
-               vertex.attr=list(name=tax_table(PS.targetX)[, "species"],
-                                nReads=colSums(otu_table(PS.targetX)),
-                                genus=tax_table(PS.targetX)[, "genus"],
-                                family=tax_table(PS.targetX)[, "family"],
-                                order=tax_table(PS.targetX)[, "order"],
-                                class=tax_table(PS.targetX)[, "class"],
-                                phylum=tax_table(PS.targetX)[, "phylum"],
-                                What=ifelse(tax_table(PS.targetX)[, "phylum"] %in%
-                                             c("Nematoda", "Platyhelminthes"),
-                                             "Helm", "Diet")))
-
-HelmDietSINGX.mb$wt.1
 
 
 
 
-png(filename = "figures/Diet_Helm_NetworkSINGX.png",
-        width =15, height = 15, units = "in", res= 300)
-phyloseq::plot_network(HelmDietSINGX.mb, PS.targetX, type="taxa", label="species", color="phylum")
-dev.off()
 
 
-pdf("figures/Diet_Helm_NetworkSINGX.pdf", width =15, height = 15)
-phyloseq::plot_network(HelmDietSINGX.mb, PS.targetX, type="taxa", label="species", color="phylum")
-dev.off()
+## Only relevant for (MA) method development!
+## LET'S do this for individual Amplicons!!! 
+
+## PS.targetF <- prune_taxa(colSums(otu_table(PS.target)>0)>3, PS.target)
+
+## tax_table(PS.targetF)[, "species"] <- paste0(tax_table(PS.targetF)[, "genus"],
+##                                              " R:",  colSums(otu_table(PS.targetF)),
+##                                              " S:",  colSums(otu_table(PS.targetF)>0))
+
+## pargs <- list(rep.num=1000, seed=10010, ncores=20)
+## seHelmDietSINGF  <- spiec.easi(PS.targetF, method="mb", pulsar.params=pargs)
+
+## HelmDietSINGF.mb <- adj2igraph(getRefit(seHelmDietSINGF),
+##                                vertex.attr=list(name=taxa_names(PS.targetF),
+##                                                 nReads=colSums(otu_table(PS.targetF))))
+
+## png(filename = "figures/Diet_Helm_NetworkSINGF.png",
+##         width =15, height = 15, units = "in", res= 300)
+## phyloseq::plot_network(HelmDietSINGF.mb, PS.targetF, type="taxa", label="species", color="phylum")
+## dev.off()
 
 
-wtc <- cluster_walktrap(HelmDietSINGX.mb)
+## pdf("figures/Diet_Helm_NetworkSINGF.pdf", width =15, height = 15)
+## phyloseq::plot_network(HelmDietSINGF.mb, PS.targetF, type="taxa", label="species", color="phylum")
+## dev.off()
 
-modularity(HelmDietSINGX.mb, membership(wtc))
+
+## wtc <- cluster_walktrap(HelmDietSINGF.mb)
+
+## modularity(HelmDietSINGF.mb, membership(wtc))
 
 
-pdf("figures/Diet_Helm_MODUL_netX.pdf", width = 15, height = 15)
-plot(wtc,
-     HelmDietSINGX.mb,
-     label="species",
-     vertex.size=1
-     )
-dev.off()
+## pdf("figures/Diet_Helm_MODUL_net.pdf", width = 15, height = 15)
+## plot(wtc,
+##      HelmDietSINGF.mb,
+##      label="species",
+##      vertex.size=1
+##      )
+## dev.off()
 
-wtc
+
+## ### THIS IS AMAZING!!! WILL REVOLUTIONIZE MULTIAMPLICON (amplicon merging)!!!
+
+## ### To have a better look: remove vulpes and other fuzzy things!
+
+## ## how does diet influence Helminth occurence?
+## PS.targetX <- subset_taxa(PS.targetF, !genus%in%c("Vulpes", "Procyon", "Canis"))
+
+
+## tax_table(PS.targetX)[, "species"] <- paste0(tax_table(PS.targetX)[, "genus"],
+##                                              " R:",  colSums(otu_table(PS.targetX)),
+##                                              " S:",  colSums(otu_table(PS.targetX)>0))
+
+## pargs <- list(rep.num=1000, seed=10010, ncores=20)
+## seHelmDietSINGX  <- spiec.easi(PS.targetX, method="mb", pulsar.params=pargs)
+
+## HelmDietSINGX.mb <-
+##     adj2igraph(getRefit(seHelmDietSINGX),
+##                vertex.attr=list(name=tax_table(PS.targetX)[, "species"],
+##                                 nReads=colSums(otu_table(PS.targetX)),
+##                                 genus=tax_table(PS.targetX)[, "genus"],
+##                                 family=tax_table(PS.targetX)[, "family"],
+##                                 order=tax_table(PS.targetX)[, "order"],
+##                                 class=tax_table(PS.targetX)[, "class"],
+##                                 phylum=tax_table(PS.targetX)[, "phylum"],
+##                                 What=ifelse(tax_table(PS.targetX)[, "phylum"] %in%
+##                                              c("Nematoda", "Platyhelminthes"),
+##                                              "Helm", "Diet")))
+
+## HelmDietSINGX.mb$wt.1
+
+
+
+
+## png(filename = "figures/Diet_Helm_NetworkSINGX.png",
+##         width =15, height = 15, units = "in", res= 300)
+## phyloseq::plot_network(HelmDietSINGX.mb, PS.targetX, type="taxa", label="species", color="phylum")
+## dev.off()
+
+
+## pdf("figures/Diet_Helm_NetworkSINGX.pdf", width =15, height = 15)
+## phyloseq::plot_network(HelmDietSINGX.mb, PS.targetX, type="taxa", label="species", color="phylum")
+## dev.off()
+
+
+## wtc <- cluster_walktrap(HelmDietSINGX.mb)
+
+## modularity(HelmDietSINGX.mb, membership(wtc))
+
+
+## pdf("figures/Diet_Helm_MODUL_netX.pdf", width = 15, height = 15)
+## plot(wtc,
+##      HelmDietSINGX.mb,
+##      label="species",
+##      vertex.size=1
+##      )
+## dev.off()
+
+## wtc
