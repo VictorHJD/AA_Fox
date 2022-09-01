@@ -50,33 +50,18 @@ getAllDiversity <- function (ps, output_string) {
     Counts <- as(otu_table(ps), "matrix")
     Counts <- as.data.frame(t(Counts))
     rownames(Counts) <- tax_table(ps)[, "genus"]
-    colnames(Counts) <- paste("Fox", colnames(Counts))
-    
     
     ## For inext diversity analysis we need to keep only samples with
     ## at least two species
     indCounts <- Counts[, colSums(Counts>0)>1]    
     
     ## Sample data in data frame
-    Sdat <- as(sample_data(ps), "matrix")
+    Sdat <- as.data.frame(as(sample_data(ps), "matrix"))
 
     ## same for the data
     SdatHPres <- Sdat[rowSums(Counts>0)>1, ]
 
 
-    ## ## produce ouptut for interactive review
-    ## message("\n Significance single observations:") 
-    ## try(print(table(Sdat$area, MoreZero=rowSums(Counts>0)>0)))
-    ## try(print(fisher.test(table(Sdat$area,
-    ##                             MoreZero=rowSums(Counts>0)>0))))
-    ## message("\n")
-    
-    ## ## produce ouptut for interactive review
-    ## message("\n Significance of removed data (less than tow observations):") 
-    ## try(print(table(Sdat$area, MoreOne=rowSums(Counts>0)>1)))
-    ## try(print(fisher.test(table(Sdat$area,
-    ##                             MoreOne=rowSums(Counts>0)>1))))
-    ## message("\n")
     
     OTU_inext_imp <- iNEXT(indCounts, datatype = "abundance", q = 0)
 
@@ -96,8 +81,6 @@ getAllDiversity <- function (ps, output_string) {
     
    ### Now the plot gets a bit messy redo by hand
     zet <- fortify(OTU_inext_imp)
-
-    Sdat$IZW_ID <- paste("Fox", Sdat$IZW_ID)
 
     zet <- merge(zet, Sdat, by.x="site", by.y="IZW_ID")
 
@@ -119,7 +102,7 @@ getAllDiversity <- function (ps, output_string) {
 
     ## But iNext loses the rownames and all extra information, add back the IDs
     ## only the sites "present" with more than 2 taxa 
-    EstimatesAsy$IZW_ID <- paste("Fox", SdatHPres[rep(1:nrow(SdatHPres), each=3), "IZW_ID"])
+    EstimatesAsy$IZW_ID <- SdatHPres[rep(1:nrow(SdatHPres), each=3), "IZW_ID"]
     
     ## now also add back the pure observed diversity for all the excluded samples
     SdatObs <- merge(data.frame(rawObs=rowSums(Counts>0), IZW_ID=rownames(Counts)), Sdat)

@@ -230,6 +230,8 @@ setdiff(sample.data$IZW_ID, sample_names(PS))
 
 rownames(sample.data) <- sample.data$IZW_ID
 
+rownames(sample.data) <- paste("Fox", rownames(sample.data))
+
 ## align and cbind to get the combinded sample data
 PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(PS)), ]))
 
@@ -254,7 +256,6 @@ PSG <- phyloseq::tax_glom(PS, "genus")
 ## We take the helminth traits information from manually curated our
 ## input data
 traits <- read.csv("input_data/helminth_traits.csv")
-
 
 traits %>%
     tibble::column_to_rownames("t.genus")  -> traits 
