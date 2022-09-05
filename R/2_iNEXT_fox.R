@@ -49,7 +49,7 @@ font_num <- "Roboto Condensed"
 getAllDiversity <- function (ps, output_string) {
     Counts <- as(otu_table(ps), "matrix")
     Counts <- as.data.frame(t(Counts))
-    rownames(Counts) <- tax_table(ps)[, "genus"]
+    rownames(Counts) <- make.unique(tax_table(ps)[, "genus"])
     
     ## For inext diversity analysis we need to keep only samples with
     ## at least two species
@@ -61,8 +61,6 @@ getAllDiversity <- function (ps, output_string) {
     ## same for the data
     SdatHPres <- Sdat[rowSums(Counts>0)>1, ]
 
-
-    
     OTU_inext_imp <- iNEXT(indCounts, datatype = "abundance", q = 0)
 
     ## UGLY set theme again within function
@@ -79,11 +77,14 @@ getAllDiversity <- function (ps, output_string) {
         plot.margin = margin(rep(12, 4))
     )
     
-   ### Now the plot gets a bit messy redo by hand
     zet <- fortify(OTU_inext_imp)
 
-    zet <- merge(zet, Sdat, by.x="site", by.y="IZW_ID")
+    ## now add the sample data and also the zero and 1 "sites" (foxes
+    ## back into this, by "all.y")
 
+    zet <- merge(zet, Sdat, by.x="site", by.y=0, all.y=TRUE)
+
+    ## Now the plot gets a bit messy redo by hand
     alphaDivFox <- ggplot(zet, aes(x = x, y = y, colour = area, group=site)) +
         geom_line(data=subset(zet, method%in%"interpolated"),
                   lwd = 1.5, alpha=0.3) +
@@ -100,15 +101,21 @@ getAllDiversity <- function (ps, output_string) {
     ##  get the the asymptotic diversity estimates
     EstimatesAsy <- OTU_inext_imp$AsyEst
 
-    ## But iNext loses the rownames and all extra information, add back the IDs
-    ## only the sites "present" with more than 2 taxa 
-    EstimatesAsy$IZW_ID <- SdatHPres[rep(1:nrow(SdatHPres), each=3), "IZW_ID"]
+    ## ## ## observed diverstiy of 1 and 0 div samples
+    NullOne <- as.data.frame(cbind(Observed=colSums(Counts[, colSums(Counts>0)<2]>0),
+                                   Estimator=colSums(Counts[, colSums(Counts>0)<2]>0)))
+    NullOne$Site <- rownames(NullOne)
+    NullOne  <- NullOne[rep(1:nrow(NullOne), each=3),]
+    NullOne$Diversity <-  c("Species richness",
+                            "Shannon diversity",
+                            "Simpson diversity")
+    NullOne$s.e. <- NullOne$LCL <- NullOne$UCL <- NA
+
+    EstimatesAsy <- rbind(EstimatesAsy, NullOne[, colnames(EstimatesAsy)])
     
-    ## now also add back the pure observed diversity for all the excluded samples
-    SdatObs <- merge(data.frame(rawObs=rowSums(Counts>0), IZW_ID=rownames(Counts)), Sdat)
-
-    EstimatesAsy <- merge(EstimatesAsy, SdatObs, by="IZW_ID", all.y=TRUE)
-
+    ## now  add back the pure observed diversity for all the excluded samples
+    EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x="Site", by.y=0)
+    
     alphaCompared <- ggplot(EstimatesAsy,
                             aes(area, Estimator, color=area,
                                 fill = after_scale(lighten(color, .7)))) +
@@ -126,7 +133,7 @@ getAllDiversity <- function (ps, output_string) {
     ## Berlin and Brandenburg as a whole (and between male and female,
     ## maybe?). I'd call this level gamma-diversity!
 
-    Pres1 <- as.data.frame(Counts>0)
+    Pres1 <- as.data.frame(t(Counts)>0)
     Pres1 <- apply(Pres1, 1, as.numeric)
 
     PresArea <- by(t(Pres1), Sdat$area, function (x) x)
@@ -152,10 +159,10 @@ getAllDiversity <- function (ps, output_string) {
               plot.margin = margin(rep(12, 4)))
 
     ## beta diversity
-    JaccPairsDist <- beta.pair(t(apply(indCounts>0, 1, as.numeric)),
+    JaccPairsDist <- beta.pair(t(apply(Counts>0, 2, as.numeric)),
                                index.family="jaccard")
 
-    JaccGrups <- betadisper(JaccPairsDist[[3]], SdatHPres$area)
+    JaccGrups <- betadisper(JaccPairsDist[[3]], Sdat$area)
 
     message("\n Significance of the beta-diversity differences\n")
     print(anova(JaccGrups))
@@ -223,30 +230,30 @@ HelmEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Dive
     drop_na() %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=.),
-       modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+       modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
                             sex + age,
                         data=.),
-       modelTree = lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+       modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
                           sex + age,
                       data=.),
-       modelHFPI = lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+       modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
                           sex + age,
                       data=.)
        ) -> lmHelm
 
 HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
     drop_na() %>%
-    do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=., family="poisson"),
-       modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+    do(modelArea = glm.nb(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                      data=.),
+       modelImperv = glm.nb(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
                              sex + age,
-                         data=., family="poisson"),
-       modelTree = glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+                         data=.),
+       modelTree = glm.nb(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
                            sex + age,
-                       data=., family="poisson"),
-       modelHFPI = glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+                       data=.),
+       modelHFPI = glm.nb(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
                            sex + age,
-                       data=., family="poisson")
+                       data=.)
        ) -> glmHelm
 
 HelmModels<- rbind(lmHelm, glmHelm)
@@ -261,30 +268,18 @@ HelmModels %>%
 
 HelmModels
 
-rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-              data=HelmEstimateAsy[!duplicated(HelmEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-              data=HelmEstimateAsy[!duplicated(HelmEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
 ## ### Models for all diversity indices DIET
 DietEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
     drop_na() %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=.),
-       modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+       modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
                             sex + age,
                         data=.),
-       modelTree = lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+       modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
                           sex + age,
                       data=.),
-       modelHFPI = lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+       modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
                           sex + age,
                       data=.)
        ) -> lmDiet
@@ -293,18 +288,18 @@ DietEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diver
     drop_na() %>%
     do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=., family="poisson"),
-       modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+       modelImperv = glm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
                              sex + age,
                          data=., family="poisson"),
-       modelTree = glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+       modelTree = glm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
                            sex + age,
                        data=., family="poisson"),
-       modelHFPI = glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+       modelHFPI = glm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
                            sex + age,
                        data=., family="poisson")
        ) -> glmDiet
 
-DietModels<- rbind(lmDiet, glmDiet)
+DietModels <- rbind(lmDiet, glmDiet)
 
 DietModels %>%
     pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
@@ -315,45 +310,33 @@ DietModels %>%
 
 DietModels
 
-rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-              data=DietEstimateAsy[!duplicated(DietEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-              data=DietEstimateAsy[!duplicated(DietEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
 
 BacterialEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
     drop_na() %>%
     do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=.),
-       modelImperv = lm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+       modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
                             sex + age,
                         data=.),
-       modelTree = lm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+       modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
                           sex + age,
                       data=.),
-       modelHFPI = lm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+       modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
                           sex + age,
                       data=.)
        ) -> lmBacterial
 
 BacterialEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
     drop_na() %>%
-    do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+    do(modelArea = glm(I(round(Estimator))~ area + condition + I(as.numeric(weight_kg)) + sex + age,
                       data=., family="poisson"),
-       modelImperv = glm(Estimator~ imperv_1000m + condition + I(as.numeric(weight_kg)) +
+       modelImperv = glm(I(round(Estimator))~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
                              sex + age,
                          data=., family="poisson"),
-       modelTree = glm(Estimator~ tree_cover_1000m + condition + I(as.numeric(weight_kg)) +
+       modelTree = glm(I(round(Estimator))~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
                            sex + age,
                        data=., family="poisson"),
-       modelHFPI = glm(Estimator~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
+       modelHFPI = glm(I(round(Estimator))~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
                            sex + age,
                        data=., family="poisson")
        ) -> glmBacterial
@@ -371,21 +354,6 @@ BacterialModels %>%
 BacterialModels
 
 
-rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-                 data=BacterialEstimateAsy[!duplicated(BacterialEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-                 data=BacterialEstimateAsy[!duplicated(BacterialEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-
-
-
 
 
 ## CHECKING APICOMPLEXA 
@@ -394,114 +362,11 @@ summary(rawGLM)
 ApicoPEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"ApicoParasites"),
                                      "ApicoParasites")
 
-rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-                 data=ApicoPEstimateAsy[!duplicated(ApicoPEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-
-rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-                 data=ApicoPEstimateAsy[!duplicated(ApicoPEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-
-ApicoXEstimateAsyy <- getAllDiversity(subset_taxa(PSG, category%in%"noClue" & 
-                                                      phylum%in%"Apicomplexa"),
-                                     "ApicoX")
-
-rawGLM <- glm.nb(rawObs ~ human_fpi_1000m + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-                 data=ApicoXEstimateAsy[!duplicated(ApicoXEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
-
-
-rawGLM <- glm.nb(rawObs ~ area + condition + I(as.numeric(weight_kg)) +
-                     sex + age,
-                 data=ApicoXEstimateAsy[!duplicated(ApicoXEstimateAsy$IZW_ID), ])
-
-summary(rawGLM)
 
 
 
 
 
-
-## ApicoEstimateAsy <- getAllDiversity(
-##     subset_taxa(PS, phylum %in% c("Apicomplexa")),
-##     "Apicomplexa")
-
-## problem is that there are more with ZERO AND ONE in BRANDENBURG
-
-##  Significance of removed data:
-##              MoreOne
-##               FALSE TRUE
-##   Berlin         30   79
-##   Brandenburg     3   39
-
-## 	Fisher's Exact Test for Count Data
-
-## data:  table(Sdat$area, MoreOne = rowSums(Counts > 0) > 1)
-## p-value = 0.00749
-## alternative hypothesis: true odds ratio is not equal to 1
-## 95 percent confidence interval:
-##   1.388368 26.606115
-## sample estimates:
-## odds ratio 
-##   4.895872 
-
-### Therefore we here compute diversity estimates without iNEXT hill
-### numbers
-
-remove_geom <- function(ggplot2_object, geom_type) {
-    ## Delete layers that match the requested type.
-    layers <- lapply(ggplot2_object$layers, function(x) {
-        if (class(x$geom)[1] == geom_type) {
-            NULL
-        } else {
-            x
-        }
-    })
-    ## Delete the unwanted layers.
-    layers <- layers[!sapply(layers, is.null)]
-    ggplot2_object$layers <- layers
-    ggplot2_object
-}
-
-
-PSApicoG <- phyloseq::tax_glom(subset_taxa(PS, phylum%in%"Apicomplexa"), "genus")
-
-apicoRichness <- plot_richness(PSApicoG, measures=c("Observed", "Shannon"),
-                               color="area", x="area") + geom_boxplot(outlier.shape = NA)
-
-remove_geom(apicoRichness, "GeomPoint")  +
-    geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
-               fill = "white", size = 2, stroke = .7) +
-    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    scale_y_continuous("Study area") + 
-    ggtitle("Apicomplexa (incl. gregarina) diversity")
-ggsave("figures/suppl/ApicoDiversity.pdf", width=13, height=9, device=cairo_pdf)
-
-cbind(estimate_richness(PSApicoG, measures=c("Observed", "Shannon")),
-      sample_data(PSApicoG))  %>% 
-    lm(Shannon~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-       data=.) ->
-    ModDivApicoShannon
-
-summary(ModDivApicoShannon)
-
-library(MASS)
-cbind(estimate_richness(PSApicoG, measures=c("Observed", "Shannon")),
-      sample_data(PSApicoG))  %>% 
-    glm.nb(Observed~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-        data=.) ->
-    ModDivApicoObserved
-
-summary(ModDivApicoObserved)
 
 ### Let's see whether there's a non-linear "ecotone" effect of any of
 ### the continuous environmental variables!
