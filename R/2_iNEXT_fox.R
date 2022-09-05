@@ -216,154 +216,92 @@ getAllDiversity <- function (ps, output_string) {
 }
 
 
+
+gimmeModels <- function (EA){
+    ## all models on the Asymptotic estimate tables from the function
+    ## above (wrapping iNEXT)
+    EA %>%
+        filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+        do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                          data=.),
+           modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
+                                sex + age,
+                            data=.),
+           modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
+                              sex + age,
+                          data=.),
+           modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
+                              sex + age,
+                          data=.)
+           ) -> lmEA
+
+    EA %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
+        do(modelArea = glm(I(round(Estimator))~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+                           data=., family="poisson"),
+           modelImperv = glm(I(round(Estimator))~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
+                                 sex + age,
+                             data=., family="poisson"),
+           modelTree = glm(I(round(Estimator))~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
+                               sex + age,
+                           data=., family="poisson"),
+           modelHFPI = glm(I(round(Estimator))~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
+                               sex + age,
+                           data=., family="poisson")
+           ) -> glmEA
+
+    EAModels<- rbind(lmEA, glmEA)
+
+    EAModels %>%
+        pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
+        mutate(tidied = map(model, tidy),
+               glanced = map(model, glance)) %>%
+        mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value))))
+}
+
+
+
+
+
 HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Helminth"),
                                    "Helminth")
+
+gimmeModels(HelmEstimateAsy)
+
 
 BacterialEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Microbiome"),
                                         "Microbiome")
 
+gimmeModels(BacterialEstimateAsy)
+
 DietEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Diet"),
                                    "Diet")
 
-## ### Models for all diversity indices HELMINTHS
-HelmEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-    drop_na() %>%
-    do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=.),
-       modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                            sex + age,
-                        data=.),
-       modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                          sex + age,
-                      data=.),
-       modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                          sex + age,
-                      data=.)
-       ) -> lmHelm
+gimmeModels(DietEstimateAsy)
 
-HelmEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-    drop_na() %>%
-    do(modelArea = glm.nb(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=.),
-       modelImperv = glm.nb(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                             sex + age,
-                         data=.),
-       modelTree = glm.nb(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                           sex + age,
-                       data=.),
-       modelHFPI = glm.nb(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                           sex + age,
-                       data=.)
-       ) -> glmHelm
+WormDietEA <- getAllDiversity(subset_taxa(PSG, category%in%"Diet"&
+                                          phylum%in%c("Platyhelminthes", "Nematoda")),
+                                   "WormDiet")
 
-HelmModels<- rbind(lmHelm, glmHelm)
+gimmeModels(WormDietEA)
 
 
-HelmModels %>%
-    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
-    mutate(tidied = map(model, tidy),
-           glanced = map(model, glance)) %>%
-    mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
-    HelmModels
+FungalEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"FungalMicrobiome"),
+                                   "FungalMicrobiome")
 
-HelmModels
-
-## ### Models for all diversity indices DIET
-DietEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-    drop_na() %>%
-    do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=.),
-       modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                            sex + age,
-                        data=.),
-       modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                          sex + age,
-                      data=.),
-       modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                          sex + age,
-                      data=.)
-       ) -> lmDiet
-
-DietEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-    drop_na() %>%
-    do(modelArea = glm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=., family="poisson"),
-       modelImperv = glm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                             sex + age,
-                         data=., family="poisson"),
-       modelTree = glm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                           sex + age,
-                       data=., family="poisson"),
-       modelHFPI = glm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                           sex + age,
-                       data=., family="poisson")
-       ) -> glmDiet
-
-DietModels <- rbind(lmDiet, glmDiet)
-
-DietModels %>%
-    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
-    mutate(tidied = map(model, tidy),
-           glanced = map(model, glance)) %>%
-    mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
-    DietModels
-
-DietModels
-
-
-BacterialEstimateAsy %>% filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-    drop_na() %>%
-    do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=.),
-       modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                            sex + age,
-                        data=.),
-       modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                          sex + age,
-                      data=.),
-       modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                          sex + age,
-                      data=.)
-       ) -> lmBacterial
-
-BacterialEstimateAsy %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-    drop_na() %>%
-    do(modelArea = glm(I(round(Estimator))~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                      data=., family="poisson"),
-       modelImperv = glm(I(round(Estimator))~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                             sex + age,
-                         data=., family="poisson"),
-       modelTree = glm(I(round(Estimator))~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                           sex + age,
-                       data=., family="poisson"),
-       modelHFPI = glm(I(round(Estimator))~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                           sex + age,
-                       data=., family="poisson")
-       ) -> glmBacterial
-
-BacterialModels<- rbind(lmBacterial, glmBacterial)
-
-
-BacterialModels %>%
-    pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
-    mutate(tidied = map(model, tidy),
-           glanced = map(model, glance)) %>%
-    mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) ->
-    BacterialModels
-
-BacterialModels
-
-
-
-
-## CHECKING APICOMPLEXA 
+gimmeModels(FungalEstimateAsy)
 
 
 ApicoPEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"ApicoParasites"),
                                      "ApicoParasites")
 
+gimmeModels(ApicoPEstimateAsy)
 
 
+ApicoEnvirEstimateAsy <- getAllDiversity(subset_taxa(PSG, !category%in%"ApicoParasites"&
+                                                          phylum%in%"Apicomplexa"), 
+                                         "EnvironmApicomplexa")
+
+gimmeModels(ApicoEnvirEstimateAsy)
 
 
 
@@ -401,8 +339,6 @@ ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width=25, height=15, device=cairo_
 #### Should do the same for bacteria!!!!
 
 
-
-
 ## ## Obtaining diet diversity as a predictor for later models
 ## ## Will add this to sample data!!!
 DietEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
@@ -426,35 +362,4 @@ BacterialEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
               by=0, all=TRUE) -> Div
 colnames(Div)[colnames(Div)%in%"y"] <- "ObsBacD"
 
-cor(Div[, -1], use="pairwise.complete.obs")
-
-### observed and Estimated diversities are so close that we can use
-### observed to include low numers... now: add all this to sample-data!
-
-
-#### TABLE 1 : WHATCHOUT!!! ###
-
-## ## ## this is removed from the PS/PSG
-## traits %>% dplyr::filter(BlastEvaluation%in%"Okay") %>%
-
-## ## ## this is done on the talbe from tax_table data.
-##     dplyr::select(zoonotic, fox.parasite, transmission.fox) ->
-##         outHelm
-
-### this is not needed anymore
-## helmData <- as.data.frame(otu_table(PSG))
-## colnames(helmData) <- unname(tax_table(PSG)[, "genus"])
-
-## helmData%>%dplyr::select(any_of(rownames(traits))) %>% t() -> helmData
-
-### thi will be done in 2_ from the tax_table data
-## outHelm <- cbind(outHelm,
-##                  foxesN=rowSums(helmData>0),
-##                  prevalence=round(rowSums(helmData>0)/ncol(helmData) *100, 2),
-##                  meanAbundance=round(rowMeans(helmData), 2))
-
-## outHelm$meanIntensity <- round(apply(helmData, 1, function (x) mean(x[x>0])), 2)
-
-## head(outHelm[order(outHelm$prevalence, decreasing=TRUE), ], n=50)
-
-## table(colSums(helmData)==0) / ncol(helmData)
+    
