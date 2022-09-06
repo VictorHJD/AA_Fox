@@ -11,10 +11,9 @@ library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
 
-## You can leave this at true here, as the "bioinformatics" script has
-## finer controls within itself for now. Re-executing this for now
-## adds only the (potentially new) sample data (created in
-## 0_Extract_Einvir_Covariates.R) to the PS object.
+## The "bioinformatics" script "1_Fox_general_MA.R" has finer controls
+## within itself for now. But we can still read it's single final
+## output object.
 recomputeBioinfo <- FALSE
 
 if(!exists("PSG")){
@@ -24,8 +23,6 @@ if(!exists("PSG")){
         PSG <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
     }
 }
-
-
 
 ## set theme for plots
 theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
@@ -267,16 +264,14 @@ HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Helminth"),
 
 gimmeModels(HelmEstimateAsy)
 
-
-BacterialEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Microbiome"),
-                                        "Microbiome")
-
-gimmeModels(BacterialEstimateAsy)
+## Parasitic Helminths not more diverse in brandenburg
 
 DietEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Diet"),
                                    "Diet")
 
 gimmeModels(DietEstimateAsy)
+
+###  -> Diet clearly more diverse in Brandenburg
 
 WormDietEA <- getAllDiversity(subset_taxa(PSG, category%in%"Diet"&
                                           phylum%in%c("Platyhelminthes", "Nematoda")),
@@ -284,11 +279,22 @@ WormDietEA <- getAllDiversity(subset_taxa(PSG, category%in%"Diet"&
 
 gimmeModels(WormDietEA)
 
+### -> "Diet-worms" more diverse in Brandenburg
+
+
+BacterialEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Microbiome"),
+                                        "Microbiome")
+
+gimmeModels(BacterialEstimateAsy)
+
+### -> Bacterial microbiome clearly more diverse in Brandenburg
 
 FungalEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"FungalMicrobiome"),
                                    "FungalMicrobiome")
 
 gimmeModels(FungalEstimateAsy)
+
+### -> Fungal microbiome more diverse in Brandenburg
 
 
 ApicoPEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"ApicoParasites"),
@@ -303,7 +309,8 @@ ApicoEnvirEstimateAsy <- getAllDiversity(subset_taxa(PSG, !category%in%"ApicoPar
 
 gimmeModels(ApicoEnvirEstimateAsy)
 
-
+### -> Environmental Apicomplexans are more diverse in Brandenburg,
+### -> parasitic Apicomplexans not really. 
 
 
 ### Let's see whether there's a non-linear "ecotone" effect of any of
@@ -339,27 +346,46 @@ ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width=25, height=15, device=cairo_
 #### Should do the same for bacteria!!!!
 
 
-## ## Obtaining diet diversity as a predictor for later models
-## ## Will add this to sample data!!!
-DietEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
-    dplyr::transmute(EstDietD = Estimator) %>% data.frame() %>%
-    merge(., rowSums(otu_table(PSG.diet) > 0), by=0, all=TRUE) -> Div
+## ## Obtaining diet diversity as a predictor for later models (could
+## ## have done this before the modelling above for cleaner code, but
+## ## now move on ;-))
+DietEstimateAsy %>%
+    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix="Diet ") ->
+    DietDiversity
 
-colnames(Div)[colnames(Div)%in%"y"] <- "ObsDietD"
+HelmEstimateAsy %>%
+    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix="Helm ") ->
+    HelminthDiversity
 
-HelmEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
-    dplyr::transmute(EstHelmD = Estimator) %>% data.frame()  %>%
-        merge(., Div , by.x= 0, by.y="Row.names", all=TRUE) %>%
-        merge(., rowSums(otu_table(PSG.helm) > 0), by.x="Row.names",
-              by=0, all=TRUE) -> Div
+ApicoPEstimateAsy %>%
+    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix="ApicoP ") ->
+    ApicoPDiversity
 
-colnames(Div)[colnames(Div)%in%"y"] <- "ObsHelmD"
+BacterialEstimateAsy %>%
+    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix="BacM ") ->
+    BacterialDiversity
 
-BacterialEstimateAsy %>% dplyr::filter(Diversity%in%"Species richness") %>%
-    dplyr::transmute(EstBacD = Estimator) %>% data.frame()  %>%
-        merge(., Div , by.x= 0, by.y="Row.names", all=TRUE) %>%
-        merge(., rowSums(otu_table(PSG.bac) > 0), by.x="Row.names",
-              by=0, all=TRUE) -> Div
-colnames(Div)[colnames(Div)%in%"y"] <- "ObsBacD"
+FungalEstimateAsy %>%
+    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix="FunM ") ->
+    FungalDiversity
+
+Reduce(merge, list(DietDiversity, HelminthDiversity,
+                   ApicoPDiversity, BacterialDiversity,
+                   FungalDiversity)) %>%
+    rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
+    AllDiv 
+
+sample_data(PSG)
+
+
+## ## Will add this to sample data or just another intermediate
+## ## data-frame?
 
     
+
+
