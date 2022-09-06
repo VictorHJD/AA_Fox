@@ -5,66 +5,57 @@ library(patchwork)
 
 recomputeBioinfo <- FALSE
 
-if(!exists("PS")){
+if(!exists("PSG")){
     if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
-        PS <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
+        PSG <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
     }
 }
 
+recomputeDiversity <- FALSE
+
+if(!"FunM_Species_richness"%in%colnames(sample_data(PSG))|
+   recomputeDiversity){
+    source("R/2_iNEXT_fox.R")
+}
 
 ## Helminth traits
 traits <- read.csv("input_data/helminth_traits.csv")
 traits %>%
     column_to_rownames("t.genus")  -> traits 
 
+PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
 
-BADtaxa <- rownames(traits)[!traits$BlastEvaluation%in%"Okay"]
-NOPara <- rownames(traits)[traits$fox.parasite%in%"No"]
+PSGHelm <- subset_samples(PSGHelm, !is.na(sample_data(PSGHelm)[, "condition"]) &
+                                   !is.na(sample_data(PSGHelm)[, "weight_kg"]))
 
-## a genus of tropical reef fish
-add.bad.taxa <- "Tonlesapia"
 
-BADtaxa <- c(BADtaxa, add.bad.taxa)
+## only taxa with reads
+PSGHelm <- prune_taxa(taxa_sums(PSGHelm) > 0, PSGHelm)
+PSGHelm <- prune_samples(sample_sums(PSGHelm) > 0, PSGHelm)
 
-## collapse to genus level
-PSG <- phyloseq::tax_glom(PS, "genus")
+HelmData <- otu_table(PSGHelm)
+colnames(HelmData) <- tax_table(PSGHelm)[, "genus"]
 
-PSF <- subset_taxa(PSG, !genus%in%NOPara &
-                        !genus%in%BADtaxa)
-
-PSF <- subset_samples(PSF, !is.na(sample_data(PSF)[, "condition"]) &
-                           !is.na(sample_data(PSF)[, "weight_kg"]))
-
-PSHelm <- subset_taxa(PSF, phylum %in% c("Nematoda", "Platyhelminthes"))
-
-## only taxa with at lest 10 reads
-PSHelm <- prune_taxa(taxa_sums(PSHelm) > 0, PSHelm)
-PSHelm <- prune_samples(sample_sums(PSHelm) > 0, PSHelm)
-
-HelmData <- otu_table(PSHelm)
-colnames(HelmData) <- tax_table(PSHelm)[, "genus"]
-
-EnvData <- sample_data(PSHelm)
+EnvData <- sample_data(PSGHelm)
 class(EnvData) <- "data.frame"
 EnvData$weight_kg <- as.numeric(EnvData$weight_kg)
 
-EnvData <- merge(EnvData, DietData[, "DDiv", drop=FALSE], by=0, all.x=TRUE)
-
-EnvData <- merge(EnvData, BacDiv, by.x="Row.names", by.y=0, all.x=TRUE)
-
-EnvData <- merge(EnvData, HelmDiv, by.x="Row.names", by.y=0, all.x=TRUE)
-
-adonis2(HelmData ~ area + age + weight_kg + sex + condition + DDiv + BacDiv,
-        data=EnvData, na.action = na.omit, by="margin")
 
 ### NO OTHER environmental variables are better explaining composition!
 
-adonis2(HelmData[!is.na(EnvData$tree_cover_1000m), ] ~ tree_cover_1000m + age + weight_kg
-        + sex + condition +DDiv + BacDiv,
+adonis2(HelmData[!is.na(EnvData$tree_cover_1000m), ] ~ age + weight_kg +
+        + sex + condition + tree_cover_1000m,
         data=EnvData[!is.na(EnvData$tree_cover_1000m), ],
         na.action = na.omit, by="margin")
+
+
+adonis2(HelmData ~ area + FunM_Species_richness  +
+            Diet_Species_richness + BacM_Species_richness,
+        data=EnvData,
+        na.action = na.omit, by="margin")
+
 
 adonis2(HelmData[!is.na(EnvData$imperv_1000m), ] ~ imperv_1000m + age + weight_kg
         + sex + condition + DDiv + BacDiv,

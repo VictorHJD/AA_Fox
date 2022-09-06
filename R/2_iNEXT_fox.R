@@ -378,10 +378,15 @@ Reduce(merge, list(DietDiversity, HelminthDiversity,
                    ApicoPDiversity, BacterialDiversity,
                    FungalDiversity)) %>%
     rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
-    AllDiv 
+    AllDiv
 
-sample_data(PSG)
+all(AllDiv$Site == rownames(sample_data(PSG)))
 
+rownames(AllDiv) <- AllDiv$Site
+
+sample_data(PSG) <- AllDiv
+
+saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
 
 ## ## Will add this to sample data or just another intermediate
 ## ## data-frame?
