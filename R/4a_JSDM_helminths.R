@@ -29,11 +29,11 @@ library(reshape2)
 
 ## Fox and helminth data from the central phyloseq object
 recomputeBioinfo <- FALSE
-if(!exists("PS")){
+if(!exists("PSG")){
     if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
-        PS <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
+        PSG <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
     }
 }
 
@@ -41,23 +41,19 @@ if(!exists("PS")){
 ## 1. a matrix of species: sites in rows (foxes) and helminth genera
 ## in columns
 
-PSHelm <- phyloseq::subset_taxa(PS, phylum%in%c("Nematoda", "Platyhelminthes"))
-PSHelmG <- phyloseq::tax_glom(PSHelm, "genus")
-
-## Remove: genera with no observations 
-PSHelmG <- phyloseq::prune_taxa(taxa_sums(PSHelmG)>0, PSHelmG)
+PSGHelm <- subset_taxa(PSG, category%in%"Helminth")
 
 ## Also reomve foxes with with NA for weight or na for environmental
 ## variables
-PSHelmG <- phyloseq::prune_samples(
-                         sample_sums(PSHelmG)>0 &
-                         !is.na(as.numeric(sample_data(PSHelmG)$weight_kg)) &
-                         !is.na(sample_data(PSHelmG)$human_fpi_1000m) &
-                         !is.na(sample_data(PSHelmG)$tree_cover_1000m), 
-                         PSHelmG)
+PSGHelmR <- phyloseq::prune_samples(
+                         sample_sums(PSGHelm)>0 &
+                         !is.na(as.numeric(sample_data(PSGHelm)$weight_kg)) &
+                         !is.na(sample_data(PSGHelm)$human_fpi_1000m) &
+                         !is.na(sample_data(PSGHelm)$tree_cover_1000m), 
+                         PSGHelm)
 
-HelmCounts <- as.data.frame(otu_table(PSHelmG))
-colnames(HelmCounts) <- phyloseq::tax_table(PSHelmG)[, "genus"]
+HelmCounts <- as.data.frame(otu_table(PSGHelmR))
+colnames(HelmCounts) <- phyloseq::tax_table(PSGHelmR)[, "genus"]
     
 HelmCounts[, colSums(HelmCounts)>0] %>%
     as.matrix() ->
@@ -69,7 +65,6 @@ HelmCounts[, colSums(HelmCounts)>0] %>%
 ## Helminth traits
 traits <- read.csv("input_data/helminth_traits.csv")
 
-
 traits %>%
     column_to_rownames("t.genus")  -> traits 
 
@@ -77,11 +72,12 @@ traits %>%
 ## making sure the two are aligned
 traits <- traits[colnames(response_data),]
 
-all(rownames(traits)==colnames(response_data))
+## make every column a factor
+traits[] <- as.data.frame(lapply(traits[], factor))
 
 ## 3.  a data frame with the environmental covariates for sites: sites
 ## (foxes) in rows
-foxes <- phyloseq::sample_data(PSHelmG)
+foxes <- phyloseq::sample_data(PSGHelmR)
 class(foxes) <- "data.frame"
 
 ## some foxes are found at the same coordinates but for the
@@ -122,7 +118,9 @@ foxes %>%
 response_data <- response_data[rownames(envcov_data), ]
 
 
-studyDesign <- data.frame(site = envcov_data$IZW_ID)
+studyDesign <- data.frame(site = rownames(envcov_data))
+studyDesign[] <- as.data.frame(lapply(studyDesign[], factor))
+
 rL <- HmscRandomLevel(sData = xyData)
 
 ### Define MCMC parameters
@@ -133,12 +131,13 @@ nChains <- 3
 verbose <- 1000
 
 
-# Regression formula for environmental covariates
+## Regression formula for environmental covariates
 XFormula.Genera = ~ sex + weight_kg + human_fpi_1000m + tree_cover_1000m 
-#weight not included because NAs
+## (previously: weight not included because NAs), now: rather removed
+## the NAs as weight is so important for diversity (see
 
 # Regression formula for traits
-TrFormula.Genera = ~ zoonotic + pet.infecting + transmission.fox
+TrFormula.Genera = ~ zoonotic + transmission.fox + lifecycle + host.range
 
 ## *BINOMIAL DISTRIBUTION* ~> PROBIT MODEL
 ## Fit models for PRESENCE/ABSENCE  data 
@@ -155,7 +154,8 @@ PAModel <- sampleMcmc(PAModel, thin = thin, samples = samples, transient = trans
                       nChains = nChains, verbose = verbose, nParallel = nChains)
 
 ## save this as it takes very long to compute!
-saveRDS(PAModel, "intermediate_data/PAModel_jSDM.rds")
+## we can't put it in the repos as it's to big
+saveRDS(PAModel, "/SAN/Metabarcoding/AA_Fox/PAModel_jSDM.rds")
 
 ## *POISSON  (or negative binomial?) DISTRIBUTION* ~> POISSON MODEL
 
@@ -174,5 +174,5 @@ COModel <- sampleMcmc(COModel, thin = thin, samples = samples, transient = trans
 
 
 ## save this as it takes very long to compute!
-saveRDS(COModel, "intermediate_data/COModel_jSDM.rds")
+saveRDS(COModel, "/SAN/Metabarcoding/AA_Fox/COModel_jSDM.rds")
 
