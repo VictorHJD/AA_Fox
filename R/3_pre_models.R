@@ -4,37 +4,44 @@ library(MASS)
 
 recomputeBioinfo <- FALSE
 
-if(!exists("PS")){
+recomputeDiversity <- FALSE
+
+if(!exists("PSG")){
     if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
-        PS <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
+        PSG <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
     }
 }
 
-PSHelm <- phyloseq::subset_taxa(PS, phylum%in%c("Nematoda", "Platyhelminthes"))
-PSHelmG <- phyloseq::tax_glom(PSHelm, "genus")
-HelmCounts <- as.data.frame(otu_table(PSHelmG))
 
-colnames(HelmCounts) <- tax_table(PSHelmG)[, "genus"]
-rownames(HelmCounts) <- paste("Fox", rownames(HelmCounts))
+PSGHelm <- subset_taxa(PSG, category%in%"Helminth")
 
-Sdat <- as.data.frame(sample_data(PSHelmG))
+PSGHelm  %>% otu_table() %>%
+    as.data.frame -> HelmCounts
+
+colnames(HelmCounts) <- tax_table(PSGHelm)[, "genus"]
+
+Sdat <- as.data.frame(sample_data(PSGHelm))
 class(Sdat) <- "data.frame"
 
-Sdat$seq.depth <- rowSums(otu_table(PS)[rownames(Sdat), ])
+Sdat$seq.depth <- rowSums(otu_table(PSG)[rownames(Sdat), ])
 
 ## Helminth traits
-traits <- read.csv("input_data/helminth_traits.csv")
+traits <- as.data.frame(tax_table(PSGHelm))
+class(traits) <- "data.frame"
+rownames(traits) <- NULL
 
 traits %>%
-    column_to_rownames("t.genus")  -> traits 
+    column_to_rownames("genus")  -> traits 
 
 HelmCounts.t <- t(HelmCounts)[rownames(traits), ]
 
 by(HelmCounts.t, traits$pet.infecting, sum)
 
 by(HelmCounts.t, traits$fox.parasite, sum)
+
+by(HelmCounts.t, traits$zoonotic, sum)
 
 
 
@@ -44,6 +51,11 @@ Fishing <- apply(HelmCounts.t, 1, function (x) {fisher.test(x>0, Sdat$area)})
 Fishing.pval <- lapply(Fishing, "[[", "p.value")
 
 Fishing[p.adjust(Fishing.pval)<0.05]
+
+
+## Mesocesstoides more prevalent in Brandenburg
+table(HelmCounts.t["Mesocestoides", ] >0, Sdat$area)
+
 
 ## Angiostrongylus more prevalent in Berlin
 table(HelmCounts.t["Angiostrongylus", ] >0, Sdat$area)
@@ -63,6 +75,16 @@ FishingC.pval <- lapply(FishingC, "[[", "p.value")
 table(p.adjust(FishingC.pval)<0.05)
 
 FishingC[p.adjust(FishingC.pval)<0.05]
+
+## Eucolus more prevalent AND ABUNDANT in Brandenburg
+tapply(HelmCounts.t["Eucoleus", ], Sdat$area, median)
+tapply(HelmCounts.t["Eucoleus", ], Sdat$area, quantile, 0.75)
+tapply(HelmCounts.t["Eucoleus", ], Sdat$area, mean)
+
+## Clonorchis more prevalent AND ABUNDANT in Brandenburg
+tapply(HelmCounts.t["Clonorchis", ], Sdat$area, median)
+tapply(HelmCounts.t["Clonorchis", ], Sdat$area, quantile, 0.75)
+tapply(HelmCounts.t["Clonorchis", ], Sdat$area, mean)
 
 ## Angiostrongylus more prevalent AND ABUNDANT in Berlin
 tapply(HelmCounts.t["Angiostrongylus", ], Sdat$area, median)
@@ -111,7 +133,9 @@ AreaModells <- data.frame(cbind(effect.size=
 
 AreaModells <- merge(AreaModells, traits, by=0)
 
-AreaModells[order(AreaModells["effect.size"]), ]
+AreaModells[order(AreaModells["effect.size"]),
+            c("Row.names", "effect.size", "adj.p.value",
+              "exact.tax", "zoonotic", "transmission.fox", "lifecycle")]
 
 
 ## presence/absence models with all the fox-covariates
@@ -147,4 +171,6 @@ AreaModellsPA <- data.frame(cbind(effect.size=
 
 AreaModellsPA <- merge(AreaModellsPA, traits, by=0)
 
-AreaModellsPA[order(AreaModellsPA["effect.size"]), ]
+AreaModellsPA[order(AreaModellsPA["effect.size"]),
+              c("Row.names", "effect.size", "adj.p.value",
+                "exact.tax", "zoonotic", "transmission.fox", "lifecycle")]
