@@ -4,14 +4,13 @@ library(patchwork)
 recomputejSDMModels <- FALSE
 
 if(!exists("COModel") | !exists("PAModel")){
-    if(recomputejSDMModels){
+    if(recomputejSDMModels & recomputejSDMModels){
         source("R/3_JSDM_helminths.R")
     } else {
-        PAModel <- readRDS(file="intermediate_data/PAModel_jSDM.rds")
+        PAModel <- readRDS(file="/SAN/Metabarcoding/AA_Fox/PAModel_jSDM.rds")
 ##      COModel <- readRDS(file="intermediate_data/COModel_jSDM.rds")
     }
 }
-
 
 ## set theme for plots
 theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
@@ -28,8 +27,6 @@ theme_update(
 
 ## font for numeric label
 font_num <- "Roboto Condensed"
-
-
 
 
 

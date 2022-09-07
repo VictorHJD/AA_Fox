@@ -135,7 +135,7 @@ AreaModells <- merge(AreaModells, traits, by=0)
 
 AreaModells[order(AreaModells["effect.size"]),
             c("Row.names", "effect.size", "adj.p.value",
-              "exact.tax", "zoonotic", "transmission.fox", "lifecycle")]
+              "exact.tax", "zoonotic", "transmission.fox", "lifecycle", "host.range")]
 
 
 ## presence/absence models with all the fox-covariates
