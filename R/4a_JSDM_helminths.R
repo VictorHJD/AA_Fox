@@ -99,8 +99,13 @@ foxes %>%
 ### and then create a predictor dataset (without non-predictor
 ### variables) and we leave out imperv_1000m as it's highly correlated
 ### with human_fpi_1000m, which is more relevant (for diversity at least)
+
+### We should consider using also diet ("Diet_Species_richness") and
+### maybe bacterial ("BacM_Species_richness") and fungal
+### ("FunM_Species_richness") microbiome species richness as
+### predictors!
+
 foxes %>%
-    ## FOR NOW also removing the foxes from the same sites here
     dplyr::select(IZW_ID, sex, weight_kg, human_fpi_1000m, 
                   tree_cover_1000m)  %>%
     mutate_at(c("IZW_ID", "sex"), as.factor) %>%
@@ -113,6 +118,8 @@ foxes %>%
 foxes %>%
     transmute(x.coord = coords.x1, y.coord = coords.x2) ->
     xyData 
+
+## Maybe remove the spatial random effects for computational efficiency?!
 
 ## FOR NOW also removing the foxes from the same sites here
 response_data <- response_data[rownames(envcov_data), ]
@@ -159,7 +166,7 @@ saveRDS(PAModel, "/SAN/Metabarcoding/AA_Fox/PAModel_jSDM.rds")
 
 ## *POISSON  (or negative binomial?) DISTRIBUTION* ~> POISSON MODEL
 
-## Fit models for COUNT data
+## Fit models for COUNT data THIS IS THE PRIORITY
 COModel <- Hmsc(Y = response_data, XData = envcov_data, XFormula = XFormula.Genera,
                 studyDesign=studyDesign, ranLevels=list(site=rL),
                 TrFormula = TrFormula.Genera, TrData = traits,
