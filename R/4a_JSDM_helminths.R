@@ -33,7 +33,7 @@ if(!exists("PSG")){
     if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
-        PSG <- readRDS(file="intermediate_data/PhyloSeqCombi.Rds")
+        PSG <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
     }
 }
 
