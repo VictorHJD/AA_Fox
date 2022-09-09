@@ -1,6 +1,6 @@
 "Row.names","effect.size","adj.p.value","exact.tax","zoonotic","transmission.fox","lifecycle","host.range"
 "Toxocara",0.103851293772085,5.58141220869209e-13,"Species: T. canis","Yes","trophic","two.host","moderate"
-"Crenosoma",0.150605812277311,0,"Species: C. vulpis","No","trophic","two.host","narrow"
+"Crenosoma",0.150605812277311,0,"Species: C. vulpis","No","trophic","two.host","moderate"
 "Angiostrongylus",0.376473606799058,0,"Species: A. vasorum","No","trophic","two.host","moderate"
 "Mesocestoides",0.563257480108888,4.006278997882e-158,"Genus: two species","No","trophic","three.host","wide"
 "Strongyloides",1.54182090606673,3.79286128813143e-07,"Genus: multiple species","Yes","fecal-oral","one.host","wide"
