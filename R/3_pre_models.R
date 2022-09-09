@@ -132,11 +132,12 @@ AreaModells <- data.frame(cbind(effect.size=
 
 
 AreaModells <- merge(AreaModells, traits, by=0)
+  
+AMtab <- AreaModells[order(AreaModells["effect.size"]),
+                     c("Row.names", "effect.size", "adj.p.value",
+                       "exact.tax", "zoonotic", "transmission.fox", "lifecycle", "host.range")]
 
-AreaModells[order(AreaModells["effect.size"]),
-            c("Row.names", "effect.size", "adj.p.value",
-              "exact.tax", "zoonotic", "transmission.fox", "lifecycle", "host.range")]
-
+write.csv(AMtab, "tables/Pre_models.csv")
 
 ## presence/absence models with all the fox-covariates
 FishingPA <- apply(HelmCounts.t, 1, function (x) {
