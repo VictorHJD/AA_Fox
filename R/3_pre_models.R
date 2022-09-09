@@ -137,7 +137,7 @@ AMtab <- AreaModells[order(AreaModells["effect.size"]),
                      c("Row.names", "effect.size", "adj.p.value",
                        "exact.tax", "zoonotic", "transmission.fox", "lifecycle", "host.range")]
 
-write.csv(AMtab, "tables/Pre_models.csv")
+write.csv(AMtab, "tables/Pre_models.csv", row.names=FALSE)
 
 ## presence/absence models with all the fox-covariates
 FishingPA <- apply(HelmCounts.t, 1, function (x) {
