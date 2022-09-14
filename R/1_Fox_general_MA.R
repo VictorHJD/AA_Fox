@@ -18,6 +18,7 @@ library(taxonomizr)
 library(taxize)
 library(parallel)
 
+
 ## re-run or use pre-computed results for different parts of the pipeline:
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
 doFilter <- FALSE
@@ -214,6 +215,30 @@ PS <- toPhyloseq(MAFinal,
 ##Add real sample data
 sample.data <- readRDS("intermediate_data/Fox_data_envir.RDS")
 
+##Date for a season category
+sample.data$date <- as.Date(sample.data$date_found, "%d.%m.%Y")
+
+## this regular seasons would mean only 5 summer samples... 
+table(ifelse(month(sample.data$date)>11, "winter",
+      ifelse(month(sample.data$date)>8, "autumn",
+      ifelse(month(sample.data$date)>5, "summer",
+      ifelse(month(sample.data$date)>2, "spring", "winter")))))
+
+## autumn spring summer winter 
+##     69     41      5     99 
+
+## let's  spread them to spring and autumn
+table(ifelse(month(sample.data$date)>11, "winter",
+      ifelse(month(sample.data$date)>6, "S_autumn",
+      ifelse(month(sample.data$date)>2, "spring", "winter"))))
+
+
+sample.data$season <- ifelse(month(sample.data$date)>11, "winter",
+                      ifelse(month(sample.data$date)>6, "S_autumn",
+                      ifelse(month(sample.data$date)>2, "spring", "winter")))
+
+sample.data$year <- year(sample.data$date)
+
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
 
 ### We have to fix the IZW sample names!
@@ -303,7 +328,7 @@ foo$category <-
     ifelse((foo$phylum %in% c("Nematoda", "Platyhelminthes") &
             foo$fox.parasite %in%"No") |
            (foo$phylum %in% c("Annelida", "Arthropoda", "Chordata",
-                              "Mollusca")&
+                              "Mollusca", "Streptophyta")&
             !foo$genus%in%c("Vulpes", "Homo", "Globicephala",
                             "Hylobates", "Procyon", "Canis")), 
            "Diet", ## <- this is Diet
