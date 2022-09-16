@@ -103,7 +103,8 @@ tapply(HelmCounts.t["Strongyloides", ], Sdat$area, mean)
 ## COUNT models with all the fox-covariates
 FishingM <- apply(HelmCounts.t, 1, function (x) {
     d <- cbind(count=x, Sdat)
-    glm(count~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+    glm(count~ area + condition + I(as.numeric(weight_kg)) + sex + age
+         + season + year,
         offset = log(seq.depth),
         data=d, family="poisson")
 })
@@ -142,8 +143,9 @@ write.csv(AMtab, "tables/Pre_models.csv", row.names=FALSE)
 ## presence/absence models with all the fox-covariates
 FishingPA <- apply(HelmCounts.t, 1, function (x) {
     d <- cbind(PA=x>0, Sdat)
-    glm(PA~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-           data=d, family="binomial")
+    glm(PA~ area + condition + I(as.numeric(weight_kg)) + sex + age  +
+            season + year + area:season,
+        data=d, family="binomial")
 })
 
 

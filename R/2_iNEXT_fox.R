@@ -217,32 +217,37 @@ getAllDiversity <- function (ps, output_string) {
 gimmeModels <- function (EA){
     ## all models on the Asymptotic estimate tables from the function
     ## above (wrapping iNEXT)
+    EA %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
+                       "human_fpi_1000m"), as.numeric)%>%
+    mutate(REstimator = round(Estimator)) -> EA
+
     EA %>%
         filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-        do(modelArea = lm(Estimator~ area + condition + I(as.numeric(weight_kg)) + sex + age,
-                          data=.),
-           modelImperv = lm(Estimator~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                                sex + age,
+        do(modelArea = lm(Estimator~ area + condition + weight_kg + sex + age +
+                              season + year + area:season, data=.),
+           modelImperv = lm(Estimator~ imperv_1000m + condition + weight_kg +
+                                sex + age  + season + year + imperv_1000m:season,
                             data=.),
-           modelTree = lm(Estimator~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                              sex + age,
+           modelTree = lm(Estimator~ tree_cover_1000m + condition + weight_kg +
+                              sex + age + season + year + tree_cover_1000m:season,
                           data=.),
-           modelHFPI = lm(Estimator~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                              sex + age,
+           modelHFPI = lm(Estimator~ human_fpi_1000m + condition + weight_kg +
+                              sex + age + season + year + human_fpi_1000m:season,
                           data=.)
            ) -> lmEA
 
     EA %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
-        do(modelArea = glm(I(round(Estimator))~ area + condition + I(as.numeric(weight_kg)) + sex + age,
+        do(modelArea = glm(REstimator ~ area + condition + weight_kg +
+                               sex + age  + season + year + area:season,
                            data=., family="poisson"),
-           modelImperv = glm(I(round(Estimator))~ I(as.numeric(imperv_1000m)) + condition + I(as.numeric(weight_kg)) +
-                                 sex + age,
+           modelImperv = glm(REstimator ~ imperv_1000m + condition + weight_kg +
+                                 sex + age + season + year + imperv_1000m:season,
                              data=., family="poisson"),
-           modelTree = glm(I(round(Estimator))~ I(as.numeric(tree_cover_1000m)) + condition + I(as.numeric(weight_kg)) +
-                               sex + age,
+           modelTree = glm(REstimator ~ tree_cover_1000m + condition + weight_kg +
+                               sex + age + season + year + tree_cover_1000m:season,
                            data=., family="poisson"),
-           modelHFPI = glm(I(round(Estimator))~ I(as.numeric(human_fpi_1000m)) + condition + I(as.numeric(weight_kg)) +
-                               sex + age,
+           modelHFPI = glm(REstimator ~ human_fpi_1000m + condition + weight_kg +
+                               sex + age + season + year + human_fpi_1000m:season,
                            data=., family="poisson")
            ) -> glmEA
 
@@ -254,7 +259,6 @@ gimmeModels <- function (EA){
                glanced = map(model, glance)) %>%
         mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value))))
 }
-
 
 
 

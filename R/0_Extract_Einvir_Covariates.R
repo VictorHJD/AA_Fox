@@ -139,7 +139,7 @@ map_tc <- tm_shape(tree_cover_bb, bbox = ) +
 ## ## look at it
 ## map_tc
 
-tmap_save(map_tc, filename = "figures/suppl/Map_treecover.pdf")
+tmap_save(map_tc, filename = "figures/Figure2_Map_treecover.pdf")
 
 
 
