@@ -17,7 +17,8 @@ library(data.table)
 library(taxonomizr)
 library(taxize)
 library(parallel)
-
+library(tidyr)
+library(dplyr)
 
 ## re-run or use pre-computed results for different parts of the pipeline:
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
@@ -238,6 +239,51 @@ sample.data$season <- ifelse(month(sample.data$date)>11, "winter",
                       ifelse(month(sample.data$date)>2, "spring", "winter")))
 
 sample.data$year <- year(sample.data$date)
+
+
+##### IMPUTATION of NA missing values #################
+
+### iputing the season NAs by consecutive sampling reasoning, there
+### are some cases in which order put those in between seasons. We
+### simply ignor and use the season of the sample point later (as they
+### came sometimes in batches).
+sample.data <- sample.data[order(as.numeric(sample.data$IZW_ID)), ]
+
+table(is.na(sample.data$season))
+## 16 missing dates and hence missing seasons
+
+sample.data$SY_imputed <- ifelse(is.na(sample.data$season), TRUE, FALSE)
+
+sample.data %>% fill(season, year, .direction = "updown") ->
+    sample.data
+
+### imputing missing weight (after making it numeric
+sample.data$weight_kg <- as.numeric((gsub(" *", "", sample.data$weight_kg)))
+
+table(is.na(sample.data$weight_kg))
+## 8 missing values for weight
+
+## using the mean of the age, sex and condition
+sample.data %>%
+    group_by(age, condition, sex) %>%
+    mutate(weight_imputed = ifelse(is.na(weight_kg), TRUE, FALSE)) %>%
+    mutate(weight_kg = case_when(is.na(weight_kg) ~ mean(weight_kg, na.rm=TRUE),
+                                 TRUE ~ as.numeric(weight_kg))) ->
+    sample.data
+
+## imputing missing condition
+table(is.na(sample.data$condition))
+
+## we use "excellent" if above group mean, "autolytic" if below
+sample.data %>%
+    group_by(age, sex) %>%
+    mutate(condition_imputed = ifelse(is.na(condition), TRUE, FALSE)) %>%
+    mutate(condition = case_when(is.na(condition) ~
+                                     ifelse(weight_kg > mean(weight_kg, na.rm=TRUE),
+                                            "excellent", "autolytic"),
+                                 TRUE ~ condition)) ->
+    sample.data
+
 
 sample.data$IZW_ID <- as.vector(sample.data$IZW_ID)
 
