@@ -403,6 +403,22 @@ sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
 ### Exclude the bad taxa
 PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
 
+## the categories of gut content
 table(tax_table(PSG)[, "category"])
+
+### Short overview of what has been imputed in the final dataset
+## season/year
+table(sample_data(PSG)$SY_imputed)
+
+## weight
+table(sample_data(PSG)$weight_imputed)
+
+## condition
+table(sample_data(PSG)$condition_imputed)
+
+## and the areas by season for the methods part
+write.csv(table(season=sample_data(PSG)$season, area=sample_data(PSG)$area),
+          file="tables/seasonArea.csv")
+
 ## and save PSG for further use 
 saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
