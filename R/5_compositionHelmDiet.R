@@ -113,6 +113,7 @@ HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "age", "weight_kg",
 
 
 
+
 ### AMAZING! ThIs MAKeS SeNSe!!!!
 HelmEnvFit
 
@@ -195,3 +196,8 @@ dev.off()
 
 
 
+## now for the table
+rbind(
+    cbind(R2=HelmEnvFit$factors$r, Pval=HelmEnvFit$factors$pvals),
+    cbind(R2=HelmEnvFit$vectors$r, Pval=HelmEnvFit$vectors$pvals),
+    cbind(R2=HelmHelmFit$vectors$r, Pval=HelmHelmFit$vectors$pvals))
