@@ -2,3 +2,5 @@
 /Fox_phyloseq.R~
 .Rproj.user
 *~
+/JSDM_models/PAModel_area_jSDM.rds
+/JSDM_models/PAModel_grad_jSDM.rds
