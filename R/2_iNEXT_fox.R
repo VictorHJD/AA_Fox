@@ -7,6 +7,7 @@ library(patchwork)
 library(colorspace)
 library(MASS)
 library(broom)
+library(stargazer)
 library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
@@ -224,30 +225,30 @@ gimmeModels <- function (EA){
     EA %>%
         filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
         do(modelArea = lm(Estimator~ area + condition + weight_kg + sex + age +
-                              season + year + area:season, data=.),
+                              season + year, data=.),
            modelImperv = lm(Estimator~ imperv_1000m + condition + weight_kg +
-                                sex + age  + season + year + imperv_1000m:season,
+                                sex + age  + season + year, 
                             data=.),
            modelTree = lm(Estimator~ tree_cover_1000m + condition + weight_kg +
-                              sex + age + season + year + tree_cover_1000m:season,
+                              sex + age + season + year,
                           data=.),
            modelHFPI = lm(Estimator~ human_fpi_1000m + condition + weight_kg +
-                              sex + age + season + year + human_fpi_1000m:season,
+                              sex + age + season + year,
                           data=.)
            ) -> lmEA
 
     EA %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
         do(modelArea = glm(REstimator ~ area + condition + weight_kg +
-                               sex + age  + season + year + area:season,
+                               sex + age  + season + year,
                            data=., family="poisson"),
            modelImperv = glm(REstimator ~ imperv_1000m + condition + weight_kg +
-                                 sex + age + season + year + imperv_1000m:season,
+                                 sex + age + season + year,
                              data=., family="poisson"),
            modelTree = glm(REstimator ~ tree_cover_1000m + condition + weight_kg +
-                               sex + age + season + year + tree_cover_1000m:season,
+                               sex + age + season + year,
                            data=., family="poisson"),
            modelHFPI = glm(REstimator ~ human_fpi_1000m + condition + weight_kg +
-                               sex + age + season + year + human_fpi_1000m:season,
+                               sex + age + season + year,
                            data=., family="poisson")
            ) -> glmEA
 
@@ -378,23 +379,25 @@ FungalEstimateAsy %>%
     pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix="FunM ") ->
     FungalDiversity
 
-Reduce(merge, list(DietDiversity, HelminthDiversity,
-                   ApicoPDiversity, BacterialDiversity,
-                   FungalDiversity)) %>%
-    rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
-    AllDiv
-
-all(AllDiv$Site == rownames(sample_data(PSG)))
-
-rownames(AllDiv) <- AllDiv$Site
-
-sample_data(PSG) <- AllDiv
-
-saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
-
-## ## Will add this to sample data or just another intermediate
-## ## data-frame?
-
+## only append the diversity statustics to the sample data if it's not
+## alredy there
+if(!"Helm_Species_richness"%in%colnames(sample_data(PSG))){
+    Reduce(merge, list(DietDiversity, HelminthDiversity,
+                       ApicoPDiversity, BacterialDiversity,
+                       FungalDiversity)) %>%
+        rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
+        AllDiv
+    ## all(AllDiv$Site == rownames(sample_data(PSG)))
+    rownames(AllDiv) <- AllDiv$Site
+    sample_data(PSG) <- AllDiv
+    ### write new phylseq object only if it's now in sample data 
+    if("Helm_Species_richness"%in%colnames(sample_data(PSG))){
+        saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
+    }
+}
     
-
+gimmeModels(HelmEstimateAsy) %>%
+    ## filter(predictor%in%"modelArea")%>%
+    dplyr::select(model) %>% .[["model"]]%>%
+    stargazer(type="html", out="./tables/HelmDiversity.html")
 
