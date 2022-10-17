@@ -856,8 +856,6 @@ ggsave(plot = vp_plot_grad, "./JSDM_models/figures_PA/VarPart_PAModel_grad.png",
        dpi = 600, width = 6, height = 5)
 
 
-print("model checking done")
-
 ## OLD SCRIPT FROM HERE (theme still needed???)
 
 ## ## set theme for plots
