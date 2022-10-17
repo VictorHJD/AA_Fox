@@ -7,8 +7,8 @@ if(!exists("PAModel_area") | !exists("PAModel_grad")){
     if(recomputejSDMModels){
         source("R/4a_JSDM_helminths.R")
     } else {
-        PAModel <- readRDS(file="inter_jSDM.rds")
-      COModel <- readRDS(file="./")
+        PAModel_area <- readRDS(file="JSDM_models/PAModel_grad_jSDM.rds")
+        PAModel_grad <- readRDS(file="JSDM_models/PAModel_grad_jSDM.rds")
     }
 }
 
@@ -162,7 +162,6 @@ MCMCtrace(PAMpost_grad$Omega[[1]],
 ## area model
 
 PApreds_area <- computePredictedValues(PAModel_area, expected = TRUE)
-saveRDS(PApreds_area, "./JSDM_models/PAModel_jSDM_area_preds.rds")
 
 ## Median of the predictions
 # PApreds_area_values <- apply(abind(PApreds_area, along=3), c(1,2), median)
@@ -184,7 +183,6 @@ mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8701379
 
 ## gradient model
 PApreds_grad <- computePredictedValues(PAModel_grad, expected = TRUE)
-saveRDS(PApreds_grad, "./JSDM_models/PAModel_jSDM_grad_preds.rds")
 
 # R2 with the built in function
 modelr2.explanatory <- evaluateModelFit(hM = PAModel_grad, predY = PApreds_grad)
@@ -231,7 +229,7 @@ for (i in 1:nrow(predictors)){
   png(paste0("./JSDM_models/figures_PA/betas_area_covariates_coef_plot_", 
              var_name[i], ".png"), width = 5, 
       height = 8, units = "in", res = 300, pointsize = 16)
-  MCMCplot(PAMpost$Beta,
+  MCMCplot(PAMpost_area$Beta,
            params = predictors[i,1],
            ISB = FALSE,
            exact = FALSE,
@@ -275,7 +273,7 @@ for (i in 1:nrow(predictors)){
   png(paste0("./JSDM_models/figures_PA/betas_grad_covariates_coef_plot_", 
              var_name[i], ".png"), width = 5, 
       height = 8, units = "in", res = 300, pointsize = 16)
-  MCMCplot(PAMpost$Beta,
+  MCMCplot(PAMpost_grad$Beta,
            params = predictors[i,1],
            ISB = FALSE,
            exact = FALSE,
@@ -648,7 +646,6 @@ dev.off()
 
 ## area model
 OmegaCor_area <- computeAssociations(PAModel_area)
-saveRDS(OmegaCor_area, file = "./JSDM_models/PAModel_area_omegaCor.rds")
 
 OmegaCor_area[[1]]$mean
 OmegaCor_area[[1]]$support
@@ -681,7 +678,6 @@ write.csv(associations_area, "./JSDM_models/PAModel_area_table_sp_associations.c
 
 ## area model
 OmegaCor_grad <- computeAssociations(PAModel_grad)
-saveRDS(OmegaCor_grad, file = "./JSDM_models/PAModel_grad_omegaCor.rds")
 
 OmegaCor_grad[[1]]$mean
 OmegaCor_grad[[1]]$support
@@ -721,7 +717,6 @@ head(PAModel_area$X)
 VP_area <- computeVariancePartitioning(PAModel_area, group = c(1,1,1, 2,2, 3, 4,4,4), 
                                        groupnames = c("Individual", "Season", "Environment", "Diet_Microbiomes"))
 plotVariancePartitioning(PAModel_area, VP_area)
-saveRDS(VP_area, "./JSDM_models/PAModel_area_varpart.rds")
 
 # Extract the values for the manual plot
 VP_vals_area <- as.data.frame(VP_area$vals) 
@@ -794,7 +789,6 @@ head(PAModel_grad$X)
 VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3, 4,4,4), 
                                        groupnames = c("Individual", "Season", "Environment", "Diet_Microbiomes"))
 plotVariancePartitioning(PAModel_grad, VP_grad)
-saveRDS(VP_grad, "./JSDM_models/PAModel_grad_varpart.rds")
 
 # Extract the values for the manual plot
 VP_vals_grad <- as.data.frame(VP_grad$vals) 
@@ -861,6 +855,8 @@ vp_plot_grad
 ggsave(plot = vp_plot_grad, "./JSDM_models/figures_PA/VarPart_PAModel_grad.png",  
        dpi = 600, width = 6, height = 5)
 
+
+print("model checking done")
 
 ## OLD SCRIPT FROM HERE (theme still needed???)
 
