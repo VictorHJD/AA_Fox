@@ -93,10 +93,11 @@ PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
                       data=EnvDataNA, 
                       na.action = na.fail, by="margin")
 
-stargazer(list(PERMA, PERMAtree, PERMAimp, PERMAhuman), type="html",
-          out="tables/Permanova.html")
+## this does not work, let's stick with the csv
+## stargazer(list(PERMA, PERMAtree, PERMAimp, PERMAhuman), type="html",
+   ##       out="tables/Permanova.html")
 
-
+write.csv(round(model.frame(PERMA), 3), "tables/Permanova.csv")
 
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
                     try=1500, trymax=1500, k=3,
