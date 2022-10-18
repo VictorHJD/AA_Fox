@@ -258,7 +258,11 @@ gimmeModels <- function (EA){
         pivot_longer(!Diversity, names_to = "predictor", values_to="model") %>%
         mutate(tidied = map(model, tidy),
                glanced = map(model, glance)) %>%
-        mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value))))
+        mutate(envPvals = unlist(map(tidied, ~ dplyr::select(.x[2,], p.value)))) %>%
+        arrange(factor(Diversity,
+                       levels=c("Species richness",
+                                "Shannon diversity",
+                                "Simpson diversity")))
 }
 
 
@@ -268,6 +272,7 @@ HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category%in%"Helminth"),
                                    "Helminth")
 
 gimmeModels(HelmEstimateAsy)
+
 
 ## Parasitic Helminths not more diverse in brandenburg
 
