@@ -45,7 +45,8 @@ PSGHelm ## 102 foxes with all samples any taxa
 HelmData <- otu_table(PSGHelm)
 colnames(HelmData) <- tax_table(PSGHelm)[, "genus"]
 
-EnvData <- sample_data(PSGHelm)
+EnvData <- sample_data(PSGHelm)[, !colnames(sample_data(PSGHelm))%in%c("date",
+                                                                       "date_found")]
 class(EnvData) <- "data.frame"
 EnvData$weight_kg <- as.numeric(EnvData$weight_kg)
 EnvData$tree_cover_1000m <- as.numeric(EnvData$tree_cover_1000m)
@@ -71,47 +72,41 @@ PERMA
 ### still area is the best model, everything below (the other
 ### environmental predictors) is not as good!
 
-adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
-            sex  + season + year +
-            Diet_Species_richness + BacM_Species_richness + FunM_Species_richness,
-        data=EnvDataNA, 
-        na.action = na.fail, by="margin")
+PERMAimp <- adonis2(HelmDataNA ~  imperv_1000m + weight_kg + age +
+                        sex  + season + year +
+                        Diet_Species_richness + BacM_Species_richness +
+                        FunM_Species_richness,
+                    data=EnvDataNA, 
+                    na.action = na.fail, by="margin")
 
-adonis2(HelmDataNA ~ area + tree_cover_1000m + weight_kg + age +
-            sex  + season + year +
-            Diet_Species_richness + BacM_Species_richness + FunM_Species_richness,
-        data=EnvDataNA, 
-        na.action = na.fail, by="margin")
+PERMAtree <- adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
+                         sex  + season + year +
+                         Diet_Species_richness + BacM_Species_richness +
+                         FunM_Species_richness,
+                     data=EnvDataNA, 
+                     na.action = na.fail, by="margin")
 
-adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
-            sex  + season + year +
-            Diet_Species_richness + BacM_Species_richness + FunM_Species_richness,
-        data=EnvDataNA, 
-        na.action = na.fail, by="margin")
+PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
+                          sex  + season + year +
+                          Diet_Species_richness + BacM_Species_richness +
+                          FunM_Species_richness,
+                      data=EnvDataNA, 
+                      na.action = na.fail, by="margin")
+
+stargazer(list(PERMA, PERMAtree, PERMAimp, PERMAhuman), type="html",
+          out="tables/Permanova.html")
 
 
-## ## Phyloseq basic ordination
-## bray_dist <- phyloseq::distance(PSGHelm,
-##                                 method="bray", weighted=F)
-
-## ordination <- ordinate(microbiome::transform(PSGHelm, "log"),
-##                        method="PCoA", distance="bray")
-
-## HelmOrdination <- merge(ordination$vectors, sample_data(PSGHelm), by=0)
-
-## ggplot(HelmOrdination, aes(Axis.1, Axis.2, shape=area, color=season)) +
-##     geom_point(size=4)
-
-## ## now nMDS and envfit! For the real deal
 
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
                     try=1500, trymax=1500, k=3,
                     center = TRUE)
 
 HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "age", "weight_kg",
+                                            "Diet_Species_richness",
+                                            "BacM_Species_richness", 
+                                            "FunM_Species_richness",
                                             "sex", "condition", "season", "year")])
-
-
 
 
 ### AMAZING! ThIs MAKeS SeNSe!!!!
@@ -137,14 +132,14 @@ HelmEnvFitDf <-
               cbind(scores(HelmEnvFit, "factors") * ordiArrowMul(HelmEnvFit),
                     ## repeat times the numbers of factor levels
                     pvals=HelmEnvFit$factors$pvals[unlist(faclevels)])))
-def.off() ## this had somehow opened a graphics device?!
+dev.off() ## this had somehow opened a graphics device?!
 
 HelmHelmDf <-
     as.data.frame(
         cbind(scores(HelmHelmFit, "vectors") * ordiArrowMul(HelmHelmFit),
               pvals=HelmHelmFit$vectors$pvals)
     )
-def.off() ## this had somehow opened a graphics device?!
+dev.off() ## this had somehow opened a graphics device?!
 
 
 ScoresHelm <-  as.data.frame(scores(nMDSHelm)$sites)
