@@ -193,7 +193,18 @@ dev.off()
 
 
 ## now for the table
-rbind(
+
+HelmTabEF <- cbind(R2=HelmHelmFit$vectors$r, Pval=HelmHelmFit$vectors$pvals)
+
+EnvTabEF <- rbind(
     cbind(R2=HelmEnvFit$factors$r, Pval=HelmEnvFit$factors$pvals),
-    cbind(R2=HelmEnvFit$vectors$r, Pval=HelmEnvFit$vectors$pvals),
-    cbind(R2=HelmHelmFit$vectors$r, Pval=HelmHelmFit$vectors$pvals))
+    cbind(R2=HelmEnvFit$vectors$r, Pval=HelmEnvFit$vectors$pvals)
+    )
+
+write.csv(round(
+    rbind(EnvTabEF[order(EnvTabEF[, "Pval"]), ], 
+          cbind(R2=0, Pval=0),
+          HelmTabEF[order(HelmTabEF[, "Pval"]), ]),
+    3), "tables/EnvFitnMDS.csv", 
+    )
+      
