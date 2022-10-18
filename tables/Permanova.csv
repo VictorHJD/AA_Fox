@@ -8,3 +8,5 @@
 "Diet_Species_richness",1,0.649,0.013,1.908,0.042
 "BacM_Species_richness",1,0.48,0.01,1.412,0.17
 "FunM_Species_richness",1,0.518,0.01,1.522,0.127
+"Residual",128,43.525,0.868,NA,NA
+"Total",139,50.127,1,NA,NA
