@@ -144,7 +144,7 @@ write.csv(AMtab, "tables/Pre_models.csv", row.names=FALSE)
 FishingPA <- apply(HelmCounts.t, 1, function (x) {
     d <- cbind(PA=x>0, Sdat)
     glm(PA~ area + condition + I(as.numeric(weight_kg)) + sex + age  +
-            season + year + area:season,
+            season + year,
         data=d, family="binomial")
 })
 
@@ -177,3 +177,9 @@ AreaModellsPA <- merge(AreaModellsPA, traits, by=0)
 AreaModellsPA[order(AreaModellsPA["effect.size"]),
               c("Row.names", "effect.size", "adj.p.value",
                 "exact.tax", "zoonotic", "transmission.fox", "lifecycle")]
+
+## Prevalences:
+apply(HelmCounts.t, 1, function (x){
+    cbind(length(x[x>0]),
+    (length(x[x>0])/length(x))*100)
+})
