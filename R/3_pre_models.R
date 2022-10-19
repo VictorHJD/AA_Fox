@@ -82,7 +82,7 @@ tapply(HelmCounts.t["Eucoleus", ], Sdat$area, quantile, 0.75)
 tapply(HelmCounts.t["Eucoleus", ], Sdat$area, mean)
 
 ## Clonorchis more prevalent AND ABUNDANT in Brandenburg
-tapply(HelmCounts.t["Clonorchis", ], Sdat$area, median)
+ctapply(HelmCounts.t["Clonorchis", ], Sdat$area, median)
 tapply(HelmCounts.t["Clonorchis", ], Sdat$area, quantile, 0.75)
 tapply(HelmCounts.t["Clonorchis", ], Sdat$area, mean)
 
@@ -100,45 +100,40 @@ tapply(HelmCounts.t["Strongyloides", ], Sdat$area, median)
 tapply(HelmCounts.t["Strongyloides", ], Sdat$area, quantile, 0.75)
 tapply(HelmCounts.t["Strongyloides", ], Sdat$area, mean)
 
-## COUNT models with all the fox-covariates
-FishingM <- apply(HelmCounts.t, 1, function (x) {
-    d <- cbind(count=x, Sdat)
-    glm(count~ area + condition + I(as.numeric(weight_kg)) + sex + age
-         + season + year,
-        offset = log(seq.depth),
-        data=d, family="poisson")
+foo <- cbind(HelmCounts, Sdat)
+
+helminths <- c("Ancylostoma", "Aelurostrongylus", "Opisthorchis", "Taenia", 
+               "Eucoleus", "Clonorchis", "Mesocestoides", "Angiostrongylus", 
+               "Uncinaria", "Crenosoma", "Capillaria", "Alaria", "Strongyloides", 
+               "Toxocara", "Toxascaris", "Brachylaima", "Pearsonema")
+
+
+FishingM <- lapply(helminths, function (x) {    
+    fo <- formula(paste0(x, "/seq.depth ~ area + condition + weight_kg +
+                       sex + age +  season + year"))
+    print(fo)
+    tryCatch({
+        glm(fo, data=foo, family="quasipoisson", weights=seq.depth)
+    }, error = function(e){cat("ERROR :",conditionMessage(e), "\n")})
 })
+
+names(FishingM) <- helminths
+
+helminths.converged <- unlist(lapply(FishingM, "[[", "converged"))
+
+FishingM <- FishingM[names(helminths.converged)[helminths.converged]]
+
+lapply(FishingM, summary)
+
 
 ## only the converged models
 FishingM <- FishingM[unlist(lapply(FishingM, "[[", "converged"))]
 
-MBrand.pvals <- lapply(FishingM, function(x) {
-    c <- coefficients(summary(x))
-    c["areaBrandenburg","Pr(>|z|)"]
-})
+stargazer(FishingM, out="tables/IndHelmAbu.html", type="html",
+          column.labels=names(FishingM), dep.var.caption="",
+          dep.var.labels="", dep.var.labels.include=FALSE
+          )
 
-MBrand.effects <- lapply(FishingM, function(x) {
-    c <- coefficients(summary(x))
-    c["areaBrandenburg","Estimate"]
-})
-
-
-MBrand.pvals.adj <- p.adjust(unlist(MBrand.pvals))
-
-
-AreaModells <- data.frame(cbind(effect.size=
-                                    exp(unlist(MBrand.effects[MBrand.pvals.adj<0.1])),
-                                adj.p.value=
-                                    unlist(MBrand.pvals.adj[MBrand.pvals.adj<0.1])))
-
-
-AreaModells <- merge(AreaModells, traits, by=0)
-  
-AMtab <- AreaModells[order(AreaModells["effect.size"]),
-                     c("Row.names", "effect.size", ## "adj.p.value", is < 0.001 in all cases
-                       "exact.tax", "zoonotic", "transmission.fox", "lifecycle", "host.range")]
-
-write.csv(AMtab, "tables/Pre_models.csv", row.names=FALSE)
 
 ## presence/absence models with all the fox-covariates
 FishingPA <- apply(HelmCounts.t, 1, function (x) {
