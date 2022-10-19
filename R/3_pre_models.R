@@ -135,7 +135,7 @@ AreaModells <- data.frame(cbind(effect.size=
 AreaModells <- merge(AreaModells, traits, by=0)
   
 AMtab <- AreaModells[order(AreaModells["effect.size"]),
-                     c("Row.names", "effect.size", "adj.p.value",
+                     c("Row.names", "effect.size", ## "adj.p.value", is < 0.001 in all cases
                        "exact.tax", "zoonotic", "transmission.fox", "lifecycle", "host.range")]
 
 write.csv(AMtab, "tables/Pre_models.csv", row.names=FALSE)
