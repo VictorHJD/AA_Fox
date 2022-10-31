@@ -1,5 +1,11 @@
 library(ggplot2)
 library(patchwork)
+library(Hmsc)
+library(dplyr)
+library(forcats)
+library(MCMCvis)
+library(ggpubr)
+library(tidyr)
 
 recomputejSDMModels <- FALSE
 
@@ -7,16 +13,30 @@ if(!exists("PAModel_area") | !exists("PAModel_grad")){
     if(recomputejSDMModels){
         source("R/4a_JSDM_helminths.R")
     } else {
-        PAModel_area <- readRDS(file="JSDM_models/PAModel_grad_jSDM.rds")
+        PAModel_area <- readRDS(file="JSDM_models/PAModel_area_jSDM.rds")
         PAModel_grad <- readRDS(file="JSDM_models/PAModel_grad_jSDM.rds")
     }
 }
 
-#####################################
-############ check model ############
-#####################################
+########### First look at the models
 
+## summary of models
+PAModel_area
+PAModel_grad
+
+## check formula
+PAModel_area$XFormula
+PAModel_grad$XFormula
+
+
+######################################
+############ check models ############
+######################################
+
+
+#######################
 ## Model convergence 
+
 
 ## We evaluate MCMC convergence in terms of two kinds of parameters that
 ## we are especially interested in: the species niches Beta, influence of
@@ -52,9 +72,6 @@ getConvergenceStats <- function (Mpost) {
   Reduce(rbind, ncl)
 }
 
-###########################
-## Model convergence
-
 ## area model
 PAMpost_area <- convertToCodaObject(PAModel_area)
 PAConv_area <- getConvergenceStats(PAMpost_area)
@@ -62,30 +79,33 @@ PAConv_area <- getConvergenceStats(PAMpost_area)
 PAConv_area[, c("ESS", "GELMAN.est", "GELMAN.CI")] <-
   apply(PAConv_area[, c("ESS", "GELMAN.est", "GELMAN.CI")], 2, as.numeric)
 
+## numerical output
 PAConv_area %>% 
   group_by(variable) %>% 
-  summarise(mean.gd = mean(GELMAN.est))
-# variable mean.gd
-# <chr>      <dbl>
-#   1 beta        1.01
-# 2 gamma       1.00
-# 3 omega       1.03
+  summarise(mean.ess = mean(ESS, na.rm = TRUE),
+            mean.gd = mean(GELMAN.est, na.rm = TRUE))
+# A tibble: 3 x 3
+# variable mean.ess mean.gd
+# <chr>       <dbl>   <dbl>
+# 1 beta       49073.    1.00
+# 2 gamma      57321.    1.00
+# 3 omega      32808.    1.00
 
+## visually inspecting convergence statistics
+
+## effective sample size
 ESSPAhist <- ggplot(PAConv_area, aes(ESS)) +
   geom_histogram() +
   facet_wrap(~variable, scales = "free_y")
 
-
+## gelman diagnostic
 GELMPAhist <- ggplot(PAConv_area, aes(GELMAN.est)) +
   geom_histogram() +
   facet_wrap(~variable, scales = "free_y")
 
-## Graphical output (which I assume is a supplementary file)
-png("JSDM_models/figures_PA/jSDM_PA_area_convergence.png", width = 800, height = 1000,
-    pointsize = 20)
 ESSPAhist / GELMPAhist
-dev.off()
 
+## chain convergence
 MCMCtrace(PAMpost_area$Beta, 
           pdf = TRUE, 
           open_pdf = FALSE,
@@ -112,30 +132,33 @@ PAConv_grad <- getConvergenceStats(PAMpost_grad)
 PAConv_grad[, c("ESS", "GELMAN.est", "GELMAN.CI")] <-
   apply(PAConv_grad[, c("ESS", "GELMAN.est", "GELMAN.CI")], 2, as.numeric)
 
+## numerical output
 PAConv_grad %>% 
   group_by(variable) %>% 
-  summarise(mean.gd = mean(GELMAN.est))
-# variable mean.gd
-# <chr>      <dbl>
-#   1 beta        1.00
-# 2 gamma       1.00
-# 3 omega       1.01
+  summarise(mean.ess = mean(ESS, na.rm = TRUE),
+            mean.gd = mean(GELMAN.est, na.rm = TRUE))
+# A tibble: 3 x 3
+# variable mean.ess mean.gd
+# <chr>       <dbl>   <dbl>
+# 1 beta       47245.    1.00
+# 2 gamma      56997.    1.00
+# 3 omega      27881.    1.01
 
+## visually inspecting convergence statistics
+
+## effective sample size
 ESSPAhist <- ggplot(PAConv_grad, aes(ESS)) +
   geom_histogram() +
   facet_wrap(~variable, scales = "free_y")
 
-
+## gelman diagnostic
 GELMPAhist <- ggplot(PAConv_grad, aes(GELMAN.est)) +
   geom_histogram() +
   facet_wrap(~variable, scales = "free_y")
 
-## Graphical output (which I assume is a supplementary file)
-png("JSDM_models/figures_PA/jSDM_PA_grad_convergence.png", width = 800, height = 1000,
-    pointsize = 20)
 ESSPAhist / GELMPAhist
-dev.off()
 
+## chain convergence
 MCMCtrace(PAMpost_grad$Beta, 
           pdf = TRUE, 
           open_pdf = FALSE,
@@ -157,65 +180,216 @@ MCMCtrace(PAMpost_grad$Omega[[1]],
 
 
 ###########################
-### Model predictions
+### Evaluate model predictive power
 
 ## area model
 
 PApreds_area <- computePredictedValues(PAModel_area, expected = TRUE)
 
-## Median of the predictions
-# PApreds_area_values <- apply(abind(PApreds_area, along=3), c(1,2), median)
-# Mean of the predictions
-# PApreds_areavalues_mean <- apply(abind(PApreds_area, along = 3), c (1,2), mean)
-
-
-# R2 with the built in function
+# Obtain R2 of area model 
 modelr2.explanatory <- evaluateModelFit(hM = PAModel_area, predY = PApreds_area)
-# explanatory power of the model
-mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.2673145
-png("./JSDM_models/figures_PA/PAmodel_area_hist_r2.png")
-hist(modelr2.explanatory$TjurR2, xlim = c(0,1), main=paste0("Mean = ", round(mean(modelr2.explanatory$TjurR2, na.rm = TRUE),2)))
-dev.off()
-
-# AUC of the model
-mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8701379
+# OBtain explanatory power of the model based on R2
+mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.2615152
+# Obtain AUC of the model
+mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8687716
 
 
 ## gradient model
 PApreds_grad <- computePredictedValues(PAModel_grad, expected = TRUE)
 
-# R2 with the built in function
+# Obtain R2 of gradient model 
 modelr2.explanatory <- evaluateModelFit(hM = PAModel_grad, predY = PApreds_grad)
-mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.2801554
-png("./JSDM_models/figures_PA/PAmodel_grad_hist_r2.png")
-hist(modelr2.explanatory$TjurR2, xlim = c(0,1), main=paste0("Mean = ", round(mean(modelr2.explanatory$TjurR2, na.rm = TRUE),2)))
-dev.off()
-
-# AUC of the model
-mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8732902
+# OBtain explanatory power of the model based on R2
+mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.2723732
+# Obtain AUC of the model
+mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8745384
 
 
-######################
-#### PLOT RESULTS ####
-######################
+
+
+############################
+#### PLOT MODEL RESULTS ####
+############################
 
 
 ###################
-## beta values
+## beta values 
 
 ## Area model
 Beta_area <- as.data.frame(MCMCsummary(PAMpost_area$Beta))
 postBeta_area <- getPostEstimate(PAModel_area, parName = "Beta")
 
-png("./JSDM_models/figures_PA/Betaplot_area_default_support95.png")
+## quick exploration of variables that are significant 
 plotBeta(PAModel_area, post = postBeta_area, param = "Support", supportLevel = 0.95)
-dev.off()
 
-png("./JSDM_models/figures_PA/Betaplot_area_default_mean95.png")
-plotBeta(PAModel_area, post = postBeta_area, param = "Mean", supportLevel = 0.95)
-dev.off()
+## Forest plot of beta effects 
+# get species in model
+m1_species <- colnames(PAModel_area$Y)
 
-# Print a plot for each predictor
+# get names for explanatory variables
+exp_variables <- colnames(PAModel_area$X)
+exp_variables
+# rename exp variables for nicer plots
+my_variables <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
+                  "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
+                  "FunM_Species_richness")
+
+ModelFrame_area <- data.frame()
+# betas (coefficients) for each species
+for (i in 1:length(m1_species)){
+  # get the variables for each species
+  mpost_beta_tmp <- PAMpost_area$Beta[,grep(m1_species[i], colnames(PAMpost_area$Beta[[1]]))]
+  # rename variables
+  for (j in 1:length(mpost_beta_tmp)){
+    colnames(mpost_beta_tmp[[j]]) <- my_variables
+  }
+  # Put model estimates into temporary data.frames. Add variable "Species" for plotting
+  modelFrame_tmp <- data.frame(Variable = my_variables,
+                               Coefficient = summary(mpost_beta_tmp)$statistics[,1],
+                               CI_low = summary(mpost_beta_tmp)$quantiles[,1],
+                               Q_25 = summary(mpost_beta_tmp)$quantiles[, 2],
+                               Q_50 = summary(mpost_beta_tmp)$quantiles[,3],
+                               Q_75 = summary(mpost_beta_tmp)$quantiles[, 4],
+                               CI_high = summary(mpost_beta_tmp)$quantiles[,5],
+                               Species = m1_species[i]) 
+  
+  # Combine these data.frames
+  ModelFrame_area <- data.frame(rbind(ModelFrame_area, modelFrame_tmp))
+}
+
+ModelFrame_area
+
+levels(as.factor(ModelFrame_area$Variable))
+# Relevel factors so they are plotted in the desired order
+ModelFrame_area <- ModelFrame_area %>% 
+  mutate(Variable = as.factor(Variable)) %>% 
+  mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
+                                            "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
+                                            "FunM_Species_richness"))) %>% 
+  mutate(Variable = fct_rev(Variable))
+summary(ModelFrame_area)
+
+## Save for maybe later use
+# write.csv(ModelFrame_area, "./JSDM_models/ModelFrame_PAModel_area.csv", row.names = FALSE)
+
+# variables with CRI not overlapping 0
+toplot_ModelFrame_area <- ModelFrame_area %>%
+  mutate(significant = case_when( 
+    CI_low < 0 & CI_high < 0 ~ "Yes", #both extremes of CI are negative
+    CI_low > 0 & CI_high > 0 ~ "Yes", #both extremes of CI are positive
+    TRUE ~ "No")) 
+
+toplot_ModelFrame_area[toplot_ModelFrame_area$significant == "Yes",]
+
+# Plot Effects
+plot_1 <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("sex[male]","weight_kg")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  ylab("\n") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+# ggsave(plot = plot_1, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot1.png", 
+       # width = 9, height = 8, dpi = 600)
+
+plot_2 <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("area[Brandenburg]", "season[spring]", "season[winter]")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+ 
+
+# ggsave(plot = plot_2, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot2.png", 
+#        width = 9, height = 8, dpi = 600)
+
+
+plot_3 <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
+                         "FunM_Species_richness")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\n") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12)) #+
+# ggtitle("Helminth presence - Area model")
+
+# ggsave(plot = plot_3, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot3.png", 
+#        width = 9, height = 8, dpi = 600)
+
+(plot_betas <- ggarrange(plot_1, plot_2, plot_3, 
+          ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
+          labels = c("A", "B", "C"), 
+          widths = c(1,1.2,1.4)))
+
+ggsave(plot = plot_betas, "./figures/PAModel_area_BetaCoefs.png", 
+       width = 12, height = 6, dpi = 600)
+
+# Detail plots for each prediction 
 n_cov <- length(PAModel_area$covNames) # Number of covariates without the intercept
 var_code <- vector()
 for (i in 1:n_cov){
@@ -291,166 +465,6 @@ for (i in 1:nrow(predictors)){
 }
 
 
-##################
-## manual plotting of beta values
-
-
-## area model
-
-# get species in model
-m1_species <- colnames(PAModel_area$Y)
-
-# get names for explanatory variables
-exp_variables <- colnames(PAModel_area$X)
-exp_variables
-# rename exp variables
-my_variables <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                  "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
-                  "FunM_Species_richness")
-
-ModelFrame_area <- data.frame()
-# betas (coefficients) for each species
-for (i in 1:length(m1_species)){
-  # get the variables for each species
-  mpost_beta_tmp <- PAMpost_area$Beta[,grep(m1_species[i], colnames(PAMpost_area$Beta[[1]]))]
-  # rename variables
-  for (j in 1:length(mpost_beta_tmp)){
-    colnames(mpost_beta_tmp[[j]]) <- my_variables
-  }
-  # Put model estimates into temporary data.frames. Add variable "Species" for plotting
-  modelFrame_tmp <- data.frame(Variable = my_variables,
-                               Coefficient = summary(mpost_beta_tmp)$statistics[,1],
-                               CI_low = summary(mpost_beta_tmp)$quantiles[,1],
-                               Q_25 = summary(mpost_beta_tmp)$quantiles[, 2],
-                               Q_50 = summary(mpost_beta_tmp)$quantiles[,3],
-                               Q_75 = summary(mpost_beta_tmp)$quantiles[, 4],
-                               CI_high = summary(mpost_beta_tmp)$quantiles[,5],
-                               Species = m1_species[i]) 
-  
-  # Combine these data.frames
-  ModelFrame_area <- data.frame(rbind(ModelFrame_area, modelFrame_tmp))
-}
-
-ModelFrame_area
-
-levels(as.factor(ModelFrame_area$Variable))
-# Relevel factors so they are plotted in the desired order
-ModelFrame_area <- ModelFrame_area %>% 
-  mutate(Variable = as.factor(Variable)) %>% 
-  mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                                            "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
-                                            "FunM_Species_richness"))) %>% 
-  mutate(Variable = fct_rev(Variable))
-summary(ModelFrame_area)
-
-write.csv(ModelFrame_area, "./JSDM_models/ModelFrame_PAModel_area.csv", row.names = FALSE)
-
-# variables with CRI not overlapping 0
-toplot_ModelFrame_area <- ModelFrame_area %>%
-  mutate(significant = case_when( 
-    CI_low < 0 & CI_high < 0 ~ "Yes", #both extremes of CI are negative
-    CI_low > 0 & CI_high > 0 ~ "Yes", #both extremes of CI are positive
-    TRUE ~ "No")) 
-
-toplot_ModelFrame_area[toplot_ModelFrame_area$significant == "Yes",]
-
-# Plot Effects
-plot_1 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("sex[male]","weight_kg")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  # scale_y_continuous(limits = c(-5, 3)) +
-  # coord_flip(ylim=c(-2, 1)) + 
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Helminth presence - Area model")
-plot_1
-
-ggsave(plot = plot_1, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot1.png", 
-      width = 9, height = 8, dpi = 600)
-
-plot_2 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
-                         "FunM_Species_richness")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  # scale_y_continuous(limits = c(-5, 3)) +
-  # coord_flip(ylim=c(-2, 1)) + 
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Helminth presence - Area model")
-plot_2
-
-ggsave(plot = plot_2, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot2.png", 
-       width = 9, height = 8, dpi = 600)
-
-plot_3 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("area[Brandenburg]", "season[spring]", "season[winter]")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Helminth presence - Area model")
-plot_3
-
-ggsave(plot = plot_3, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot3.png", 
-      width = 9, height = 8, dpi = 600)
-
-
 ## gradient model
 
 # get species in model
@@ -499,7 +513,8 @@ ModelFrame_grad <- ModelFrame_grad %>%
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_grad)
 
-write.csv(ModelFrame_grad, "./JSDM_models/ModelFrame_PAModel_grad.csv", row.names = FALSE)
+## Save for maybe later use
+# write.csv(ModelFrame_grad, "./JSDM_models/ModelFrame_PAModel_grad.csv", row.names = FALSE)
 
 # variables with CRI not overlapping 0
 toplot_ModelFrame_grad <- ModelFrame_grad %>%
@@ -526,58 +541,20 @@ plot_1 <- toplot_ModelFrame_grad %>%
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
-  # scale_y_continuous(limits = c(-5, 3)) +
-  # coord_flip(ylim=c(-2, 1)) + 
   coord_flip() +
   scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
                          guide = guide_legend(reverse = TRUE)) +
+  ylab("\n") +
   theme(
     panel.background = element_rect(fill = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Helminth presence - Gradient model")
-plot_1
-
-ggsave(plot = plot_1, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs_plot1.png", 
-      width = 9, height = 8, dpi = 600)
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
 
 plot_2 <- toplot_ModelFrame_grad %>% 
-  filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
-                         "FunM_Species_richness")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  # scale_y_continuous(limits = c(-5, 3)) +
-  # coord_flip(ylim=c(-2, 1)) + 
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Helminth presence - Gradient model")
-plot_2
-
-ggsave(plot = plot_2, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs_plot2.png", 
-       width = 9, height = 8, dpi = 600)
-
-# Plot Effects
-plot_3 <- toplot_ModelFrame_grad %>% 
   filter(Variable %in% c("human_fpi_1000m",  "tree_cover_1000m", "season[spring]", "season[winter]")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
@@ -595,17 +572,55 @@ plot_3 <- toplot_ModelFrame_grad %>%
   coord_flip() +
   scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
                          guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
   theme(
     panel.background = element_rect(fill = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold")) +
-  ggtitle("Helminth presence - Gradient model")
-plot_3
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12)) 
 
-ggsave(plot = plot_3, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs_plot3.png", 
-      width = 9, height = 8, dpi = 600)
+plot_3 <- toplot_ModelFrame_grad %>% 
+  filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
+                         "FunM_Species_richness")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\n") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12)) 
+
+
+(plot_betas <- ggarrange(plot_1, plot_2, plot_3, 
+                         ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
+                         labels = c("A", "B", "C"), 
+                         widths = c(1,1.2,1.4)))
+
+ggsave(plot = plot_betas, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png", 
+       width = 12, height = 6, dpi = 600)
 
 
 ##################
@@ -636,8 +651,6 @@ pdf("JSDM_models/figures_PA/jSDM_PAModel_grad_GammaEffects_mean.pdf", width=7, h
 plotGamma(hM = PAModel_grad, post = postGamma_grad, param = "Mean", supportLevel = 0.95,
           newplot = TRUE, covNamesNumbers = c(TRUE, TRUE), mar =c (10,10,1,1))
 dev.off()
-
-#PAMpost$Gamma
 
 
 
@@ -672,8 +685,8 @@ associations_area <- cbind.data.frame(assoc_mean, support = assoc_support$value)
 colnames(associations_area) <- c("species1", "species2", "mean", "support")
 associations_area
 
-write.csv(associations_area, "./JSDM_models/PAModel_area_table_sp_associations.csv",
-          row.names = FALSE)
+# write.csv(associations_area, "./JSDM_models/PAModel_area_table_sp_associations.csv",
+#           row.names = FALSE)
 
 
 ## area model
@@ -715,7 +728,7 @@ write.csv(associations_grad, "./JSDM_models/PAModel_grad_table_sp_associations.c
 head(PAModel_area$X)
 
 VP_area <- computeVariancePartitioning(PAModel_area, group = c(1,1,1, 2,2, 3, 4,4,4), 
-                                       groupnames = c("Individual", "Season", "Environment", "Diet_Microbiomes"))
+                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Other Microbiomes"))
 plotVariancePartitioning(PAModel_area, VP_area)
 
 # Extract the values for the manual plot
@@ -728,7 +741,7 @@ colnames(mean_vp_area) <- "mean"
 mean_vp_area <- mean_vp_area %>% 
   mutate(percent = round(mean * 100, 2), 
          Variable = factor(rownames(mean_vp_area), 
-                           levels = c("Random: site", "Diet_Microbiomes", "Environment", "Season", "Individual"))
+                           levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic"))
   )  
 mean_vp_area
 
@@ -741,7 +754,7 @@ colnames(VP_vals_area) <- my_species
 VP_toplot_area <- VP_vals_area %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_area), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site", "Diet_Microbiomes", "Environment", "Season", "Individual")))
+  mutate(Variable = factor(Variable, levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic")))
 
 head(VP_toplot_area)
 tail(VP_toplot_area)
@@ -780,8 +793,9 @@ vp_plot_area <- ggplot(VP_toplot_area, aes(x = Species, y = value, fill = Variab
 
 vp_plot_area 
 
-ggsave(plot = vp_plot_area, "./JSDM_models/figures_PA/VarPart_PAModel_area.png",  
+ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",  
        dpi = 600, width = 6, height = 5)
+
 
 ## gradient model
 head(PAModel_grad$X)
