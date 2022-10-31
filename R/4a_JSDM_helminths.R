@@ -73,6 +73,7 @@ colnames(HelmCounts) <- phyloseq::tax_table(PSGHelmR)[, "genus"]
 ntokeep <- nrow(HelmCounts)*0.05
 response_data <- HelmCounts[, colSums(HelmCounts>0)>ntokeep] %>%
     as.matrix() 
+nrow(response_data) # [1] 140
 
 ## 2. a trait data frame with the genus in rows, same name and order
 ## as in species matrix (columns)
@@ -101,6 +102,7 @@ foxes <- foxes %>%
   mutate(coords.x1 = as.numeric(coords.x1)) %>% 
     mutate(coords.x1 = ifelse(duplicated(coords.x1, coords.x2),
                              coords.x1+1, coords.x1)) 
+nrow(foxes) # [1] 140
 
 ### now we need to know how the environmental data for the foxes is
 ### correlated
@@ -130,6 +132,7 @@ envcov_data <- foxes %>%
     mutate_at(c("weight_kg", "human_fpi_1000m", "tree_cover_1000m",
                 "Diet_Species_richness", "BacM_Species_richness", "FunM_Species_richness"), as.numeric) %>% 
   filter(!is.na(season))
+nrow(envcov_data) # [1] 140
 
 #### now the coordinates (in the coordinate system Cedric used) for
 #### the random structure
@@ -137,13 +140,13 @@ xyData <- foxes %>%
   transmute(x.coord = coords.x1, y.coord = coords.x2) %>% 
   mutate(x.coord = as.numeric(x.coord), 
          y.coord = as.numeric(y.coord))
-     
+nrow(xyData)  # [1] 140
 
 ## Maybe remove the spatial random effects for computational efficiency?!
 
 ## FOR NOW also removing the foxes from the same sites here
 response_data <- response_data[rownames(envcov_data), ]
-
+nrow(response_data)
 
 studyDesign <- data.frame(site = rownames(envcov_data))
 studyDesign[] <- as.data.frame(lapply(studyDesign[], factor))
@@ -178,6 +181,7 @@ PAModel_fitarea <- Hmsc(Y = response_data>0, XData = envcov_data, XFormula = XFo
                 TrFormula = TrFormula.Genera, TrData = traits,
                 distr = "probit")
 
+## trial to see if model runs
 PAModel_area <- sampleMcmc(PAModel_fitarea, thin = 5, samples = 20, verbose=TRUE)
 
 # the real model
@@ -205,5 +209,12 @@ PAModel_grad <- sampleMcmc(PAModel_fitgrad, thin = thin, samples = samples, tran
 ## we can't put it in the repos as it's to big
 saveRDS(PAModel_grad, "./JSDM_models/PAModel_grad_jSDM.rds")
 
+## quick look at the models
+PAModel_area
+# Hmsc object with 140 sampling units, 11 species, 9 covariates, 5 traits and 1 random levels
+PAModel_area$XFormula
 
+PAModel_grad
+# Hmsc object with 140 sampling units, 11 species, 10 covariates, 5 traits and 1 random levels
+PAModel_grad$XFormula
 
