@@ -6,6 +6,8 @@ library(forcats)
 library(MCMCvis)
 library(ggpubr)
 library(tidyr)
+library(igraph)
+library(ggraph)
 
 recomputejSDMModels <- FALSE
 
@@ -310,6 +312,7 @@ plot_1 <- toplot_ModelFrame_area %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
 
+# to save just one plot
 # ggsave(plot = plot_1, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot1.png", 
        # width = 9, height = 8, dpi = 600)
 
@@ -342,11 +345,6 @@ plot_2 <- toplot_ModelFrame_area %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
  
-
-# ggsave(plot = plot_2, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot2.png", 
-#        width = 9, height = 8, dpi = 600)
-
-
 plot_3 <- toplot_ModelFrame_area %>% 
   filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
                          "FunM_Species_richness")) %>%
@@ -375,11 +373,7 @@ plot_3 <- toplot_ModelFrame_area %>%
     axis.text = element_text(size = 12), 
     axis.title = element_text(size = 14, face = "bold"),
     legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12)) #+
-# ggtitle("Helminth presence - Area model")
-
-# ggsave(plot = plot_3, "./JSDM_models/figures_PA/PAModel_area_BetaCoefs_plot3.png", 
-#        width = 9, height = 8, dpi = 600)
+    legend.text = element_text(size = 12)) 
 
 (plot_betas <- ggarrange(plot_1, plot_2, plot_3, 
           ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
@@ -388,6 +382,7 @@ plot_3 <- toplot_ModelFrame_area %>%
 
 ggsave(plot = plot_betas, "./figures/PAModel_area_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
+
 
 # Detail plots for each prediction 
 n_cov <- length(PAModel_area$covNames) # Number of covariates without the intercept
@@ -422,50 +417,12 @@ for (i in 1:nrow(predictors)){
 
 
 ## Gradient model
+
 Beta_grad <- as.data.frame(MCMCsummary(PAMpost_grad$Beta))
 postBeta_grad <- getPostEstimate(PAModel_grad, parName = "Beta")
 
-png("./JSDM_models/figures_PA/Betaplot_grad_default_support95.png")
+## quick exploration of variables that are significant 
 plotBeta(PAModel_grad, post = postBeta_grad, param = "Support", supportLevel = 0.95)
-dev.off()
-
-png("./JSDM_models/figures_PA/Betaplot_grad_default_mean95.png")
-plotBeta(PAModel_grad, post = postBeta_grad, param = "Mean", supportLevel = 0.95)
-dev.off()
-
-# Print a plot for each predictor
-n_cov <- length(PAModel_grad$covNames) # Number of covariates without the intercept
-var_code <- vector()
-for (i in 1:n_cov){
-  var_code[i] <- paste0("C", i)
-}
-
-var_name <- as.vector(PAModel_grad$covNames[1:n_cov])
-predictors <- as.data.frame(cbind(var_code, var_name))
-
-for (i in 1:nrow(predictors)){
-  png(paste0("./JSDM_models/figures_PA/betas_grad_covariates_coef_plot_", 
-             var_name[i], ".png"), width = 5, 
-      height = 8, units = "in", res = 300, pointsize = 16)
-  MCMCplot(PAMpost_grad$Beta,
-           params = predictors[i,1],
-           ISB = FALSE,
-           exact = FALSE,
-           ref_ovl = TRUE,
-           rank = FALSE,
-           xlab = 'ESTIMATE',
-           main = predictors[i,2],
-           sz_labels = 0.5,
-           sz_med = 1,
-           sz_thick = 1,
-           sz_thin = 1,
-           sz_ax = 1,
-           sz_main_txt = 1)
-  dev.off()
-}
-
-
-## gradient model
 
 # get species in model
 m1_species <- colnames(PAModel_grad$Y)
@@ -503,8 +460,6 @@ for (i in 1:length(m1_species)){
 
 ModelFrame_grad
 
-levels(as.factor(ModelFrame_grad$Variable))
-# Relevel factors so they are plotted in the desired order
 ModelFrame_grad <- ModelFrame_grad %>% 
   mutate(Variable = as.factor(Variable)) %>% 
   mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",          
@@ -622,6 +577,39 @@ plot_3 <- toplot_ModelFrame_grad %>%
 ggsave(plot = plot_betas, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
 
+# Print a plot for each predictor
+n_cov <- length(PAModel_grad$covNames) # Number of covariates without the intercept
+var_code <- vector()
+for (i in 1:n_cov){
+  var_code[i] <- paste0("C", i)
+}
+
+var_name <- as.vector(PAModel_grad$covNames[1:n_cov])
+predictors <- as.data.frame(cbind(var_code, var_name))
+
+for (i in 1:nrow(predictors)){
+  png(paste0("./JSDM_models/figures_PA/betas_grad_covariates_coef_plot_", 
+             var_name[i], ".png"), width = 5, 
+      height = 8, units = "in", res = 300, pointsize = 16)
+  MCMCplot(PAMpost_grad$Beta,
+           params = predictors[i,1],
+           ISB = FALSE,
+           exact = FALSE,
+           ref_ovl = TRUE,
+           rank = FALSE,
+           xlab = 'ESTIMATE',
+           main = predictors[i,2],
+           sz_labels = 0.5,
+           sz_med = 1,
+           sz_thick = 1,
+           sz_thin = 1,
+           sz_ax = 1,
+           sz_main_txt = 1)
+  dev.off()
+}
+
+
+
 
 ##################
 ## plot traits
@@ -629,28 +617,191 @@ ggsave(plot = plot_betas, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png",
 ## area model
 postGamma_area <- getPostEstimate(PAModel_area, parName = "Gamma")
 
-pdf("JSDM_models/figures_PA/jSDM_PAModel_area_GammaEffects_support.pdf", width=7, height=8)
-plotGamma(hM = PAModel_area, post = postGamma_area, param = "Support", supportLevel = 0.95,
-          newplot = TRUE, covNamesNumbers = c(TRUE, TRUE), mar =c (10,10,1,1))
-dev.off()
+## quick exploration of variables that are significant 
+plotGamma(PAModel_area, post = postGamma_area, param = "Support", supportLevel = 0.95)
 
-pdf("JSDM_models/figures_PA/jSDM_PAModel_area_GammaEffects_mean.pdf", width=7, height=8)
-plotGamma(hM = PAModel_area, post = postGamma_area, param = "Mean", supportLevel = 0.95,
-          newplot = TRUE, covNamesNumbers = c(TRUE, TRUE), mar =c (10,10,1,1))
-dev.off()
+## Forest plot of gamma effects 
+# get traits in model
+m1_trait_area <- colnames(PAModel_area$Tr)[-1] # remove intercept in traits to avoid future problems
+
+# get names for explanatory variables
+exp_variables_area <- colnames(PAModel_area$X)
+
+# rename exp variables for nicer plots
+my_variables_area <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
+                  "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
+                  "FunM_Species_richness")
+
+ModelFrame_Traits_area <- data.frame()
+# betas (coefficients) for each species
+for (i in 1:length(m1_trait_area)){
+  # get the variables for each trait
+  mpost_gamma_tmp <- PAMpost_area$Gamma[,grep(m1_trait_area[i], colnames(PAMpost_area$Gamma[[1]]))]
+  # rename variables
+  for (j in 1:length(mpost_gamma_tmp)){
+    colnames(mpost_gamma_tmp[[j]]) <- my_variables_area
+  }
+  # Put model estimates into temporary data.frames. Add variable "Species" for plotting
+  modelFrame_tmp <- data.frame(Variable = my_variables_area,
+                               Coefficient = summary(mpost_gamma_tmp)$statistics[,1],
+                               CI_low = summary(mpost_gamma_tmp)$quantiles[,1],
+                               Q_25 = summary(mpost_gamma_tmp)$quantiles[, 2],
+                               Q_50 = summary(mpost_gamma_tmp)$quantiles[,3],
+                               Q_75 = summary(mpost_gamma_tmp)$quantiles[, 4],
+                               CI_high = summary(mpost_gamma_tmp)$quantiles[,5],
+                               Traits = m1_trait_area[i]) 
+  
+  # Combine these data.frames
+  ModelFrame_Traits_area <- data.frame(rbind(ModelFrame_Traits_area, modelFrame_tmp))
+}
+
+ModelFrame_Traits_area
+
+# Relevel factors so they are plotted in the desired order
+ModelFrame_Traits_area <- ModelFrame_Traits_area %>% 
+  mutate(Variable = as.factor(Variable)) %>% 
+  mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
+                                            "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
+                                            "FunM_Species_richness"))) %>% 
+  mutate(Variable = fct_rev(Variable))
+summary(ModelFrame_Traits_area)
+
+# variables with CRI not overlapping 0
+toplot_ModelFrame_Traits_area <- ModelFrame_Traits_area %>%
+  mutate(significant = case_when( 
+    CI_low < 0 & CI_high < 0 ~ "Yes", #both extremes of CI are negative
+    CI_low > 0 & CI_high > 0 ~ "Yes", #both extremes of CI are positive
+    TRUE ~ "No")) 
+
+toplot_ModelFrame_Traits_area[toplot_ModelFrame_Traits_area$significant == "Yes",]
+
+# Plot Effects
+plot_traits_area <- ggplot(data = toplot_ModelFrame_Traits_area, aes(group = Traits, colour = Traits)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  ylab("\n") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+plot_traits_area
+
+ggsave(plot = plot_traits_area, "./JSDM_models/figures_PA/PAModel_area_GammaCoefs_traits.png", 
+       width = 9, height = 8, dpi = 600)
+
 
 ## gradient model
 postGamma_grad <- getPostEstimate(PAModel_grad, parName = "Gamma")
 
-pdf("JSDM_models/figures_PA/jSDM_PAModel_grad_GammaEffects_support.pdf", width=7, height=8)
-plotGamma(hM = PAModel_grad, post = postGamma_grad, param = "Support", supportLevel = 0.95,
-          newplot = TRUE, covNamesNumbers = c(TRUE, TRUE), mar =c (10,10,1,1))
-dev.off()
+## quick exploration of variables that are significant 
+plotGamma(PAModel_grad, post = postGamma_grad, param = "Support", supportLevel = 0.95)
 
-pdf("JSDM_models/figures_PA/jSDM_PAModel_grad_GammaEffects_mean.pdf", width=7, height=8)
-plotGamma(hM = PAModel_grad, post = postGamma_grad, param = "Mean", supportLevel = 0.95,
-          newplot = TRUE, covNamesNumbers = c(TRUE, TRUE), mar =c (10,10,1,1))
-dev.off()
+## Forest plot of gamma effects 
+# get traits in model
+m1_trait_grad <- colnames(PAModel_grad$Tr)[-1] # remove intercept in traits to avoid future problems
+
+# get names for explanatory variables
+exp_variables_grad <- colnames(PAModel_grad$X)
+
+# rename exp variables for nicer plots
+my_variables_grad <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
+                       "human_fpi_1000m", "tree_cover_1000m", 
+                       "Diet_Species_richness", "BacM_Species_richness", 
+                       "FunM_Species_richness")
+
+ModelFrame_Traits_grad <- data.frame()
+# betas (coefficients) for each species
+for (i in 1:length(m1_trait_grad)){
+  # get the variables for each trait
+  mpost_gamma_tmp <- PAMpost_grad$Gamma[,grep(m1_trait_grad[i], colnames(PAMpost_grad$Gamma[[1]]))]
+  # rename variables
+  for (j in 1:length(mpost_gamma_tmp)){
+    colnames(mpost_gamma_tmp[[j]]) <- my_variables_grad
+  }
+  # Put model estimates into temporary data.frames. Add variable "Species" for plotting
+  modelFrame_tmp <- data.frame(Variable = my_variables_grad,
+                               Coefficient = summary(mpost_gamma_tmp)$statistics[,1],
+                               CI_low = summary(mpost_gamma_tmp)$quantiles[,1],
+                               Q_25 = summary(mpost_gamma_tmp)$quantiles[, 2],
+                               Q_50 = summary(mpost_gamma_tmp)$quantiles[,3],
+                               Q_75 = summary(mpost_gamma_tmp)$quantiles[, 4],
+                               CI_high = summary(mpost_gamma_tmp)$quantiles[,5],
+                               Traits = m1_trait_grad[i]) 
+  
+  # Combine these data.frames
+  ModelFrame_Traits_grad <- data.frame(rbind(ModelFrame_Traits_grad, modelFrame_tmp))
+}
+
+ModelFrame_Traits_grad
+
+# Relevel factors so they are plotted in the desired order
+ModelFrame_Traits_grad <- ModelFrame_Traits_grad %>% 
+  mutate(Variable = as.factor(Variable)) %>% 
+  mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
+                                            "human_fpi_1000m", "tree_cover_1000m", 
+                                            "Diet_Species_richness", "BacM_Species_richness", 
+                                            "FunM_Species_richness"))) %>% 
+  mutate(Variable = fct_rev(Variable))
+summary(ModelFrame_Traits_grad)
+
+# variables with CRI not overlapping 0
+toplot_ModelFrame_Traits_grad <- ModelFrame_Traits_grad %>%
+  mutate(significant = case_when( 
+    CI_low < 0 & CI_high < 0 ~ "Yes", #both extremes of CI are negative
+    CI_low > 0 & CI_high > 0 ~ "Yes", #both extremes of CI are positive
+    TRUE ~ "No")) 
+
+toplot_ModelFrame_Traits_grad[toplot_ModelFrame_Traits_grad$significant == "Yes",]
+
+# Plot Effects
+plot_traits_grad <- ggplot(data = toplot_ModelFrame_Traits_grad, aes(group = Traits, colour = Traits)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  ylab("\n") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+plot_traits_grad
+
+ggsave(plot = plot_traits_grad, "./JSDM_models/figures_PA/PAModel_grad_GammaCoefs_traits.png", 
+       width = 9, height = 8, dpi = 600)
 
 
 
@@ -660,65 +811,145 @@ dev.off()
 ## area model
 OmegaCor_area <- computeAssociations(PAModel_area)
 
-OmegaCor_area[[1]]$mean
-OmegaCor_area[[1]]$support
-
-# Default plot in Hmsc package
-supportLevel <- 0.95
-
-toPlot_PAModel_area <- ((OmegaCor_area[[1]]$support > supportLevel)
-                        + (OmegaCor_area[[1]]$support < (1 - supportLevel)) > 0) * OmegaCor_area[[1]]$mean
-
-png("./JSDM_models/figures_PA/PAModel_area_Omegaplot_default_support95.png")
-par(mfrow = c(1,1))
-corrplot(toPlot_PAModel_area, method = "color", 
-         col = colorRampPalette(c("blue", "white", "red"))(200),
-         title = paste0("random effect level: ", PAModel_area$rLNames[1]), 
-         mar = c(0,0,1,0))
-dev.off()
-
 # get associations for manual plotting - replicate
 assoc_mean <- melt(OmegaCor_area[[1]]$mean)
 assoc_support <- melt(OmegaCor_area[[1]]$support)
 
 associations_area <- cbind.data.frame(assoc_mean, support = assoc_support$value)
+
 colnames(associations_area) <- c("species1", "species2", "mean", "support")
-associations_area
 
-# write.csv(associations_area, "./JSDM_models/PAModel_area_table_sp_associations.csv",
-#           row.names = FALSE)
+# Select association that are significant in the 95% CI
+associations_area95 <- associations_area %>%
+  filter(support < 0.025 | support > 0.975) %>%
+  filter(species1 != species2) %>%
+  select(from = species1, to = species2, mean = mean, support = support) 
+
+head(associations_area)
+head(associations_area95)
+
+## plot as hierarchical bundle
+edges <- data.frame(from = "origin", to = associations_area$species1)
+vertices <- data.frame(name = unique(c(as.character(edges$from), as.character(edges$to))))
+
+## calculate the ANGLE of the labels
+vertices$id <- NA
+myleaves <- which(is.na(match(vertices$name, edges$from))) # Select the rows with the final species, not the groups
+nleaves <- length(myleaves) # This should be the number of species
+vertices$id[myleaves] <- seq(1:nleaves)
+vertices$angle <- 110 - 360*vertices$id/nleaves
+# text adjustment
+vertices$hjust<-ifelse( vertices$angle < -90, 0, 1)
+vertices$angle<-ifelse(vertices$angle < -90, vertices$angle+180, vertices$angle)
+
+## Create a graph object
+mygraph <- graph_from_data_frame(d = edges, vertices = vertices)
+
+# The connection object must refer to the ids of the leaves:
+from = match(associations_area95$from, vertices$name)
+to = match(associations_area95$to, vertices$name)
+
+graph_area <- ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
+  geom_conn_bundle(data = get_con(from = from, to = to, values = associations_area95$mean), 
+                   alpha=0.5, width=1.8, tension = 0.8, aes(colour=values), 
+                   show.legend = TRUE )+
+  scale_edge_colour_distiller(palette = "Blues",
+                              direction = +1,
+                              guide = "edge_colourbar",
+                              limits = c(0.85, 0.999),
+                              name = "Correlation\n",
+                              ) +
+  geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label = name, angle = angle, hjust=hjust), size=4, alpha=1) +
+  geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, size=1, alpha=0.5), colour = "grey30") +
+  expand_limits(x = c(-2, 2), y = c(-2, 2)) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.title = element_blank(),
+        axis.text = element_blank(), 
+        plot.background=element_rect(fill = "white"),
+        legend.key = element_rect(color = "gray", fill = "black"),
+        legend.title = element_text(color = "black"),
+        legend.text = element_text(color = "black")) +
+  guides(alpha = "none", 
+         colour = "none",
+         size = "none")
+
+ggsave(plot = graph_area, "./JSDM_models/figures_PA/PAModel_area_sp_assoc.png", 
+       width = 6, height = 6, dpi = 600)
 
 
-## area model
+## Gradient model
 OmegaCor_grad <- computeAssociations(PAModel_grad)
-
-OmegaCor_grad[[1]]$mean
-OmegaCor_grad[[1]]$support
-
-# Default plot in Hmsc package
-supportLevel <- 0.95
-
-toPlot_PAModel_grad <- ((OmegaCor_grad[[1]]$support > supportLevel)
-                        + (OmegaCor_grad[[1]]$support < (1 - supportLevel)) > 0) * OmegaCor_grad[[1]]$mean
-
-png("./JSDM_models/figures_PA/PAModel_grad_Omegaplot_default_support95.png")
-par(mfrow = c(1,1))
-corrplot(toPlot_PAModel_grad, method = "color", 
-         col = colorRampPalette(c("blue", "white", "red"))(200),
-         title = paste0("random effect level: ", PAModel_grad$rLNames[1]), 
-         mar = c(0,0,1,0))
-dev.off()
 
 # get associations for manual plotting - replicate
 assoc_mean <- melt(OmegaCor_grad[[1]]$mean)
 assoc_support <- melt(OmegaCor_grad[[1]]$support)
 
 associations_grad <- cbind.data.frame(assoc_mean, support = assoc_support$value)
-colnames(associations_grad) <- c("species1", "species2", "mean", "support")
-associations_grad
 
-write.csv(associations_grad, "./JSDM_models/PAModel_grad_table_sp_associations.csv",
-          row.names = FALSE)
+colnames(associations_grad) <- c("species1", "species2", "mean", "support")
+
+# Select association that are significant in the 95% CI
+associations_grad95 <- associations_grad %>%
+  filter(support < 0.025 | support > 0.975) %>%
+  filter(species1 != species2) %>%
+  select(from = species1, to = species2, mean = mean, support = support) 
+
+head(associations_grad)
+head(associations_grad95)
+
+## plot as hierarchical bundle
+edges <- data.frame(from = "origin", to = associations_grad$species1)
+vertices <- data.frame(name = unique(c(as.character(edges$from), as.character(edges$to))))
+
+## calculate the ANGLE of the labels
+vertices$id <- NA
+myleaves <- which(is.na(match(vertices$name, edges$from))) # Select the rows with the final species, not the groups
+nleaves <- length(myleaves) # This should be the number of species
+vertices$id[myleaves] <- seq(1:nleaves)
+vertices$angle <- 110 - 360*vertices$id/nleaves
+# text adjustment
+vertices$hjust<-ifelse( vertices$angle < -90, 0, 1)
+vertices$angle<-ifelse(vertices$angle < -90, vertices$angle+180, vertices$angle)
+
+## Create a graph object
+mygraph <- graph_from_data_frame(d = edges, vertices = vertices)
+
+# The connection object must refer to the ids of the leaves:
+from = match(associations_grad95$from, vertices$name)
+to = match(associations_grad95$to, vertices$name)
+
+graph_grad <- ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
+  geom_conn_bundle(data = get_con(from = from, to = to, values = associations_grad95$mean), 
+                   alpha=0.5, width=1.8, tension = 0.8, aes(colour=values), 
+                   show.legend = TRUE )+
+  scale_edge_colour_distiller(palette = "Blues",
+                              direction = +1,
+                              guide = "edge_colourbar",
+                              limits = c(0.85, 0.999),
+                              name = "Correlation\n",
+  ) +
+  geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label = name, angle = angle, hjust=hjust), size=4, alpha=1) +
+  geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, size=1, alpha=0.5), colour = "grey30") +
+  expand_limits(x = c(-2, 2), y = c(-2, 2)) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.title = element_blank(),
+        axis.text = element_blank(), 
+        plot.background=element_rect(fill = "white"),
+        legend.key = element_rect(color = "gray", fill = "black"),
+        legend.title = element_text(color = "black"),
+        legend.text = element_text(color = "black")) +
+  guides(alpha = "none", 
+         colour = "none",
+         size = "none")
+
+ggsave(plot = graph_grad, "./JSDM_models/figures_PA/PAModel_grad_sp_assoc.png", 
+       width = 6, height = 6, dpi = 600)
+
+
 
 
 ############################
