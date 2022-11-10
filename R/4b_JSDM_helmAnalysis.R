@@ -988,10 +988,21 @@ VP_toplot_area <- VP_vals_area %>%
   mutate(Variable = rep(rownames(VP_vals_area), each = length(my_species))) %>% 
   mutate(Variable = factor(Variable, levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic")))
 
+## get the species in descending order of host-intrinsic values
+species_order <- VP_toplot_area %>% 
+  filter(Variable == "Host-intrinsic") %>% 
+  arrange(desc(value))
+  
+## order and add colours to plot
+VP_toplot_area2 <- VP_toplot_area %>% 
+  mutate(Species_ord = factor(Species, levels = species_order$Species)) 
+
 ## add colour to the species based on one-host or multi-host trait
-multihost_sp <- PAModel_area$Tr %>% 
+multihost_sp <- species_order %>% 
+  left_join(PAModel_area$Tr %>% 
+              as.data.frame() %>% 
+              rownames_to_column(var = "Species"), by = "Species") %>% 
   as.data.frame() %>% 
-  rownames_to_column(var = "Species") %>% 
   mutate(multihost = case_when(
     lifecyclethree.host == 1 ~ "Three",
     lifecycletwo.host == 1 ~ "Two",
@@ -1004,16 +1015,7 @@ multihost_sp <- PAModel_area$Tr %>%
   )) %>% 
   dplyr::select(Species, colour_text)
 
-## get the species in descending order of host-intrinsic values
-species_order <- VP_toplot_area %>% 
-  filter(Variable == "Host-intrinsic") %>% 
-  arrange(desc(value))
-  
-## order and add colours to plot
-VP_toplot_area2 <- VP_toplot_area %>% 
-  mutate(Species_ord = factor(Species, levels = species_order$Species)) %>% 
-  left_join(multihost_sp, by = "Species")
-  
+
 
 ## plot
 vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = Variable)) +
@@ -1038,7 +1040,7 @@ vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = V
         panel.background = element_blank(), panel.border = element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=10, colour = VP_toplot_area2$colour_text, face = "italic"),
+                                   size=10, colour = multihost_sp$colour_text, face = "italic"),
         axis.text.y = element_text(colour = "black", size = 10),
         axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
         legend.key.height = unit(1.5, "lines"),
@@ -1091,9 +1093,29 @@ species_order_grad <- VP_toplot_grad %>%
   arrange(desc(value)) %>% 
   ungroup() 
 
+
+## order and add colours to plot
 VP_toplot_grad2 <- VP_toplot_grad %>% 
-  mutate(Species_ord = factor(Species, levels = species_order_grad$Species)) %>% 
-  left_join(multihost_sp, by = "Species")
+  mutate(Species_ord = factor(Species, levels = species_order_grad$Species)) 
+
+## add colour to the species based on one-host or multi-host trait
+multihost_sp_grad <- species_order_grad %>% 
+  left_join(PAModel_grad$Tr %>% 
+              as.data.frame() %>% 
+              rownames_to_column(var = "Species"), by = "Species") %>% 
+  as.data.frame() %>% 
+  mutate(multihost = case_when(
+    lifecyclethree.host == 1 ~ "Three",
+    lifecycletwo.host == 1 ~ "Two",
+    TRUE ~ "One"
+  )) %>% 
+  mutate(colour_text = case_when(
+    multihost == "Three" ~ "orange",
+    multihost == "Two" ~ "darkgreen",
+    multihost == "One" ~ "grey40"
+  )) %>% 
+  dplyr::select(Species, colour_text)
+
 
 
 vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = Variable)) +
@@ -1118,7 +1140,7 @@ vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = V
         panel.background = element_blank(), panel.border = element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=10, colour = VP_toplot_grad2$colour_text, face = "italic"),
+                                   size=10, colour = multihost_sp_grad$colour_text, face = "italic"),
         axis.text.y = element_text(colour = "black", size = 10),
         axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
         legend.key.height = unit(1.5, "lines"),
