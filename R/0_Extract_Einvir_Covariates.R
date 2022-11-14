@@ -1,10 +1,15 @@
 library(dplyr)
 library(raster)
 library(sf)
+library(stars)
 library(readr)
 library(patchwork)
 library(ggplot2)
-library(tmap)
+library(systemfonts)
+library(scico)
+#library(tmap)
+
+#devtools::install_github("EcoDynIZW/d6berlin")
 
 
 ## the required raw data
@@ -74,77 +79,166 @@ human_fpi <- raster(paste0(rawdata_dir, "/HFP2009_int_3035.tif"))
 #######################################
 ## extract environmental variables
 
-# 1000m buffer 
-envcov_1 <- raster::extract(tree_cover_bb, fox_sp, buffer = 1000,
-                            fun = mean, na.rm = T, sp = TRUE)
-envcov_2 <- raster::extract(imperv, envcov_1, buffer = 1000,
-                            fun = mean, na.rm = T, sp = TRUE)
-envcov_1000m_df <- raster::extract(human_fpi, envcov_2, buffer = 1000,
-                                   fun = mean, na.rm = T, sp = TRUE) %>% 
-  as.data.frame() %>% 
-  rename(tree_cover_1000m = NEW_TCD_2015_bb_020m_03035,
-         imperv_1000m = imp_bb_mv_b_20m_3035, 
-         human_fpi_1000m = HFP2009_int_3035)
+filepath <- "intermediate_data/Fox_data_envir.RDS"
 
-## 100m buffer 
-envcov_3 <- raster::extract(tree_cover_bb, fox_sp, buffer = 100,
-                            fun = mean, na.rm = T, sp = TRUE)
-envcov_4 <- raster::extract(imperv, envcov_3, buffer = 100,
-                            fun = mean, na.rm = T, sp = TRUE)
-envcov_100m_df <- raster::extract(human_fpi, envcov_4, buffer = 100,
-                                  fun = mean, na.rm = T, sp = TRUE) %>% 
-  as.data.frame() %>% 
-  rename(tree_cover_100m = NEW_TCD_2015_bb_020m_03035,
-         imperv_100m = imp_bb_mv_b_20m_3035, 
-         human_fpi_100m = HFP2009_int_3035) %>% 
-  dplyr::select(tree_cover_100m, imperv_100m, human_fpi_100m, IZW_ID)
+if(!file.exists(filepath)) {
 
-## Put together in one table
-fox_envcov <-  left_join(envcov_1000m_df, envcov_100m_df, 
-                         by = "IZW_ID")
-
-## Save environmental values 
-readr::write_rds(fox_envcov,
-                 "intermediate_data/Fox_data_envir.RDS")
+  # 1000m buffer 
+  envcov_1 <- raster::extract(tree_cover_bb, fox_sp, buffer = 1000,
+                              fun = mean, na.rm = TRUE, sp = TRUE)
+  envcov_2 <- raster::extract(imperv, envcov_1, buffer = 1000,
+                              fun = mean, na.rm = TRUE, sp = TRUE)
+  envcov_1000m_df <- raster::extract(human_fpi, envcov_2, buffer = 1000,
+                                     fun = mean, na.rm = TRUE, sp = TRUE) %>% 
+    as.data.frame() %>% 
+    rename(tree_cover_1000m = NEW_TCD_2015_bb_020m_03035,
+           imperv_1000m = imp_bb_mv_b_20m_3035, 
+           human_fpi_1000m = HFP2009_int_3035)
+  
+  ## 100m buffer 
+  envcov_3 <- raster::extract(tree_cover_bb, fox_sp, buffer = 100,
+                              fun = mean, na.rm = TRUE, sp = TRUE)
+  envcov_4 <- raster::extract(imperv, envcov_3, buffer = 100,
+                              fun = mean, na.rm = TRUE, sp = TRUE)
+  envcov_100m_df <- raster::extract(human_fpi, envcov_4, buffer = 100,
+                                    fun = mean, na.rm = TRUE, sp = TRUE) %>% 
+    as.data.frame() %>% 
+    rename(tree_cover_100m = NEW_TCD_2015_bb_020m_03035,
+           imperv_100m = imp_bb_mv_b_20m_3035, 
+           human_fpi_100m = HFP2009_int_3035) %>% 
+    dplyr::select(tree_cover_100m, imperv_100m, human_fpi_100m, IZW_ID)
+  
+  ## Put together in one table
+  fox_envcov <-  left_join(envcov_1000m_df, envcov_100m_df, 
+                           by = "IZW_ID")
+  
+  ## Save environmental values 
+  readr::write_rds(fox_envcov, filepath)
+} else {
+  fox_envcov <- readr::read_rds(filepath)
+}
 
 ## double check values make sense in a map
 ## make env cov spatial
 fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs = 3035)
 
-## ## interactive map. External circle represents the values at the
-## ## 1000m buffer, the inner circle represents the values at the 100m
-## ## buffer
-## tm_shape(tree_cover_bb) +
-##   tm_raster(palette = "Greens", alpha = 0.5) +
-##   tm_shape(fox_envcov_sf) +
-##   tm_dots("tree_cover_1000m", palette = "Greens", size = 0.1) +
-##   tm_shape(fox_envcov_sf) +
-##   tm_dots("tree_cover_100m", palette = "Greens", size = 0.04) 
+
+## static map with ggplot2 + sf 
+## External circle represents the values at the 1000m buffer, the inner circle 
+## represents the values at the 100m buffer
+b <- as(extent(4400000, 4700000, 3100000, 3400000), 'SpatialPolygons')
+crs(b) <- crs(imperv)
+human_fpi_crop <-  st_as_stars(crop(human_fpi, b))
+#human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b), fact = 10, fun = "mean"))
+
+## shape of federal states
+boundaries <- 
+  st_read("input_data/VG250_Bundeslaender_esri.geojson") %>% 
+  st_transform(crs = st_crs(fox_envcov_sf)) %>% 
+  filter(GEN %in% c("Berlin", "Brandenburg"))
+
+theme_set(theme_void(base_family = "Open Sans", base_size = 15))
+theme_update(
+  legend.position = "top", legend.justification = "left", 
+  axis.text = element_text(color = "black", size = rel(.8), margin = margin(rep(5, 4))),
+  axis.ticks.length = unit(.4, "lines"), axis.ticks = element_line(color = "grey75"),
+  plot.tag = element_text(face = "bold"),
+  plot.margin = margin(rep(5, 4))
+)
+
+map_study <- 
+  ggplot() +
+  geom_stars(data = human_fpi_crop) +
+  #geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "black", alpha = .15) +
+  ## state boundaries
+  geom_sf(data = boundaries, fill = NA, color = "black") +
+  ## 1000m buffer
+  geom_sf(data = fox_envcov_sf, size = 5, shape = 21, stroke = 1.2, fill = "white", color = "white") +
+  geom_sf(data = fox_envcov_sf, size = 5, shape = 21, stroke = 0, fill = "white") +
+  geom_sf(data = fox_envcov_sf, aes(color = human_fpi_1000m), shape = 16, size = 5, alpha = .7) +
+  ## 100m buffer
+  geom_sf(data = fox_envcov_sf, size = 1.2, shape = 21, stroke = .8, fill = "white", color = "black") +
+  geom_sf(data = fox_envcov_sf, size = 1.2, shape = 21, stroke = 0, fill = "white") +
+  geom_sf(data = fox_envcov_sf, aes(color = human_fpi_100m), shape = 16, size = 1.2, alpha = .7) +
+  ggspatial::annotation_scale(
+    location = "bl", text_family = "Open Sans", text_cex = 1.2
+  ) +
+  ggspatial::annotation_north_arrow(location = "tr") +
+  coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
+  scale_fill_gradient(low = "grey30", high = "grey97", guide = "none") +
+  scale_color_scico(
+    palette = "batlow", begin = .1,
+    name = "Human Footprint Index (2009)", limits = c(0, 50), breaks = 1:9*5, 
+    guide = guide_colorsteps(barwidth = unit(18, "lines"), barheight = unit(.6, "lines"),
+                             title.position = "top", title.hjust = 0, show.limits = TRUE)
+  ) +
+  labs(x = NULL, y = NULL)
+
+#map_study
+ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
 
 
-# Map to save to figure
-tmap_mode("plot")
-map_tc <- tm_shape(tree_cover_bb, bbox = ) +
-  tm_raster(palette = "Greens", alpha = 0.5, legend.show = FALSE) + #remove the legend because it is the same for all layers
-  tm_shape(fox_envcov_sf) +
-  tm_symbols(col = "tree_cover_1000m", palette = "Greens", border.col = "black", 
-             size = 1.5, legend.col.show = TRUE, title.col =  "Tree cover \npercentage") + 
-  tm_shape(fox_envcov_sf) +
-  tm_symbols(col = "tree_cover_100m", palette = "Greens", border.col = "black", 
-             size = 0.5, legend.col.show = FALSE) + #remove the legend because it is the same 
-  tm_scale_bar(position = c("left", "BOTTOM"), text.size = 1) +
-  tm_compass(position = c("right", "TOP")) +
-  tm_layout(legend.frame = TRUE)
+## overview map
+sf_world <- 
+  st_as_sf(rworldmap::getMap(resolution = "low")) %>% 
+  st_transform(crs = st_crs(fox_envcov_sf)) %>% 
+  st_buffer(dist = 0) %>% 
+  dplyr::select(ISO_A2, SOVEREIGNT, LON, continent) %>% 
+  mutate(area = st_area(.))
 
-## ## look at it
-## map_tc
+map_europe <- 
+  ggplot(sf_world) +
+  geom_sf(fill = "grey80", color = "grey95", lwd = .1) +
+  geom_rect(
+    xmin = 4430000, xmax = 4640000, ymin = 3160000, ymax = 3385000,
+    color = "#212121", fill = "#a4cbb6", size = .7
+  ) +
+  geom_sf_text(
+    data = filter(sf_world, ISO_A2 %in% c(
+      "DE", "SE", "FR", "PL", "CZ", "IT", "ES", "AT", "CH", "GB", "PT", "NL", "BE", "IR", "IS"
+    )),
+    aes(label = ISO_A2),
+    family = "Open Sans", color = "grey40", fontface = "bold", size = 4.5,
+    nudge_x = 20000, nudge_y = -10000
+  ) +
+  ggspatial::annotation_scale(
+    location = 'tr', text_family = "Open Sans", text_cex = 1.2
+  ) +
+  coord_sf(xlim = c(2650000, 5150000), ylim = c(1650000, 5100000)) +
+  scale_x_continuous(expand = c(0, 0), breaks = seq(-10, 30, by = 10)) +
+  theme(panel.ontop = FALSE,
+        panel.grid.major = element_line(color = "grey75", linetype = "15", size = .3)) +
+  labs(x = NULL, y = NULL)
 
-tmap_save(map_tc, filename = "figures/Figure2_Map_treecover.pdf")
+#map_europe
+ggsave("figures/raw/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
+
+
+map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey95", bg = TRUE)
+
+#map_globe
+ggsave("figures/raw/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
+
+
+### combined map
+# map_overview <- map_europe + labs(tag = "A.") + inset_element(map_globe, .14, .75, .59, 1.2, align_to = "plot")
+# m <- map_overview + (map_study + labs(tags = "B."))
+# 
+# ggsave(""figures/raw/study_overview.png", width = 11.5, height = 7, bg = "white", dpi = 600)
+
 
 
 
 ###################################################
 ### Plots comparing values at the two buffers 
+
+theme_set(theme_minimal(base_family = "Open Sans", base_size = 15))
+theme_update(
+  panel.grid.minor = element_blank()#,
+  #axis.text.y = element_text(family = font_num) # missing the font_num object
+)
+
+colors <- c("#e7b800", "#2e6c61")
 
 fox_envcov %>% group_by(area) %>%
   summarize(treeCoverCor=cor(tree_cover_1000m, tree_cover_100m,
@@ -155,26 +249,22 @@ fox_envcov %>% group_by(area) %>%
                         use="pairwise.complete.obs")) 
 
 tree_cover <- ggplot(fox_envcov, aes(tree_cover_1000m, tree_cover_100m, color=area)) +
-  scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-  scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-  theme(legend.position="none", #axis.text.y = element_text(family = font_num) # missing the font_num object
-  )+
-  geom_point() 
+  geom_point(size = 2.5)  +
+  scale_colour_manual(values = colors, name = "Study area:") +
+  labs(x = "Tree cover (1000 m buffer)", y = "Tree cover (100 m buffer)")
 
 imperv <- ggplot(fox_envcov, aes(imperv_1000m, imperv_100m, color=area)) +
-  scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-  scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-  theme(legend.position="none", #axis.text.y = element_text(family = font_num)
-  )+
-  geom_point() 
+  geom_point(size = 2.5) +
+  scale_colour_manual(values = colors, name = "Study area:") +
+  labs(x = "Imperviousness (1000 m buffer)", y = "Imperviousness (100 m buffer)")
 
 hfpi <- ggplot(fox_envcov, aes(human_fpi_1000m, human_fpi_100m, color=area)) +
-  scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-  scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-  geom_point()
+  geom_point(size = 2.5) +
+  scale_colour_manual(values = colors, name = "Study area:") +
+  labs(x = "Human FPI (1000 m buffer)", y = "Human FPI (100 m buffer)")
 
-png("figures/suppl/Env100_1000Cors.png", width=15, height=5)
-tree_cover + imperv + hfpi
-dev.off()
+tree_cover + imperv + hfpi + plot_layout(guides = "collect")
+
+ggsave("figures/suppl/Env100_1000Cors.png", width = 18, height = 7, bg = "white", dpi = 600)
 
 
