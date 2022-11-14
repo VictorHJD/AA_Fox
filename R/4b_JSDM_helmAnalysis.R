@@ -8,6 +8,7 @@ library(ggpubr)
 library(tidyr)
 library(igraph)
 library(ggraph)
+library(tibble)
 
 recomputejSDMModels <- FALSE
 
@@ -987,36 +988,59 @@ VP_toplot_area <- VP_vals_area %>%
   mutate(Variable = rep(rownames(VP_vals_area), each = length(my_species))) %>% 
   mutate(Variable = factor(Variable, levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic")))
 
-head(VP_toplot_area)
-tail(VP_toplot_area)
+## get the species in descending order of host-intrinsic values
+species_order <- VP_toplot_area %>% 
+  filter(Variable == "Host-intrinsic") %>% 
+  arrange(desc(value))
+  
+## order and add colours to plot
+VP_toplot_area2 <- VP_toplot_area %>% 
+  mutate(Species_ord = factor(Species, levels = species_order$Species)) 
 
-plot(VP_toplot_area$value ~ VP_toplot_area$Variable)
+## add colour to the species based on one-host or multi-host trait
+multihost_sp <- species_order %>% 
+  left_join(PAModel_area$Tr %>% 
+              as.data.frame() %>% 
+              rownames_to_column(var = "Species"), by = "Species") %>% 
+  as.data.frame() %>% 
+  mutate(multihost = case_when(
+    lifecyclethree.host == 1 ~ "Three",
+    lifecycletwo.host == 1 ~ "Two",
+    TRUE ~ "One"
+  )) %>% 
+  mutate(colour_text = case_when(
+    multihost == "Three" ~ "orange",
+    multihost == "Two" ~ "darkgreen",
+    multihost == "One" ~ "grey40"
+  )) %>% 
+  dplyr::select(Species, colour_text)
 
-vp_plot_area <- ggplot(VP_toplot_area, aes(x = Species, y = value, fill = Variable)) +
+
+
+## plot
+vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = Variable)) +
   geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
   scale_fill_manual(values = alpha(c("lightyellow", "darkorange3", "darkgreen", "darkblue", "firebrick4"), 0.7),
                     name = "Variable group", 
                     labels=c(paste0("Random: site\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
-                             paste0("Diet_Microbiomes\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Diet_Microbiomes"], ")"), 
-                             paste0("Environment\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Environment"], ")"),
+                             paste0("Other_Microbiomes\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Other Microbiomes"], ")"), 
+                             paste0("Nat. Environment\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Natural envir"], ")"),
                              paste0("Season\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Season"], ")"),
-                             paste0("Individual\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Individual"], ")"))) +
-  labs(#title = "Variance Partitioning", 
-    title = "Response = PA, Environment = area",
-    x = "\nHelminths", 
-    y = "Variance partitioning (%)\n", col = "black") +
+                             paste0("Host-intrinsic\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"))) +
+  labs(x = "\nHelminth taxa", 
+       y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
   theme_bw()+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), panel.border = element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=10, colour = "black", face = "italic"),
+                                   size=10, colour = multihost_sp$colour_text, face = "italic"),
         axis.text.y = element_text(colour = "black", size = 10),
         axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
         legend.key.height = unit(1.5, "lines"),
@@ -1028,12 +1052,14 @@ ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",
        dpi = 600, width = 6, height = 5)
 
 
+
+
+
 ## gradient model
 head(PAModel_grad$X)
 
 VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3, 4,4,4), 
-                                       groupnames = c("Individual", "Season", "Environment", "Diet_Microbiomes"))
-plotVariancePartitioning(PAModel_grad, VP_grad)
+                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Other Microbiomes"))
 
 # Extract the values for the manual plot
 VP_vals_grad <- as.data.frame(VP_grad$vals) 
@@ -1045,8 +1071,9 @@ colnames(mean_vp_grad) <- "mean"
 mean_vp_grad <- mean_vp_grad %>% 
   mutate(percent = round(mean * 100, 2), 
          Variable = factor(rownames(mean_vp_grad), 
-                           levels = c("Random: site", "Diet_Microbiomes", "Environment", "Season", "Individual"))
-  )  
+                           levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic"))
+  )
+
 mean_vp_grad
 
 # set species names
@@ -1058,38 +1085,62 @@ colnames(VP_vals_grad) <- my_species
 VP_toplot_grad <- VP_vals_grad %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_grad), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site", "Diet_Microbiomes", "Environment", "Season", "Individual")))
+  mutate(Variable = factor(Variable, levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic")))
 
-head(VP_toplot_grad)
-tail(VP_toplot_grad)
+## get the species in descending order of host-intrinsic values
+species_order_grad <- VP_toplot_grad %>% 
+  filter(Variable == "Host-intrinsic") %>% 
+  arrange(desc(value)) %>% 
+  ungroup() 
 
-plot(VP_toplot_grad$value ~ VP_toplot_grad$Variable)
 
-vp_plot_grad <- ggplot(VP_toplot_grad, aes(x = Species, y = value, fill = Variable)) +
+## order and add colours to plot
+VP_toplot_grad2 <- VP_toplot_grad %>% 
+  mutate(Species_ord = factor(Species, levels = species_order_grad$Species)) 
+
+## add colour to the species based on one-host or multi-host trait
+multihost_sp_grad <- species_order_grad %>% 
+  left_join(PAModel_grad$Tr %>% 
+              as.data.frame() %>% 
+              rownames_to_column(var = "Species"), by = "Species") %>% 
+  as.data.frame() %>% 
+  mutate(multihost = case_when(
+    lifecyclethree.host == 1 ~ "Three",
+    lifecycletwo.host == 1 ~ "Two",
+    TRUE ~ "One"
+  )) %>% 
+  mutate(colour_text = case_when(
+    multihost == "Three" ~ "orange",
+    multihost == "Two" ~ "darkgreen",
+    multihost == "One" ~ "grey40"
+  )) %>% 
+  dplyr::select(Species, colour_text)
+
+
+
+vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = Variable)) +
   geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
   scale_fill_manual(values = alpha(c("lightyellow", "darkorange3", "darkgreen", "darkblue", "firebrick4"), 0.7),
                     name = "Variable group", 
                     labels=c(paste0("Random: site\n(mean = ", 
-                                    mean_vp_grad$percent[mean_vp_grad$Variable == "Random: site"], ")"),
-                             paste0("Diet_Microbiomes\n(mean = ", 
-                                    mean_vp_grad$percent[mean_vp_grad$Variable == "Diet_Microbiomes"], ")"), 
-                             paste0("Environment\n(mean = ", 
-                                    mean_vp_grad$percent[mean_vp_grad$Variable == "Environment"], ")"), 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
+                             paste0("Other_Microbiomes\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Other Microbiomes"], ")"), 
+                             paste0("Nat. Environment\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Natural envir"], ")"),
                              paste0("Season\n(mean = ", 
-                                    mean_vp_grad$percent[mean_vp_grad$Variable == "Season"], ")"), 
-                             paste0("Individual\n(mean = ", 
-                                    mean_vp_grad$percent[mean_vp_grad$Variable == "Individual"], ")"))) +
-  labs(#title = "Variance Partitioning", 
-    title = "Response = PA, Environment = gradient",
-    x = "\nHelminths", 
-    y = "Variance partitioning (%)\n", col = "black") +
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Season"], ")"),
+                             paste0("Host-intrinsic\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"))) +
+  labs(x = "\nHelminth taxa",
+       y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
   theme_bw()+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), panel.border = element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=10, colour = "black", face = "italic"),
+                                   size=10, colour = multihost_sp_grad$colour_text, face = "italic"),
         axis.text.y = element_text(colour = "black", size = 10),
         axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
         legend.key.height = unit(1.5, "lines"),
@@ -1099,198 +1150,4 @@ vp_plot_grad
 
 ggsave(plot = vp_plot_grad, "./JSDM_models/figures_PA/VarPart_PAModel_grad.png",  
        dpi = 600, width = 6, height = 5)
-
-
-## OLD SCRIPT FROM HERE (theme still needed???)
-
-## ## set theme for plots
-## theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
-## theme_update(
-##     axis.title.x = element_text(margin = margin(t = 12)),
-##     axis.title.y = element_text(margin = margin(r = 12)),
-##     strip.text = element_text(face = "bold", color = "black", size = 12, margin = margin(b = 10)),
-##     legend.title = element_text(size = 12, face = "bold"),
-##     legend.text = element_text(size = 12),
-##     panel.spacing.x = unit(2, "lines"),
-##     panel.grid.minor = element_blank(),
-##     plot.margin = margin(rep(12, 4))
-## )
-
-## ## font for numeric label
-## font_num <- "Roboto Condensed"
-
-
-
-## ## Model convergence 
-
-## ## We evaluate MCMC convergence in terms of two kinds of parameters that
-## ## we are especially interested in: the species niches Beta, influence of
-## ## traits on species niches Gamma, and the residual species associations
-## ## Omega.  The strength of phylogenetic signal rho was not included in
-## ## this model
-
-## ## Evaluate convergence: Effective sample size and gelman-rubin
-## ## diagnostic (potencial reduction factor)
-
-
-## ## get everything in one nice table
-## getConvergenceStats <- function (Mpost) {
-##     ## get effective size 
-##     cl <- list(beta = cbind(effectiveSize(Mpost$Beta),
-##                             gelman.diag(Mpost$Beta,
-##                                         multivariate = FALSE)$psrf,
-##                             "beta"), 
-##                gamma = cbind(effectiveSize(Mpost$Gamma),
-##                              gelman.diag(Mpost$Gamma,
-##                                          multivariate = FALSE)$psrf,
-##                              "gamma"),
-##                omega = cbind(effectiveSize(Mpost$Omega[[1]]),
-##                              gelman.diag(Mpost$Omega[[1]],
-##                                          multivariate = FALSE)$psrf,
-##                              "omega"))
-##     ## name the columns
-##     ncl <- lapply(cl, function(x) {
-##         df <- as.data.frame(x)
-##         colnames(df) <- c("ESS", "GELMAN.est", "GELMAN.CI", "variable")
-##         df
-##     })
-##     Reduce(rbind, ncl)
-## }
-
-## PAMpost <- convertToCodaObject(PAModel)
-## ##COMpost <- convertToCodaObject(COModel)
-
-## PAConv <- getConvergenceStats(PAMpost)
-## ## COConv <- getConvergenceStats(COMpost)
-
-## PAConv[, c("ESS", "GELMAN.est", "GELMAN.CI")] <-
-##     apply(PAConv[, c("ESS", "GELMAN.est", "GELMAN.CI")], 2, as.numeric)
-
-## ## COConv[, c("ESS", "GELMAN.est", "GELMAN.CI")] <-
-## ##     apply(COConv[, c("ESS", "GELMAN.est", "GELMAN.CI")], 2, as.numeric)
-
-
-## ESShist <- ggplot(PAConv, aes(ESS)) +
-##     geom_histogram() +
-##     facet_wrap(~variable, scales = "free_y")
-
-
-## GELMhist <- ggplot(PAConv, aes(GELMAN.est)) +
-##     geom_histogram() +
-##     facet_wrap(~variable, scales = "free_y")
-
-
-## ## Graphical output (which I assume is a supplementary file)
-## png("figures/suppl/jSDM_PA_convergence.png", width = 800, height = 1000,
-##     pointsize = 20)
-## ESShist / GELMhist
-## dev.off()
-
-
-## ## ESSCOhist <- ggplot(COConv, aes(ESS)) +
-## ##     geom_histogram() +
-## ##     facet_wrap(~variable, scales = "free_y")
-
-
-## ## GELMCOhist <- ggplot(COConv, aes(GELMAN.est)) +
-## ##     geom_histogram() +
-## ##     facet_wrap(~variable, scales = "free_y")
-
-
-
-## ## ## Graphical output (which I assume is a supplementary file)
-## ## png("figures/suppl/jSDM_CO_convergence.png", width = 800, height = 1000,
-## ##     pointsize = 20)
-## ## ESSCOhist / GELMCOhist
-## ## dev.off()
-
-
-## MCMCtrace(PAMpost$Beta, 
-##           pdf = FALSE,
-##           plot = TRUE,
-##           open_pdf = FALSE,
-##           filename = "jSDM_PA_MCMCtrace_beta",
-##           wd= "figures/suppl/"
-##           )
-
-## MCMCtrace(PAMpost$Gamma, 
-##           pdf = TRUE, 
-##           open_pdf = FALSE,
-##           filename = "jSDM_PA_MCMCtrace_gamma",
-##           wd= "figures/suppl/")
-
-
-## MCMCtrace(PAMpost$Omega[[1]], 
-##           pdf = TRUE, o
-##           open_pdf = FALSE,
-##           filename = "jSDM_PA_MCMCtrace_omega",
-##           wd = "figures/suppl/")
-
-## ## MCMCtrace(COMpost$Beta, 
-## ##           pdf = TRUE, 
-## ##           open_pdf = FALSE,
-## ##           filename = "jSDM_CO_MCMCtrace_beta",
-## ##           wd= "figures/suppl/")
-
-## ## MCMCtrace(COMpost$Gamma, 
-## ##           pdf = TRUE, 
-## ##           open_pdf = FALSE,
-## ##           filename = "jSDM_CO_MCMCtrace_gamma",
-## ##           wd = "figures/suppl/")
-
-## ## MCMCtrace(COMpost$Omega[[1]], 
-## ##           pdf = TRUE, 
-## ##           open_pdf = FALSE,
-## ##           filename = "jSDM_CO_MCMCtrace_omega",
-## ##           wd = "figures/suppl/")
-
-## ### -> No proper convergence for the Count (CO) models will continue
-## ### -> only with the presence/absence (PA models) for now!!!
-
-
-## PApreds <- computePredictedValues(PAModel, expected = TRUE)
-
-## ## Median of the predictions
-## PApreds.values <- apply(abind(PApreds, along=3), c(1,2), median)
-## # Mean of the predictions
-## PApreds.values.mean <- apply(abind(PApreds, along = 3), c (1,2), mean)
-
-
-## # R2 with the built in function
-## modelr2.explanatory <- evaluateModelFit(hM = PAModel, predY = PApreds)
-## modelr2.explanatory
-
-## # AUC of the model
-## mean(modelr2.explanatory$AUC, na.rm=TRUE)
-## ## 0.8826433 [was 0.8524357 in previous versions)
-
-
-
-## postGamma <- getPostEstimate(PAModel, parName = "Gamma")
-
-
-## pdf("figures/suppl/jSDM_PA_GammaEffects.pdf", width=10, height=20)
-## ## ## don't understand this strange "heatmap"
-## ##plotGamma(hM = PAModel, post = postGamma, param = "Support", supportLevel = 0.95)
-## MCMCplot(PAMpost$Gamma, ref_ovl = TRUE)
-## dev.off()
-
-
-
-
-
-## pdf("figures/suppl/jSDM_PA_BetaEffects.pdf", width=10, height=20)
-## ## ## don't understand this strange "heatmap"
-## MCMCplot(PAMpost$Beta, ref_ovl = TRUE)
-## dev.off()
-
-
-## ## MCMCplot(PAMpost$Omega, ref_ovl = TRUE)
-
-## ## MCMCplot(PAMpost$Beta, ref_ovl = TRUE)
-
-
-
-
-
 
