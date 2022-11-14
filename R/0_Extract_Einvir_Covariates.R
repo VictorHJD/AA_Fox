@@ -175,7 +175,7 @@ map_study <-
   labs(x = NULL, y = NULL)
 
 #map_study
-ggsave("figures/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
+ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
 
 
 ## overview map
@@ -211,20 +211,20 @@ map_europe <-
   labs(x = NULL, y = NULL)
 
 #map_europe
-ggsave("figures/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
+ggsave("figures/raw/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
 
 
 map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey95", bg = TRUE)
 
 #map_globe
-ggsave("figures/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
+ggsave("figures/raw/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
 
 
 ### combined map
-map_overview <- map_europe + labs(tag = "A.") + inset_element(map_globe, .14, .75, .59, 1.2, align_to = "plot")
-m <- map_overview + (map_study + labs(tags = "B."))
-
-ggsave("study_overview.png", width = 11.5, height = 7, bg = "white", dpi = 600)
+# map_overview <- map_europe + labs(tag = "A.") + inset_element(map_globe, .14, .75, .59, 1.2, align_to = "plot")
+# m <- map_overview + (map_study + labs(tags = "B."))
+# 
+# ggsave(""figures/raw/study_overview.png", width = 11.5, height = 7, bg = "white", dpi = 600)
 
 
 
