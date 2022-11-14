@@ -129,7 +129,7 @@ fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs 
 b <- as(extent(4400000, 4700000, 3100000, 3400000), 'SpatialPolygons')
 crs(b) <- crs(imperv)
 human_fpi_crop <-  st_as_stars(crop(human_fpi, b))
-human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b), fact = 10, fun = "mean"))
+#human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b), fact = 10, fun = "mean"))
 
 ## shape of federal states
 boundaries <- 
@@ -148,7 +148,7 @@ theme_update(
 
 map_study <- 
   ggplot() +
-  geom_stars(data = human_fpi_agg_1000m) +
+  geom_stars(data = human_fpi_crop) +
   #geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "black", alpha = .15) +
   ## state boundaries
   geom_sf(data = boundaries, fill = NA, color = "black") +
@@ -160,6 +160,10 @@ map_study <-
   geom_sf(data = fox_envcov_sf, size = 1.2, shape = 21, stroke = .8, fill = "white", color = "black") +
   geom_sf(data = fox_envcov_sf, size = 1.2, shape = 21, stroke = 0, fill = "white") +
   geom_sf(data = fox_envcov_sf, aes(color = human_fpi_100m), shape = 16, size = 1.2, alpha = .7) +
+  ggspatial::annotation_scale(
+    location = "bl", text_family = "Open Sans", text_cex = 1.2
+  ) +
+  ggspatial::annotation_north_arrow(location = "tr") +
   coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
   scale_fill_gradient(low = "grey30", high = "grey97", guide = "none") +
   scale_color_scico(
