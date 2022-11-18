@@ -3,7 +3,7 @@
 ## Setup 
 For a fully reproducible analysis starting from raw sequencing files R
 script have to be executed in numerical order (starting with a "\\d_";
-e.g. 0_, 1_, ..), scripts prefixed with X_ are currently not used.
+e.g. 0_, 1_, ..).
 
 We follow one simple convention for executing the scripts: Your R
 session should run in the repository folder directly (in the folder
@@ -17,6 +17,21 @@ TRUE) or read it from 'intermediate_data'.
 For coauthors, here is how this was migrated from the Dropbox folder
 and how the data flows through the pipeline and analyses:
 
+## Matching of files from this repository with references in the manuscript
+
+| File reference | Created in | File in ropository               |
+|:---------------|------------|:---------------------------------|
+| suppl. table 1 | outside    | input_data/primer_file_foxes.csv |
+|                |            |                                  |
+|                |            |                                  |
+|                |            |                                  |
+|                |            |                                  |
+|                |            |                                  |
+|                |            |                                  |
+|                |            |                                  |
+|                |            |                                  |
+
+
 ## 0) Environmental variables
 
 Dropbox/Project_Canid_Metabarcoding/5_scripts/Extract_EnvirCovariates_BE_BB_20200903.Rmd
@@ -27,14 +42,16 @@ Dropbox/Project_Canid_Metabarcoding/5_scripts/Extract_EnvirCovariates_BE_BB_2020
 The input raw (layer) files this is based on are in:
 input_data/tifs/*.tif
 
-This unlike data for previous (pre-mid-2021) versions of the
-manuscript now allows us analysis of landscape variables for both
-Berlin and Brandenburg. 
+As this contains only impervious surface, tree cover and human
+footprint index, unlike data for previous (pre-mid-2021) versions of
+the manuscript, now allows us analysis of landscape variables for both
+Berlin and Brandenburg.
 
 The script reads data on the sampled foxes from
-"input_data/Fox_data.csv', appends environmental variables (x, y, v)
-for each fox and writes them (together with the 'basic data') to
+"input_data/Fox_data.csv', appends environmental variables for each
+fox and writes them (together with the 'basic data') to
 'intermediate_data/Fox_data_envir.RDS'.
+
  
 ## 1) Sequencing data 
 We (Victor Jarquin-Diaz and Emanuel Heitlinger) process the raw
@@ -45,9 +62,10 @@ sequence variant (ASV) abundances for each fox.
 
 The sequencing data is most easiely available on the compute server of
 the Heitlinger group (harriet@biologie.hu-berlin.de). The script could
-alternatively be run on the sequencing data after download from
-NCBI-SRA/ or ENA (ADD LINK HERE) (for full reproducibilty; sequencing
-data is to large for storage on github).
+alternatively be run on the sequencing data after download from ENA or
+NCBI-SRA [BioProject
+PRJNA386767](https://www.ncbi.nlm.nih.gov/sra/PRJNA386767) (for full
+reproducibilty; sequencing data is to large for storage on github).
 
 The script also adds the environmenal covariates (from
 intermediate_data/Fox_data_envir.RDS produced in
