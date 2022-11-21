@@ -44,7 +44,7 @@ if(!exists("PSG")){
 
 ### As we now want diversity for different taxonomic (phyla) subsets
 ### I've put all off this in on giant function 
-getAllDiversity <- function (ps, output_string) {
+getAllDiversity <- function (ps, output_string, plot=FALSE) {
     Counts <- as(otu_table(ps), "matrix")
     Counts <- as.data.frame(t(Counts))
     rownames(Counts) <- make.unique(tax_table(ps)[, "genus"])
@@ -63,10 +63,10 @@ getAllDiversity <- function (ps, output_string) {
     
     zet <- fortify(OTU_inext_imp)
 
-    ## now add the sample data and also the zero and 1 "sites" (foxes
+    ## now add the sample data and also the zero and 1 "Assemblages" (foxes
     ## back into this, by "all.y")
 
-    zet <- merge(zet, Sdat, by.x = "site", by.y = 0, all.y = TRUE)
+    zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = 0, all.y = TRUE)
 
     ## UGLY set theme again within function
     ## set theme for plots
@@ -83,12 +83,12 @@ getAllDiversity <- function (ps, output_string) {
     )
     
     ## Now the plot gets a bit messy redo by hand
-    alphaDivFox <- ggplot(zet, aes(x = x, y = y, colour = area, group=site)) +
-        geom_line(data = subset(zet, method %in% "interpolated"),
+    alphaDivFox <- ggplot(zet, aes(x = x, y = y, colour = area, group=Assemblage)) +
+        geom_line(data = subset(zet, Method %in% "Rarefaction"),
                   lwd = 1.5, alpha = 0.3) +
-        geom_point(data = subset(zet, method %in% "observed"), shape = 21,
+        geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
                    fill = "white", size = 2.7, stroke = .8) + 
-        geom_point(data = subset(zet, method %in% "observed"), shape = 21,
+        geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
                    fill = "transparent", size = 2.7, stroke = .8) + 
         scale_colour_manual(values = c("#e7b800", "#2e6c61")) +
         scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
@@ -103,7 +103,7 @@ getAllDiversity <- function (ps, output_string) {
     ## ## ## observed diverstiy of 1 and 0 div samples
     NullOne <- as.data.frame(cbind(Observed =  colSums(Counts[, colSums(Counts > 0) < 2] > 0),
                                    Estimator = colSums(Counts[, colSums(Counts > 0) < 2] > 0)))
-    NullOne$Site <- rownames(NullOne)
+    NullOne$Assemblage <- rownames(NullOne)
     NullOne <- NullOne[rep(1:nrow(NullOne), each = 3),]
     NullOne$Diversity <-  c("Species richness",
                             "Shannon diversity",
@@ -113,7 +113,7 @@ getAllDiversity <- function (ps, output_string) {
     EstimatesAsy <- rbind(EstimatesAsy, NullOne[, colnames(EstimatesAsy)])
     
     ## now  add back the pure observed diversity for all the excluded samples
-    EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x = "Site", by.y = 0)
+    EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x = "Assemblage", by.y = 0)
     
     alphaCompared <- ggplot(EstimatesAsy,
                             aes(area, Estimator, color = area,
@@ -139,7 +139,7 @@ getAllDiversity <- function (ps, output_string) {
     PresArea <- by(t(Pres1), Sdat$area, function (x) x)
 
 
-    ## for iNext all sites have to have more than one species!
+    ## for iNext all assemblages have to have more than one species!
     Fox_inext_area1 <- iNEXT(list(Berlin = t(PresArea$Berlin),
                                   Brandenburg = t(PresArea$Brandenburg)), 
                              q = 0, datatype = "incidence_raw")
@@ -208,10 +208,19 @@ getAllDiversity <- function (ps, output_string) {
     ) +
         plot_annotation(tag_levels = 'a')
     
-    f4 <- paste0("figures/Diversity", output_string, ".pdf")
-    ggsave(f4, width = 13, height = 9, device = cairo_pdf)
-
-    ## we plot an return AsymptoticAlphaEstimates
+    if(plot %in% c("pdf", "png")){
+        if(plot %in% "pdf"){
+            f4 <- paste0("figures/Diversity", output_string, ".pdf")
+            ggsave(f4, width = 13, height = 9, device = cairo_pdf)
+        }
+        if(plot %in% "png"){
+            f4 <- paste0("figures/Diversity", output_string, ".png")
+            ggsave(f4, width = 13, height = 9, bg = "white", dpi = 600, device="png")
+        }
+    } else{
+        message("to produce plots give \"pdf\" or \"png\" as argument")
+    }
+    ## we return AsymptoticAlphaEstimates
     return(EstimatesAsy)
 }
 
@@ -272,7 +281,7 @@ gimmeModels <- function (EA){
 
 
 HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% c("Helminth")),
-                                   "Helminth")
+                                   "Helminth", plot="png")
 
 gimmeModels(HelmEstimateAsy)
 
@@ -280,7 +289,7 @@ gimmeModels(HelmEstimateAsy)
 ## Parasitic Helminths not more diverse in brandenburg
 
 DietEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% "Diet"),
-                                   "Diet")
+                                   "Diet", plot=FALSE)
 
 gimmeModels(DietEstimateAsy)
 
@@ -288,7 +297,7 @@ gimmeModels(DietEstimateAsy)
 
 WormDietEA <- getAllDiversity(subset_taxa(PSG, category %in% "Diet"&
                                           phylum %in% c("Platyhelminthes", "Nematoda")),
-                                   "WormDiet")
+                                   "WormDiet", plot=FALSE)
 
 gimmeModels(WormDietEA)
 
@@ -303,7 +312,7 @@ gimmeModels(BacterialEstimateAsy)
 ### -> Bacterial microbiome clearly more diverse in Brandenburg
 
 FungalEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% "FungalMicrobiome"),
-                                   "FungalMicrobiome")
+                                   "FungalMicrobiome", plot=FALSE)
 
 gimmeModels(FungalEstimateAsy)
 
@@ -311,14 +320,14 @@ gimmeModels(FungalEstimateAsy)
 
 
 ApicoPEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% "ApicoParasites"),
-                                     "ApicoParasites")
+                                     "ApicoParasites", plot=FALSE)
 
 gimmeModels(ApicoPEstimateAsy)
 
 
 ApicoEnvirEstimateAsy <- getAllDiversity(subset_taxa(PSG, !category %in% "ApicoParasites" &
                                                           phylum %in% "Apicomplexa"), 
-                                         "EnvironmApicomplexa")
+                                         "EnvironmApicomplexa", plot=FALSE)
 
 gimmeModels(ApicoEnvirEstimateAsy)
 
@@ -397,8 +406,8 @@ if(!"Helm_Species_richness" %in% colnames(sample_data(PSG))){
                        FungalDiversity)) %>%
         rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
         AllDiv
-    ## all(AllDiv$Site == rownames(sample_data(PSG)))
-    rownames(AllDiv) <- AllDiv$Site
+    ## all(AllDiv$Assemblage == rownames(sample_data(PSG)))
+    rownames(AllDiv) <- AllDiv$Assemblage
     sample_data(PSG) <- AllDiv
     ### write new phylseq object only if it's now in sample data 
     if("Helm_Species_richness" %in% colnames(sample_data(PSG))){
@@ -409,5 +418,10 @@ if(!"Helm_Species_richness" %in% colnames(sample_data(PSG))){
 gimmeModels(HelmEstimateAsy) %>%
     ## filter(predictor %in% "modelArea")%>%
     dplyr::select(model) %>% .[["model"]]%>%
-    stargazer(type = "html", out="./tables/HelmDiversity.html")
+    stargazer(type = "html", out="./tables/HelmDiversityArea.html")
+
+gimmeModels(HelmEstimateAsy) %>%
+    filter(!predictor %in% "modelArea")%>%
+    dplyr::select(model) %>% .[["model"]]%>%
+    stargazer(type = "html", out="./tables/HelmDiversityConti.html")
 

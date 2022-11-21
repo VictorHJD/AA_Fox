@@ -19,17 +19,18 @@ and how the data flows through the pipeline and analyses:
 
 ## Matching of files from this repository with references in the manuscript
 
-| File reference | Created in           | File in ropository               |
-|:---------------|----------------------|:---------------------------------|
-| suppl. table 1 | outside              | input_data/primer_file_foxes.csv |
-| Figure S1      | R/1_Fox_general_MA.R | figures/AmpSampleHeatmap.pdf     |
-|                |                      |                                  |
-|                |                      |                                  |
-|                |                      |                                  |
-|                |                      |                                  |
-|                |                      |                                  |
-|                |                      |                                  |
-|                |                      |                                  |
+| File reference | Created in                      | File in ropository                   |
+|:---------------|---------------------------------|:-------------------------------------|
+| Figure 1       | outside, manually               | In this readme (ADD!)                |
+| Figure 2       | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png |
+| suppl. table 1 | outside, manually               | input_data/primer_file_foxes.csv     |
+| Figure S1      | R/1_Fox_general_MA.R            | figures/AmpSampleHeatmap.png         |
+| suppl. table 2 | outside, manually               | input_data/helminth_traits.csv       |
+| Figure 3       | R/2_iNEXT_fox.R                 | figures/DiversityHelminth.png (pdf)  |
+| Table 2        | R/2_iNEXT_fox.R                 |                                      |
+| suppl. table 3 | R/2_iNEXT_fox.R                 |                                      |
+|                |                                 |                                      |
+|                |                                 |                                      |
 
 
 ## 0) Environmental variables
