@@ -24,11 +24,12 @@ and how the data flows through the pipeline and analyses:
 | Figure 1       | outside, manually               | In this readme (ADD!)                |
 | Figure 2       | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png |
 | suppl. table 1 | outside, manually               | input_data/primer_file_foxes.csv     |
+| Table 1        | R/1_Fox_general_MA.R            | tables/seasonArea.csv                |
 | Figure S1      | R/1_Fox_general_MA.R            | figures/AmpSampleHeatmap.png         |
 | suppl. table 2 | outside, manually               | input_data/helminth_traits.csv       |
-| Figure 3       | R/2_iNEXT_fox.R                 | figures/DiversityHelminth.png (pdf)  |
-| Table 2        | R/2_iNEXT_fox.R                 |                                      |
-| suppl. table 3 | R/2_iNEXT_fox.R                 |                                      |
+| Figure 3       | R/2_iNEXT_fox.R                 | figures/DiversityHelminth.png        |
+| Table 2        | R/2_iNEXT_fox.R                 | tables/HelmDiversityArea.html        |
+| suppl. table 3 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html       |
 |                |                                 |                                      |
 |                |                                 |                                      |
 
