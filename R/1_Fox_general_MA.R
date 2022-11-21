@@ -197,7 +197,9 @@ exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
 ## We exclude like this
 MAFinal <- MAF2[which(!exclude.primers), which(!exclude.samples)]
 
+pdf("figures/AmpSampleHeatmap.pdf")
 plotAmpliconNumbers(MAFinal)
+dev.off()
 
 PS.l <- toPhyloseq(MAFinal,
                    samples=colnames(MAFinal),
