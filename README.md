@@ -22,7 +22,7 @@ and how the data flows through the pipeline and analyses:
 | File reference | Created in           | File in ropository               |
 |:---------------|----------------------|:---------------------------------|
 | suppl. table 1 | outside              | input_data/primer_file_foxes.csv |
-| Figure S1      | R/1_Fox_general_MA.R |                                  |
+| Figure S1      | R/1_Fox_general_MA.R | figures/AmpSampleHeatmap.pdf     |
 |                |                      |                                  |
 |                |                      |                                  |
 |                |                      |                                  |
