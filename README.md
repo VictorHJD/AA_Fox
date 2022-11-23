@@ -19,23 +19,29 @@ and how the data flows through the pipeline and analyses:
 
 ## Matching of files from this repository with references in the manuscript
 
-| File reference | Created in                      | File in ropository                   |
-|:---------------|---------------------------------|:-------------------------------------|
-| Figure 1       | outside, manually               | In this readme (ADD!)                |
-| Figure 2       | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png |
-| suppl. table 1 | outside, manually               | input_data/primer_file_foxes.csv     |
-| Table 1        | R/1_Fox_general_MA.R            | tables/seasonArea.csv                |
-| Figure S1      | R/1_Fox_general_MA.R            | figures/AmpSampleHeatmap.png         |
-| suppl. table 2 | outside, manually               | input_data/helminth_traits.csv       |
-| Figure 3       | R/2_iNEXT_fox.R                 | figures/DiversityHelminth.png        |
-| Table 2        | R/2_iNEXT_fox.R                 | tables/HelmDiversityArea.html        |
-| suppl. table 3 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html       |
-| Table 3        | R/5_compositionHelmDiet.R       | tables/Permanova.csv                 |
-| suppl.table 4  | R/5_compositionHelmDiet.R       | tables/PermanovaConti.csv            |
-| Figure 4       | R/5_compositionHelmDiet.R       | figures/CompositionEnvHelm.png       |
-|                |                                 |                                      |
-|                |                                 |                                      |
-|                |                                 |                                      |
+| File reference | Created in                      | File in ropository                                        |
+|:---------------|---------------------------------|:----------------------------------------------------------|
+| Figure 1       | outside, manually               | In this readme (ADD!)                                     |
+| Figure 2       | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png                      |
+| suppl. table 1 | outside, manually               | input_data/primer_file_foxes.csv                          |
+| Table 1        | R/1_Fox_general_MA.R            | tables/seasonArea.csv                                     |
+| Figure S1      | R/1_Fox_general_MA.R            | figures/AmpSampleHeatmap.png                              |
+| suppl. table 2 | outside, manually               | input_data/helminth_traits.csv                            |
+| Figure 3       | R/2_iNEXT_fox.R                 | figures/DiversityHelminth.png                             |
+| Table 2        | R/2_iNEXT_fox.R                 | tables/HelmDiversityArea.html                             |
+| suppl. table 3 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html                            |
+| Table 3        | R/5_compositionHelmDiet.R       | tables/Permanova.csv                                      |
+| suppl.table 4  | R/5_compositionHelmDiet.R       | tables/PermanovaConti.csv                                 |
+| Figure 4       | R/5_compositionHelmDiet.R       | figures/CompositionEnvHelm.png                            |
+| Table 4        | R/5_compositionHelmDiet.R       | tables/EnvFitnMDS.csv                                     |
+| Figure 5       | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                          |
+| Figure 6       | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png                        |
+| Figure 7       | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_GammaCoefs_traits.png |
+| Figure S2      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_sp_assoc.png          |
+| Figure S3      | R/4b_JSDM_helmAnalysis.R        | /JSDM_models/figures_PA/VarPart_PAModel_grad.png          |
+| Figure S4      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png         |
+| Figure S5      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_GammaCoefs_traits.png |
+| Figure S6      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_sp_assoc.png          |
 
 
 
