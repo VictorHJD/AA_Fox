@@ -99,6 +99,8 @@ PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
 
 write.csv(round(PERMA, 3), "tables/Permanova.csv")
 
+write.csv(rbind(PERMAimp, PERMAtree, PERMAhuman), "tables/PermanovaConti.csv")
+
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
                     try=1500, trymax=1500, k=3,
                     center = TRUE)
@@ -166,12 +168,13 @@ ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
     scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
     scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
     new_scale_color()+
-    geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, color = log(pvals)),
+    ### ordiArrowMul didn't work somehow have to scale manually
+    geom_segment(aes(x = 0, y = 0, xend = NMDS1*0.035, yend = NMDS2*0.035, color = log(pvals)),
                  data = subset(HelmEnvFitDf, pvals<0.1),
-                 arrow = arrow(length = unit(0.04, "npc"), angle=23),
+                 arrow = arrow(length = unit(0.035, "npc"), angle=23),
                  size=1.5) +
     scale_color_viridis_c(option = "cividis") + 
-    geom_text(data = subset(HelmEnvFitDf, pvals<0.1), aes(x = NMDS1, y = NMDS2+0.04),
+    geom_text(data = subset(HelmEnvFitDf, pvals<0.1), aes(x = NMDS1*0.035, y = NMDS2*0.035+0.04),
               label = row.names(subset(HelmEnvFitDf, pvals<0.1)), size=5.5,
               color="darkgrey") +
     theme_bw() ->
@@ -186,10 +189,9 @@ ggHelmEnv +
               color="blue")+
     theme_bw() -> ggHelmEnvHelm
 
-pdf("figures/composition_Env_Helm.pdf", width=14, height=7)
-ggHelmEnvHelm
-dev.off()
-
+ggsave("figures/CompositionEnvHelm.png", ggHelmEnvHelm, 
+       width = 18, height = 7, bg = "white", dpi = 600,
+       device="png")
 
 
 ## now for the table

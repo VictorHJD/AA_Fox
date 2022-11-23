@@ -30,8 +30,13 @@ and how the data flows through the pipeline and analyses:
 | Figure 3       | R/2_iNEXT_fox.R                 | figures/DiversityHelminth.png        |
 | Table 2        | R/2_iNEXT_fox.R                 | tables/HelmDiversityArea.html        |
 | suppl. table 3 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html       |
+| Table 3        | R/5_compositionHelmDiet.R       | tables/Permanova.csv                 |
+| suppl.table 4  | R/5_compositionHelmDiet.R       | tables/PermanovaConti.csv            |
+| Figure 4       | R/5_compositionHelmDiet.R       | figures/CompositionEnvHelm.png       |
 |                |                                 |                                      |
 |                |                                 |                                      |
+|                |                                 |                                      |
+
 
 
 ## 0) Environmental variables
