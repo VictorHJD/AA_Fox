@@ -416,12 +416,12 @@ if(!"Helm_Species_richness" %in% colnames(sample_data(PSG))){
 }
     
 gimmeModels(HelmEstimateAsy) %>%
-    ## filter(predictor %in% "modelArea")%>%
+    filter(Diversity %in% "Species richness")%>%
     dplyr::select(model) %>% .[["model"]]%>%
-    stargazer(type = "html", out="./tables/HelmDiversityArea.html")
+    stargazer(type = "html", out="./tables/HelmDiversityq0.html")
 
 gimmeModels(HelmEstimateAsy) %>%
-    filter(!predictor %in% "modelArea")%>%
+    filter(Diversity %in% c("Shannon diversity", "Simpson diversity"))%>%
     dplyr::select(model) %>% .[["model"]]%>%
-    stargazer(type = "html", out="./tables/HelmDiversityConti.html")
+    stargazer(type = "html", out="./tables/HelmDiversityq1aq2.html")
 
