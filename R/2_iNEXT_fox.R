@@ -425,7 +425,7 @@ gimmeModels(HelmEstimateAsy) %>%
     filter(Diversity %in% c("Shannon diversity", "Simpson diversity"))%>%
     dplyr::select(model) %>% .[["model"]]%>%
     stargazer(type = "html", out="./tables/HelmDiversityq1aq2.html",
-              column.labels = rep(c("Shannon diversity (q=1)",
-                                    "Simpson diversity (q=2)"),
-                                  each=4))
+              dep.var.labels = rep(c("Shannon diversity (q=1)",
+                                     "Simpson diversity (q=2)"),
+                                   each=4))
 
