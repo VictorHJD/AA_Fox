@@ -418,7 +418,8 @@ if(!"Helm_Species_richness" %in% colnames(sample_data(PSG))){
 gimmeModels(HelmEstimateAsy) %>%
     filter(Diversity %in% "Species richness")%>%
     dplyr::select(model) %>% .[["model"]]%>%
-    stargazer(type = "html", out="./tables/HelmDiversityq0.html")
+    stargazer(type = "html", out="./tables/HelmDiversityq0.html",
+              dep.var.caption = "Species Richness (q=0)")
 
 gimmeModels(HelmEstimateAsy) %>%
     filter(Diversity %in% c("Shannon diversity", "Simpson diversity"))%>%
