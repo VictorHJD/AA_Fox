@@ -50,7 +50,7 @@ and how the data flows through the pipeline and analyses:
 Dropbox/Project_Canid_Metabarcoding/5_scripts/Extract_EnvirCovariates_BE_BB_20200903.Rmd
 (by Cedric Scherer)
  
--> 0_Extract_Einvir_Covariates.R
+-> 0_Extract_Einvir_Covariates.R (by Cedric Scherer and Aimara Planillo)
  
 The input raw (layer) files this is based on are in:
 input_data/tifs/*.tif
@@ -103,7 +103,7 @@ diversity [q=1] and Simpson diversity [q=2]), beta (jaccard centroid
 distances) and gamma diversity (rarefied diversity by fox individual).
 
 
-## 3) JSDM analysis 
+## 4) JSDM analysis 
 
 ### a) Helminth trait data
 Caro Scholz compiled helminth traits in 
@@ -122,13 +122,14 @@ only analysing this.
 JSDM_parasites_helminths_AP_20200828.Rmd (by Aimara
 Planillo). 
  
--> 3_JSDM_helminths.R
+-> 4a_JSDM_helminths.R (run the JSDM models)
+-> 4b_JSDM_helmAnalysis.R (evaluate and extract posterior effects from JSDM models)
 
 Runs the model, the model check and shows the results
  
-## 4) Comunity composition analyses
+## 5) Comunity composition analyses
 
 Dropbox/Project_Canid_Metabarcoding/5_scripts/PCA_CS_20200903_1946 
  
--> 4_CommunityComposition.R
+-> 5_CommunityComposition.R
  
