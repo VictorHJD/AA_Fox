@@ -9,8 +9,13 @@ library(tidyr)
 library(igraph)
 library(ggraph)
 library(tibble)
+library(reshape2)
 
 recomputejSDMModels <- FALSE
+
+## to avoid doing now convergence tests (and pdfs of those) every time
+## the script is run
+newConvergenceTest <- FALSE
 
 if(!exists("PAModel_area") | !exists("PAModel_grad")){
     if(recomputejSDMModels){
@@ -108,26 +113,27 @@ GELMPAhist <- ggplot(PAConv_area, aes(GELMAN.est)) +
 
 ESSPAhist / GELMPAhist
 
+if(newConvergenceTest){
 ## chain convergence
-MCMCtrace(PAMpost_area$Beta, 
-          pdf = TRUE, 
-          open_pdf = FALSE,
-          filename = "jSDM_PA_MCMCtrace_beta_area",
-          wd= "JSDM_models/figures_PA/")
+    MCMCtrace(PAMpost_area$Beta, 
+              pdf = TRUE, 
+              open_pdf = FALSE,
+              filename = "jSDM_PA_MCMCtrace_beta_area",
+              wd= "JSDM_models/figures_PA/")
 
-MCMCtrace(PAMpost_area$Gamma, 
-          pdf = TRUE, 
-          open_pdf = FALSE,
-          filename = "jSDM_PA_MCMCtrace_gamma_area",
-          wd = "JSDM_models/figures_PA/")
+    MCMCtrace(PAMpost_area$Gamma, 
+              pdf = TRUE, 
+              open_pdf = FALSE,
+              filename = "jSDM_PA_MCMCtrace_gamma_area",
+              wd = "JSDM_models/figures_PA/")
 
-MCMCtrace(PAMpost_area$Omega[[1]], 
-          pdf = TRUE, 
-          open_pdf = FALSE,
-          filename = "jSDM_PA_MCMCtrace_omega_area",
-          wd = "JSDM_models/figures_PA/")
-
-
+    MCMCtrace(PAMpost_area$Omega[[1]], 
+              pdf = TRUE, 
+              open_pdf = FALSE,
+              filename = "jSDM_PA_MCMCtrace_omega_area",
+              wd = "JSDM_models/figures_PA/")
+}
+    
 ## gradient model
 PAMpost_grad <- convertToCodaObject(PAModel_grad)
 PAConv_grad <- getConvergenceStats(PAMpost_grad)
@@ -162,24 +168,25 @@ GELMPAhist <- ggplot(PAConv_grad, aes(GELMAN.est)) +
 ESSPAhist / GELMPAhist
 
 ## chain convergence
-MCMCtrace(PAMpost_grad$Beta, 
-          pdf = TRUE, 
-          open_pdf = FALSE,
-          filename = "jSDM_PA_MCMCtrace_beta_grad",
-          wd= "JSDM_models/figures_PA/")
+if(newConvergenceTest) {
+    MCMCtrace(PAMpost_grad$Beta, 
+              pdf = TRUE, 
+              open_pdf = FALSE,
+              filename = "jSDM_PA_MCMCtrace_beta_grad",
+              wd= "JSDM_models/figures_PA/")
 
-MCMCtrace(PAMpost_grad$Gamma, 
-          pdf = TRUE, 
-          open_pdf = FALSE,
-          filename = "jSDM_PA_MCMCtrace_gamma_grad",
-          wd = "JSDM_models/figures_PA/")
+    MCMCtrace(PAMpost_grad$Gamma, 
+              pdf = TRUE, 
+              open_pdf = FALSE,
+              filename = "jSDM_PA_MCMCtrace_gamma_grad",
+              wd = "JSDM_models/figures_PA/")
 
-MCMCtrace(PAMpost_grad$Omega[[1]], 
-          pdf = TRUE, 
-          open_pdf = FALSE,
-          filename = "jSDM_PA_MCMCtrace_omega_grad",
-          wd = "JSDM_models/figures_PA/")
-
+    MCMCtrace(PAMpost_grad$Omega[[1]], 
+              pdf = TRUE, 
+              open_pdf = FALSE,
+              filename = "jSDM_PA_MCMCtrace_omega_grad",
+              wd = "JSDM_models/figures_PA/")
+}
 
 
 ###########################
