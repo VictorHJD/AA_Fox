@@ -7,15 +7,16 @@ e.g. 0_, 1_, ..).
 
 We follow one simple convention for executing the scripts: Your R
 session should run in the repository folder directly (in the folder
-that you cloned, not in 'input_data/', 'intermediate_data' or 'R/').
+that you cloned, not in 'input_data/', '/intermediate_data' or 'R/').
 
 At the beginning of each script we test for the availability of the
 required data (in a potentially interactive R session) and either
 recompute it executing ('sourcing') the previous scripts (recompute =
 TRUE) or read it from 'intermediate_data'. 
 
-For coauthors, here is how this was migrated from the Dropbox folder
-and how the data flows through the pipeline and analyses:
+All neccesary intermediate data to run the script are contained within
+this repository. You can run each script seperately to scrutinze the
+methods and code an to reproduce the results. 
 
 ## Matching of files from this repository with references in the manuscript
 
@@ -34,6 +35,7 @@ and how the data flows through the pipeline and analyses:
 | suppl.table 4  | R/5_compositionHelmDiet.R       | tables/PermanovaConti.csv                                 |
 | Figure 4       | R/5_compositionHelmDiet.R       | figures/CompositionEnvHelm.png                            |
 | Table 4        | R/5_compositionHelmDiet.R       | tables/EnvFitnMDS.csv                                     |
+| Table 5        | R/3_pre_models.R                | tables/IndHelmAbu.html                                    |
 | Figure 5       | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                          |
 | Figure 6       | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png                        |
 | Figure 7       | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_GammaCoefs_traits.png |
@@ -44,13 +46,9 @@ and how the data flows through the pipeline and analyses:
 | Figure S6      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_sp_assoc.png          |
 
 
-
 ## 0) Environmental variables
 
-Dropbox/Project_Canid_Metabarcoding/5_scripts/Extract_EnvirCovariates_BE_BB_20200903.Rmd
-(by Cedric Scherer)
- 
--> 0_Extract_Einvir_Covariates.R (by Cedric Scherer and Aimara Planillo)
+-> R/0_Extract_Einvir_Covariates.R (by Cedric Scherer and Aimara Planillo)
  
 The input raw (layer) files this is based on are in:
 input_data/tifs/*.tif
@@ -66,19 +64,23 @@ fox and writes them (together with the 'basic data') to
 'intermediate_data/Fox_data_envir.RDS'.
 
  
-## 1) Sequencing data 
-We (Victor Jarquin-Diaz and Emanuel Heitlinger) process the raw
-sequencing data in 1_Fox_general_MA.R based on matching of the primer
+## 1) Sequencing data, sample data and helminith trait data
+
+-> R/1_Fox_general_MA.R (by Victor Victor Jarquin-Diaz and Emanuel Heitlinger)
+
+The script reads the raw sequencing data (and stors and reads
+intermediate files) from the compute server of the Heitlinger group
+(harriet@biologie.hu-berlin.de) and is in the present form not
+executable on other systems. In oder to execute it you'll need to
+download the data from NCBI-SRA [BioProject
+PRJNA386767](https://www.ncbi.nlm.nih.gov/sra/PRJNA386767), as
+sequecing data is to large for storage on github. Then adapt the path
+for reading the data in the script accoringly.
+
+We process the raw sequencing data based on matching of the primer
 sequences in 'input_data/primer_file_foxes.csv'. We are using the
 MultiAmplicon wrapper of the dada2 package to produce amplified
 sequence variant (ASV) abundances for each fox.
-
-The sequencing data is most easiely available on the compute server of
-the Heitlinger group (harriet@biologie.hu-berlin.de). The script could
-alternatively be run on the sequencing data after download from ENA or
-NCBI-SRA [BioProject
-PRJNA386767](https://www.ncbi.nlm.nih.gov/sra/PRJNA386767) (for full
-reproducibilty; sequencing data is to large for storage on github).
 
 The script also adds the environmenal covariates (from
 intermediate_data/Fox_data_envir.RDS produced in
@@ -86,50 +88,46 @@ intermediate_data/Fox_data_envir.RDS produced in
 pipeline. The environmental covariates are stored as "sample_data" in
 this object.
 
-The script stores intermediate data on our server and is in the
-present not executable anywhere else. You can continue with it's
-output object. 
+Similarly, the helminth trait data (found in
+input_data/helminth_traits.csv; compiled by Carolin Scholz and Emanuel
+Heitlinger) is storted in the "phloseq" object's "taxon_table"). 
  
 We store output as a phyloseq object in
 'intermediate_data/PhyloSeqCombi.Rds'
 
 ## 2) Diversity analysis
 
-At this point we have all data to perform diversity analysis in
-'R/2_iNEXT_fox.R'
 
-We look at three differen masures for alpha (species [q=0], Shannon
-diversity [q=1] and Simpson diversity [q=2]), beta (jaccard centroid
-distances) and gamma diversity (rarefied diversity by fox individual).
+-> R/2_iNEXT_fox.R (by Carolin Scholz, Aimara Planillo, Cedric Scherer
+and Emanuel Heitlinger)
 
+We look at three differen masures for alpha diverstiy: species
+richness [q=0], Shannon diversity [q=1] and Simpson diversity [q=2]),
+based on the iNext package. We compare beta diversity (jaccard
+centroid distances) using the package vegan and gamma diversity
+(rarefied diversity by fox individual) again using iNext.
+
+Diversity data for each fox are appended to the "sample_data" in the
+phyloseq object.
+
+## 3) Generalized linear models for helminth abundance
+
+-> R/3_pre_models.R (by Emanuel Heitlinger)
+
+Runs generalized linear models on the abundance of individual helminth species
 
 ## 4) JSDM analysis 
 
-### a) Helminth trait data
-Caro Scholz compiled helminth traits in 
-Dropbox/Project_Canid_Metabarcoding/6_processed_data/traits_grouped.RDS
- 
--> input_data/helminth_traits.csv
- 
-This manual input data can be edited directly. It still contains many
-NAs we might want to add missing information as we progress with
-analysis/publication.
- 
-AT THIS POINT WE HAVE ALL THE DATA collected and processed (in the
-phloseq object and the traits table) and the remaining two scripts are
-only analysing this.
- 
-JSDM_parasites_helminths_AP_20200828.Rmd (by Aimara
-Planillo). 
- 
--> 4a_JSDM_helminths.R (run the JSDM models)
--> 4b_JSDM_helmAnalysis.R (evaluate and extract posterior effects from JSDM models)
 
-Runs the model, the model check and shows the results
+-> 4a_JSDM_helminths.R (by Aimara Planillo)
+Runs the JSDM models 
+
+-> 4b_JSDM_helmAnalysis.R
+Evaluates the models and extract posterior effects and plot in 
+
  
 ## 5) Comunity composition analyses
 
-Dropbox/Project_Canid_Metabarcoding/5_scripts/PCA_CS_20200903_1946 
- 
--> 5_CommunityComposition.R
- 
+-> 5_CommunityComposition.R (by Emanuel Heitlinger)
+
+Performs community analyses using the vegan package
