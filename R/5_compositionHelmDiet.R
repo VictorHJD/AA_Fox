@@ -65,7 +65,8 @@ PERMA <- vegan::adonis2(HelmDataNA ~ area + weight_kg + age +
                      Diet_Species_richness + BacM_Species_richness +
                      FunM_Species_richness,
                      data=EnvDataNA, 
-                     na.action = na.fail, by="margin")
+                     na.action = na.fail, by="margin",
+                     method="jaccard")
 
 PERMA
 
@@ -77,21 +78,24 @@ PERMAimp <- adonis2(HelmDataNA ~  imperv_1000m + weight_kg + age +
                         Diet_Species_richness + BacM_Species_richness +
                         FunM_Species_richness,
                     data=EnvDataNA, 
-                    na.action = na.fail, by="margin")
+                    na.action = na.fail, by="margin",
+                    method="jaccard")
 
 PERMAtree <- adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
                          sex  + season + year +
                          Diet_Species_richness + BacM_Species_richness +
                          FunM_Species_richness,
                      data=EnvDataNA, 
-                     na.action = na.fail, by="margin")
+                     na.action = na.fail, by="margin",
+                     method="jaccard")
 
 PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
                           sex  + season + year +
                           Diet_Species_richness + BacM_Species_richness +
                           FunM_Species_richness,
                       data=EnvDataNA, 
-                      na.action = na.fail, by="margin")
+                      na.action = na.fail, by="margin",
+                      method="jaccard")
 
 ## this does not work, let's stick with the csv
 ## stargazer(list(PERMA, PERMAtree, PERMAimp, PERMAhuman), type="html",
