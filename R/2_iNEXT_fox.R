@@ -274,7 +274,7 @@ gimmeModels <- function (EA){
                            data = ., family = "poisson")
            ) -> glmEA
 
-    EAModels<- rbind(lmEA, glmEA)
+    EAModels <- rbind(lmEA, glmEA)
 
     EAModels %>%
         pivot_longer(!Diversity, names_to = "predictor", values_to = "model") %>%
@@ -297,7 +297,7 @@ HelmModels <- gimmeModels(HelmEstimateAsy)
 
 AreaRich <- HelmModels %>%
     filter(Diversity %in% "Species richness")%>%
-    dplyr::select(model) %>% .[["model"]]
+    dplyr::select(model) %>% .[["model"]] %>% .[[1]]
 
 plot(ggeffect(AreaRich, terms=c("weight_kg", "season", "area")),
                      rawdata=TRUE) +
@@ -314,7 +314,6 @@ ContiRich <- glm(Estimator ~ tree_cover_1000m +
 
 ### The problem is the Continous model has a better AIC but it is not
 ### any better at explaining anything. 
-
 
 ## Parasitic Helminths not more diverse in brandenburg
 
@@ -450,15 +449,22 @@ ggsave("figures/suppl/HelmRich_Conti_Env.png",
     
 HelmModels %>%
     filter(Diversity %in% "Species richness")%>%
-    dplyr::select(model) %>% .[["model"]]%>%
+    dplyr::select(model) %>% .[["model"]] %>%
+    append(. , list(ContiRich)) %>%
     stargazer(type = "html", out="./tables/HelmDiversityq0.html",
-              dep.var.caption = "Species Richness (q=0)")
+              dep.var.caption = "Species Richness (q=0)",
+              dep.var.labels  = c("", ""),
+              intercept.top=TRUE, intercept.bottom=FALSE)
 
 HelmModels %>%
     filter(Diversity %in% c("Shannon diversity", "Simpson diversity"))%>%
-    dplyr::select(model) %>% .[["model"]]%>%
-    stargazer(type = "html", out="./tables/HelmDiversityq1aq2.html",
+    dplyr::select(model) %>% .[["model"]] %>%
+    stargazer(type = "html", out="./tables/suppl/HelmDiversityq1aq2.html",
               column.labels = rep(c("Shannon diversity (q=1)",
-                                     "Simpson diversity (q=2)"),
-                                   each=4))
+                                    "Simpson diversity (q=2)"),
+                                  each=4),
+              dep.var.caption = "",
+              dep.var.labels  = "",
+              intercept.top=TRUE, intercept.bottom=FALSE
+              )
 
