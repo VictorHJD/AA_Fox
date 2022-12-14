@@ -197,7 +197,7 @@ exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
 ## We exclude like this
 MAFinal <- MAF2[which(!exclude.primers), which(!exclude.samples)]
 
-png("figures/AmpSampleHeatmap.png", width=24, height=8, units = 'in', res = 300)
+png("figures/suppl/AmpSampleHeatmap.png", width=24, height=8, units = 'in', res = 300)
 plotAmpliconNumbers(MAFinal)
 dev.off()
 

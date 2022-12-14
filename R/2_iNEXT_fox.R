@@ -15,7 +15,9 @@ library(sjlabelled)
 ## The "bioinformatics" script "1_Fox_general_MA.R" has finer controls
 ## within itself for now. But we can still read it's single final
 ## output object.
+
 recomputeBioinfo <- FALSE
+## recomputeBioinfo <- TRUE
 
 if(!exists("PSG")){
     if(recomputeBioinfo){
@@ -42,8 +44,15 @@ if(!exists("PSG")){
 #font_num <- "Roboto Condensed"
 
 
-### As we now want diversity for different taxonomic (phyla) subsets
-### I've put all off this in on giant function 
+### WARNING: most of the functions in this script are more complicatd
+### than necessary for the present (Dec 2022) manuscript. The
+### functions allow a general assesment of diversity (q=0, 1 and 2)
+### for different taxonomic (phyla) subsets. I've put all off this in
+### two big functions. One runs iNEXT, compiles the data and generates
+### plots (getAllDiversity) the other one (gimmeModels) runs all the
+### statistical models on them
+
+
 getAllDiversity <- function (ps, output_string, plot=FALSE) {
     Counts <- as(otu_table(ps), "matrix")
     Counts <- as.data.frame(t(Counts))
@@ -210,11 +219,11 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
     
     if(plot %in% c("pdf", "png")){
         if(plot %in% "pdf"){
-            f4 <- paste0("figures/Diversity", output_string, ".pdf")
+            f4 <- paste0("figures/suppl/Diversity", output_string, ".pdf")
             ggsave(f4, width = 13, height = 9, device = cairo_pdf)
         }
         if(plot %in% "png"){
-            f4 <- paste0("figures/Diversity", output_string, ".png")
+            f4 <- paste0("figures/suppl/Diversity", output_string, ".png")
             ggsave(f4, width = 13, height = 9, bg = "white", dpi = 600, device="png")
         }
     } else{
@@ -236,31 +245,31 @@ gimmeModels <- function (EA){
     EA %>%
         filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
         do(modelArea = lm(Estimator~ area + condition + weight_kg + sex + age +
-                              season + year, 
+                              season, 
                           data = .),
            modelImperv = lm(Estimator~ imperv_1000m + condition + weight_kg +
-                                sex + age  + season + year, 
+                                sex + age  + season, 
                             data = .),
            modelTree = lm(Estimator~ tree_cover_1000m + condition + weight_kg +
-                              sex + age + season + year,
+                              sex + age + season,
                           data = .),
            modelHFPI = lm(Estimator~ human_fpi_1000m + condition + weight_kg +
-                              sex + age + season + year,
+                              sex + age + season,
                           data = .)
            ) -> lmEA
 
     EA %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
         do(modelArea = glm(REstimator ~ area + condition + weight_kg +
-                               sex + age  + season + year,
+                               sex + age  + season,
                            data = ., family = "poisson"),
            modelImperv = glm(REstimator ~ imperv_1000m + condition + weight_kg +
-                                 sex + age + season + year,
+                                 sex + age + season,
                              data = ., family = "poisson"),
            modelTree = glm(REstimator ~ tree_cover_1000m + condition + weight_kg +
-                               sex + age + season + year,
+                               sex + age + season,
                            data = ., family = "poisson"),
            modelHFPI = glm(REstimator ~ human_fpi_1000m + condition + weight_kg +
-                               sex + age + season + year,
+                               sex + age + season,
                            data = ., family = "poisson")
            ) -> glmEA
 
@@ -284,6 +293,37 @@ HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% c("Helminth"))
                                    "Helminth", plot="png")
 
 gimmeModels(HelmEstimateAsy)
+
+### Single models for a streamlined (reduced) analysis:
+HelmEstimateAsy <- HelmEstimateAsy[HelmEstimateAsy$Diversity%in%"Species richness",]
+
+HelmEstimateAsy$Estimator <- as.numeric(HelmEstimateAsy$Estimator)
+HelmEstimateAsy$weight_kg <- as.numeric(HelmEstimateAsy$weight_kg)
+
+AreaRich <- glm(Estimator ~ area + condition + weight_kg +
+                    sex + age  + season,
+                data = HelmEstimateAsy, family = "poisson")
+
+library(ggeffects)
+DivModelPlot <- plot(ggeffect(AreaRich, terms=c("weight_kg", "season", "area")),
+                     rawdata=TRUE) +
+    scale_y_continuous("Species richness (Hill number q=0)")
+
+ggsave("figures/Div_Model.png", width = 7, height = 6, bg = "white", dpi = 600)
+
+HelmEstimateAsy$tree_cover_1000m  <- as.numeric(HelmEstimateAsy$tree_cover_1000m)
+HelmEstimateAsy$imperv_1000m <- as.numeric(HelmEstimateAsy$imperv_1000m)
+HelmEstimateAsy$human_fpi_1000m <- as.numeric(HelmEstimateAsy$human_fpi_1000m)
+
+ContiRich <- glm(Estimator ~ tree_cover_1000m + 
+                     imperv_1000m + 
+                     human_fpi_1000m + 
+                     + condition + weight_kg +
+                     sex + age  + season,
+                 data = HelmEstimateAsy, family = "poisson")
+
+### The problem is the Continous model has a better AIC but it is not
+### any better at explaining anything. 
 
 
 ## Parasitic Helminths not more diverse in brandenburg
@@ -338,82 +378,85 @@ gimmeModels(ApicoEnvirEstimateAsy)
 ### Let's see whether there's a non-linear "ecotone" effect of any of
 ### the continuous environmental variables!
 
+## ## Diet diversity along a gradient 
+## DietEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
+##                                   tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
+##     pivot_longer(cols = contains("1000m")) %>%
+##     ggplot(aes(value, Estimator, color = area)) +
+##     geom_point() +
+##     scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+##     scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+##     facet_wrap(name~Diversity, scales = "free") + 
+##     stat_smooth() +
+##     geom_smooth(aes(value, Estimator), color = "black") +
+##     ggtitle("Diet diversity")
+
+## ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width = 25, height = 15, device = cairo_pdf)
+
+### As a reviewer figure only the q0
+
 HelmEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
                                   tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
+    dplyr::filter(Diversity %in%"Species richness") %>%
     pivot_longer(cols = contains("1000m")) %>%
     ggplot(aes(value, Estimator, color = area)) +
     geom_point() +
     scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
     scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    facet_wrap(name ~ Diversity, scales = "free") + 
+    facet_wrap(~name, nrow=1, scales = "free") + 
     stat_smooth() +
     geom_smooth(aes(value, Estimator), color="black") +
-    ggtitle("Helminth diversity")
+    scale_y_continuous("Helminth species richness (Hill number q=0)")
 
-ggsave("figures/suppl/HelmDiv_Conti_Env.pdf", width = 25, height = 15, device = cairo_pdf)
-
-DietEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
-                                  tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
-    pivot_longer(cols = contains("1000m")) %>%
-    ggplot(aes(value, Estimator, color = area)) +
-    geom_point() +
-    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    facet_wrap(name~Diversity, scales = "free") + 
-    stat_smooth() +
-    geom_smooth(aes(value, Estimator), color = "black") +
-    ggtitle("Diet diversity")
-
-ggsave("figures/suppl/DietDiv_Conti_Env.pdf", width = 25, height = 15, device = cairo_pdf)
+ggsave("figures/suppl/HelmRich_Conti_Env.png", 
+       width = 21, height = 7, bg = "white", dpi = 600)
 
 
-#### Should do the same for bacteria!!!!
 
+## ## Obtaining diet diversity as a predictor for later models
+## ## Decided to remove this for now from the manuscript (December 2022). 
 
-## ## Obtaining diet diversity as a predictor for later models (could
-## ## have done this before the modelling above for cleaner code, but
-## ## now move on ;-))
-DietEstimateAsy %>%
-    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
-    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "Diet ") ->
-    DietDiversity
+## DietEstimateAsy %>%
+##     dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+##     pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "Diet ") ->
+##     DietDiversity
 
-HelmEstimateAsy %>%
-    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
-    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "Helm ") ->
-    HelminthDiversity
+## HelmEstimateAsy %>%
+##     dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+##     pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "Helm ") ->
+##     HelminthDiversity
 
-ApicoPEstimateAsy %>%
-    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
-    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "ApicoP ") ->
-    ApicoPDiversity
+## ApicoPEstimateAsy %>%
+##     dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+##     pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "ApicoP ") ->
+##     ApicoPDiversity
 
-BacterialEstimateAsy %>%
-    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
-    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "BacM ") ->
-    BacterialDiversity
+## BacterialEstimateAsy %>%
+##     dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+##     pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "BacM ") ->
+##     BacterialDiversity
 
-FungalEstimateAsy %>%
-    dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
-    pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "FunM ") ->
-    FungalDiversity
+## FungalEstimateAsy %>%
+##     dplyr::select(-c(Observed, LCL, s.e.,UCL)) %>%
+##     pivot_wider(names_from = Diversity, values_from = Estimator, names_prefix = "FunM ") ->
+##     FungalDiversity
 
-## only append the diversity statustics to the sample data if it's not
-## alredy there
-if(!"Helm_Species_richness" %in% colnames(sample_data(PSG))){
-    Reduce(merge, list(DietDiversity, HelminthDiversity,
-                       ApicoPDiversity, BacterialDiversity,
-                       FungalDiversity)) %>%
-        rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
-        AllDiv
-    ## all(AllDiv$Assemblage == rownames(sample_data(PSG)))
-    rownames(AllDiv) <- AllDiv$Assemblage
-    sample_data(PSG) <- AllDiv
-    ### write new phylseq object only if it's now in sample data 
-    if("Helm_Species_richness" %in% colnames(sample_data(PSG))){
-        saveRDS(PSG, file = "intermediate_data/PhyloSeqGenus.Rds")
-    }
-}
+## ## only append the diversity statustics to the sample data if it's not
+## ## alredy there
+## if(!"Helm_Species_richness" %in% colnames(sample_data(PSG))){
+##     Reduce(merge, list(DietDiversity, HelminthDiversity,
+##                        ApicoPDiversity, BacterialDiversity,
+##                        FungalDiversity)) %>%
+##         rename_with(~ gsub(" ", "_", .x, fixed = TRUE)) ->
+##         AllDiv
+##     ## all(AllDiv$Assemblage == rownames(sample_data(PSG)))
+##     rownames(AllDiv) <- AllDiv$Assemblage
+##     sample_data(PSG) <- AllDiv
+##     ### write new phylseq object only if it's now in sample data 
+##     if("Helm_Species_richness" %in% colnames(sample_data(PSG))){
+##         saveRDS(PSG, file = "intermediate_data/PhyloSeqGenus.Rds")
+##     }
+## }
     
 gimmeModels(HelmEstimateAsy) %>%
     filter(Diversity %in% "Species richness")%>%
