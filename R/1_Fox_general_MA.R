@@ -419,8 +419,10 @@ table(sample_data(PSG)$weight_imputed)
 table(sample_data(PSG)$condition_imputed)
 
 ## and the areas by season for the methods part
-write.csv(table(season=sample_data(PSG)$season, area=sample_data(PSG)$area),
-          file="tables/seasonArea.csv")
+## write.csv(table(season=sample_data(PSG)$season, area=sample_data(PSG)$area),
+##           file="tables/seasonArea.csv")
+## ## this is now only in-text
+table(season=sample_data(PSG)$season, area=sample_data(PSG)$area)
 
 ## and save PSG for further use 
 saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")

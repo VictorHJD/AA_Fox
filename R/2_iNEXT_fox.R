@@ -8,6 +8,7 @@ library(colorspace)
 library(MASS)
 library(broom)
 library(stargazer)
+library(ggeffects)
 library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
@@ -292,28 +293,17 @@ gimmeModels <- function (EA){
 HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% c("Helminth")),
                                    "Helminth", plot="png")
 
-gimmeModels(HelmEstimateAsy)
+HelmModels <- gimmeModels(HelmEstimateAsy)
 
-### Single models for a streamlined (reduced) analysis:
-HelmEstimateAsy <- HelmEstimateAsy[HelmEstimateAsy$Diversity%in%"Species richness",]
+AreaRich <- HelmModels %>%
+    filter(Diversity %in% "Species richness")%>%
+    dplyr::select(model) %>% .[["model"]]
 
-HelmEstimateAsy$Estimator <- as.numeric(HelmEstimateAsy$Estimator)
-HelmEstimateAsy$weight_kg <- as.numeric(HelmEstimateAsy$weight_kg)
-
-AreaRich <- glm(Estimator ~ area + condition + weight_kg +
-                    sex + age  + season,
-                data = HelmEstimateAsy, family = "poisson")
-
-library(ggeffects)
-DivModelPlot <- plot(ggeffect(AreaRich, terms=c("weight_kg", "season", "area")),
+plot(ggeffect(AreaRich, terms=c("weight_kg", "season", "area")),
                      rawdata=TRUE) +
     scale_y_continuous("Species richness (Hill number q=0)")
 
 ggsave("figures/Div_Model.png", width = 7, height = 6, bg = "white", dpi = 600)
-
-HelmEstimateAsy$tree_cover_1000m  <- as.numeric(HelmEstimateAsy$tree_cover_1000m)
-HelmEstimateAsy$imperv_1000m <- as.numeric(HelmEstimateAsy$imperv_1000m)
-HelmEstimateAsy$human_fpi_1000m <- as.numeric(HelmEstimateAsy$human_fpi_1000m)
 
 ContiRich <- glm(Estimator ~ tree_cover_1000m + 
                      imperv_1000m + 
@@ -458,13 +448,13 @@ ggsave("figures/suppl/HelmRich_Conti_Env.png",
 ##     }
 ## }
     
-gimmeModels(HelmEstimateAsy) %>%
+HelmModels %>%
     filter(Diversity %in% "Species richness")%>%
     dplyr::select(model) %>% .[["model"]]%>%
     stargazer(type = "html", out="./tables/HelmDiversityq0.html",
               dep.var.caption = "Species Richness (q=0)")
 
-gimmeModels(HelmEstimateAsy) %>%
+HelmModels %>%
     filter(Diversity %in% c("Shannon diversity", "Simpson diversity"))%>%
     dplyr::select(model) %>% .[["model"]]%>%
     stargazer(type = "html", out="./tables/HelmDiversityq1aq2.html",
