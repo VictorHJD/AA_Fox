@@ -305,12 +305,20 @@ plot(ggeffect(AreaRich, terms=c("weight_kg", "season", "area")),
 
 ggsave("figures/Div_Model.png", width = 7, height = 6, bg = "white", dpi = 600)
 
-ContiRich <- glm(Estimator ~ tree_cover_1000m + 
+
+
+HelmEstimateAsy %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
+                                "human_fpi_1000m"), as.numeric) %>%
+    filter(Diversity %in% "Species richness")%>%
+    mutate(REstimator = round(Estimator)) -> EA
+
+
+ContiRich <- glm(REstimator ~ tree_cover_1000m + 
                      imperv_1000m + 
                      human_fpi_1000m + 
                      + condition + weight_kg +
                      sex + age  + season,
-                 data = HelmEstimateAsy, family = "poisson")
+                 data = EA, family = "poisson")
 
 ### The problem is the Continous model has a better AIC but it is not
 ### any better at explaining anything. 
