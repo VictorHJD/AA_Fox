@@ -31,19 +31,19 @@ methods and code an to reproduce the results.
 | Figure 3       | R/2_iNEXT_fox.R                 | figures/Div_Model.png                                     |
 | Table 2        | R/2_iNEXT_fox.R                 | tables/HelmDiversityArea.html                             |
 | suppl. table 3 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html                            |
-| Table 3        | R/5_compositionHelmDiet.R       | tables/Permanova.csv                                      |
-| suppl.table 4  | R/5_compositionHelmDiet.R       | tables/PermanovaConti.csv                                 |
-| Figure 4       | R/5_compositionHelmDiet.R       | figures/CompositionEnvHelm.png                            |
-| Table 4        | R/5_compositionHelmDiet.R       | tables/EnvFitnMDS.csv                                     |
-| Table 5        | R/3_pre_models.R                | tables/IndHelmAbu.html                                    |
-| Figure 5       | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                          |
-| Figure 6       | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png                        |
-| Figure 7       | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_GammaCoefs_traits.png |
-| Figure S2      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_sp_assoc.png          |
-| Figure S3      | R/4b_JSDM_helmAnalysis.R        | /JSDM_models/figures_PA/VarPart_PAModel_grad.png          |
-| Figure S4      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png         |
-| Figure S5      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_GammaCoefs_traits.png |
-| Figure S6      | R/4b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_sp_assoc.png          |
+| Table 3        | R/3_compositionHelmDiet.R       | tables/Permanova.csv                                      |
+| suppl.table 4  | R/3_compositionHelmDiet.R       | tables/PermanovaConti.csv                                 |
+| Figure 4       | R/3_compositionHelmDiet.R       | figures/CompositionEnvHelm.png                            |
+| Table 4        | R/3_compositionHelmDiet.R       | tables/suppl/EnvFitnMDS.csv                                     |
+| Table 5        | R/4_abu_models.R                | tables/IndHelmAbu.html                                    |
+| Figure 5       | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                          |
+| Figure 6       | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png                        |
+| Figure 7       | R/5b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_GammaCoefs_traits.png |
+| Figure S2      | R/5b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_area_sp_assoc.png          |
+| Figure S3      | R/5b_JSDM_helmAnalysis.R        | /JSDM_models/figures_PA/VarPart_PAModel_grad.png          |
+| Figure S4      | R/5b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png         |
+| Figure S5      | R/5b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_GammaCoefs_traits.png |
+| Figure S6      | R/5b_JSDM_helmAnalysis.R        | JSDM_models/figures_PA/PAModel_grad_sp_assoc.png          |
 
 
 ## 0) Environmental variables
@@ -110,24 +110,26 @@ centroid distances) using the package vegan and gamma diversity
 Diversity data for each fox are appended to the "sample_data" in the
 phyloseq object.
 
-## 3) Generalized linear models for helminth abundance
+## 3) Comunity composition analyses
 
--> R/3_pre_models.R (by Emanuel Heitlinger)
+-> 3_CommunityComposition.R (by Emanuel Heitlinger)
+
+Performs community analyses using the vegan package
+
+
+## 4) Generalized linear models for helminth abundance
+
+-> R/4_abu_models.R (by Emanuel Heitlinger)
 
 Runs generalized linear models on the abundance of individual helminth species
 
-## 4) JSDM analysis 
+## 5) jSDM analysis 
 
 
--> 4a_JSDM_helminths.R (by Aimara Planillo)
+-> 5a_JSDM_helminths.R (by Aimara Planillo)
 Runs the JSDM models 
 
--> 4b_JSDM_helmAnalysis.R
+-> 5b_JSDM_helmAnalysis.R
 Evaluates the models and extract posterior effects and plot in 
 
  
-## 5) Comunity composition analyses
-
--> 5_CommunityComposition.R (by Emanuel Heitlinger)
-
-Performs community analyses using the vegan package
