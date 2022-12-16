@@ -26,10 +26,6 @@ library(forcats)
 ## - weight fox (kg)
 ### We need to use weight as it has a BIG influence on diversity
 
-## - Species richness in diet
-## - Species richness in FunM
-## - Species richness in BacM
-
 ## Traits of parasites:
 ## - host range: moderate vs wide
 ## - zoonotic: yes/no
@@ -108,8 +104,7 @@ nrow(foxes) # [1] 140
 ### correlated
 envcov_cor <- foxes %>%
     dplyr::select(weight_kg, 
-                  tree_cover_1000m, imperv_1000m, human_fpi_1000m, 
-                  Diet_Species_richness, BacM_Species_richness, FunM_Species_richness) %>%
+                  tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
     mutate_all(as.numeric) %>%
     cor(x=., use = "pairwise.complete.obs") 
 
@@ -120,17 +115,11 @@ ggcorrplot(envcov_cor, type = "lower", lab = TRUE)
 ### variables) and we leave out imperv_1000m as it's highly correlated
 ### with human_fpi_1000m, which is more relevant (for diversity at least)
 
-### We should consider using also diet ("Diet_Species_richness") and
-### maybe bacterial ("BacM_Species_richness") and fungal
-### ("FunM_Species_richness") microbiome species richness as
-### predictors!
-
 envcov_data <- foxes %>%
-    dplyr::select(IZW_ID, area, sex, age, weight_kg, season, area, human_fpi_1000m, tree_cover_1000m,
-                  Diet_Species_richness, BacM_Species_richness, FunM_Species_richness)  %>%
+    dplyr::select(IZW_ID, area, sex, age, weight_kg, season, area,
+                  human_fpi_1000m, tree_cover_1000m)  %>%
     mutate_at(c("IZW_ID", "area", "sex", "age", "season", "area"), as.factor) %>%
-    mutate_at(c("weight_kg", "human_fpi_1000m", "tree_cover_1000m",
-                "Diet_Species_richness", "BacM_Species_richness", "FunM_Species_richness"), as.numeric) %>% 
+    mutate_at(c("weight_kg", "human_fpi_1000m", "tree_cover_1000m"), as.numeric) %>% 
   filter(!is.na(season))
 nrow(envcov_data) # [1] 140
 
@@ -162,11 +151,9 @@ verbose <- 1000
 
 
 ## Regression formula for environmental covariates
-XFormula.area = ~ sex + weight_kg + season + area +
-  Diet_Species_richness + BacM_Species_richness + FunM_Species_richness
+XFormula.area = ~ sex + weight_kg + season + area 
   
-XFormula.grad = ~ sex + weight_kg + season + human_fpi_1000m + tree_cover_1000m +
-  Diet_Species_richness + BacM_Species_richness + FunM_Species_richness
+XFormula.grad = ~ sex + weight_kg + season + human_fpi_1000m + tree_cover_1000m 
 
 
 # Regression formula for traits

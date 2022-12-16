@@ -63,7 +63,7 @@ HelmDataNA <- HelmData[rownames(EnvDataNA), ]
 ### NO OTHER environmental variables are better explaining composition!
 
 PERMA <- vegan::adonis2(HelmDataNA ~ area + weight_kg + age +
-                     sex  + season, 
+                     sex  + season + condition, 
                      data=EnvDataNA, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
@@ -74,22 +74,39 @@ PERMA
 ### environmental predictors) is not as good!
 
 PERMAimp <- adonis2(HelmDataNA ~  imperv_1000m + weight_kg + age +
-                        sex  + season, 
+                        sex  + season + condition, 
                     data=EnvDataNA, 
                     na.action = na.fail, by="margin",
                     method="jaccard")
 
 PERMAtree <- adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
-                         sex  + season, 
+                         sex  + season + condition, 
                      data=EnvDataNA, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
 
 PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
+                          sex  + season + condition, 
+                      data=EnvDataNA, 
+                      na.action = na.fail, by="margin",
+                      method="jaccard")
+
+PERMAall <- adonis2(HelmDataNA ~ human_fpi_1000m + tree_cover_1000m +
+                        imperv_1000m + weight_kg + age + condition +
                           sex  + season, 
                       data=EnvDataNA, 
                       na.action = na.fail, by="margin",
                       method="jaccard")
+
+
+PERMAallX <- adonis2(HelmDataNA ~ area + tree_cover_1000m +
+                        imperv_1000m + weight_kg + age + condition +
+                          sex  + season, 
+                      data=EnvDataNA, 
+                      na.action = na.fail, by="margin",
+                      method="jaccard")
+
+
 
 ## this does not work, let's stick with the csv
 ## stargazer(list(PERMA, PERMAtree, PERMAimp, PERMAhuman), type="html",
@@ -157,6 +174,9 @@ theme_update(
 ## font for numeric label
 font_num <- "Roboto Condensed"
 
+## arrow head size and offsetting for the graphic
+arrowhead <- 0.04
+offset <- 0.04
 
 ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
     geom_point(data = ScoresHelm, aes(colour = area, shape = season), size = 3) +
@@ -164,12 +184,14 @@ ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
     scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
     new_scale_color()+
     ### ordiArrowMul didn't work somehow have to scale manually
-    geom_segment(aes(x = 0, y = 0, xend = NMDS1*0.035, yend = NMDS2*0.035, color = log(pvals)),
-                 data = subset(HelmEnvFitDf, pvals<0.1),
-                 arrow = arrow(length = unit(0.035, "npc"), angle=23),
+    geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2,
+                     color = log(pvals)),
+                 data = subset(HelmEnvFitDf, pvals < 0.1),
+                 arrow = arrow(length = unit(arrowhead, "npc"), angle=23),
                  size=1.5) +
     scale_color_viridis_c(option = "cividis") + 
-    geom_text(data = subset(HelmEnvFitDf, pvals<0.1), aes(x = NMDS1*0.035, y = NMDS2*0.035+0.04),
+    geom_text(data = subset(HelmEnvFitDf, pvals<0.1),
+              aes(x = NMDS1, y = NMDS2 + offset),
               label = row.names(subset(HelmEnvFitDf, pvals<0.1)), size=5.5,
               color="darkgrey") +
     theme_bw() ->
@@ -178,10 +200,11 @@ ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
 ggHelmEnv +
     geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, color = pvals),
                  data = subset(HelmHelmDf, pvals<=0.1),
-                 arrow = arrow(length = unit(0.04, "npc"), angle=23), size=1.5) +
-    geom_text(data = subset(HelmHelmDf, pvals<0.1), aes(x = NMDS1, y = NMDS2+0.04),
+                 arrow = arrow(length = unit(arrowhead, "npc"), angle=23), size=1.5) +
+    geom_text(data = subset(HelmHelmDf, pvals<0.1), aes(x = NMDS1, y = NMDS2 + offset),
               label = row.names(subset(HelmHelmDf, pvals<0.1)), size=4.5,
               color="blue")+
+    scale_color_viridis_c(option = "plasma") + 
     theme_bw() -> ggHelmEnvHelm
 
 ggsave("figures/CompositionEnvHelm.png", ggHelmEnvHelm, 
