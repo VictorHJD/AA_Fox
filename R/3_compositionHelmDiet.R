@@ -15,17 +15,19 @@ if(!exists("PSG")){
     }
 }
 
-recomputeDiversity <- FALSE
+## ## Dec 2022 we don't need this anymore -> Excluded!
+## recomputeDiversity <- FALSE
 
-if(!"FunM_Species_richness"%in%colnames(sample_data(PSG))|
-   recomputeDiversity){
-    source("R/2_iNEXT_fox.R")
-}
+## if(!"FunM_Species_richness"%in%colnames(sample_data(PSG))|
+##    recomputeDiversity){
+##     source("R/2_iNEXT_fox.R")
+## }
 
-## Helminth traits
-traits <- read.csv("input_data/helminth_traits.csv")
-traits %>%
-    column_to_rownames("t.genus")  -> traits 
+## ## We also don't us this here!!
+## ## Helminth traits
+## traits <- read.csv("input_data/helminth_traits.csv")
+## traits %>%
+##     column_to_rownames("t.genus")  -> traits 
 
 PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
 
@@ -61,9 +63,7 @@ HelmDataNA <- HelmData[rownames(EnvDataNA), ]
 ### NO OTHER environmental variables are better explaining composition!
 
 PERMA <- vegan::adonis2(HelmDataNA ~ area + weight_kg + age +
-                     sex  + season + year +
-                     Diet_Species_richness + BacM_Species_richness +
-                     FunM_Species_richness,
+                     sex  + season, 
                      data=EnvDataNA, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
@@ -74,25 +74,19 @@ PERMA
 ### environmental predictors) is not as good!
 
 PERMAimp <- adonis2(HelmDataNA ~  imperv_1000m + weight_kg + age +
-                        sex  + season + year +
-                        Diet_Species_richness + BacM_Species_richness +
-                        FunM_Species_richness,
+                        sex  + season, 
                     data=EnvDataNA, 
                     na.action = na.fail, by="margin",
                     method="jaccard")
 
 PERMAtree <- adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
-                         sex  + season + year +
-                         Diet_Species_richness + BacM_Species_richness +
-                         FunM_Species_richness,
+                         sex  + season, 
                      data=EnvDataNA, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
 
 PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
-                          sex  + season + year +
-                          Diet_Species_richness + BacM_Species_richness +
-                          FunM_Species_richness,
+                          sex  + season, 
                       data=EnvDataNA, 
                       na.action = na.fail, by="margin",
                       method="jaccard")
@@ -103,17 +97,14 @@ PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
 
 write.csv(round(PERMA, 3), "tables/Permanova.csv")
 
-write.csv(rbind(PERMAimp, PERMAtree, PERMAhuman), "tables/PermanovaConti.csv")
+write.csv(rbind(PERMAimp, PERMAtree, PERMAhuman), "tables/suppl/PermanovaConti.csv")
 
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
                     try=1500, trymax=1500, k=3,
                     center = TRUE)
 
 HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "age", "weight_kg",
-                                            "Diet_Species_richness",
-                                            "BacM_Species_richness", 
-                                            "FunM_Species_richness",
-                                            "sex", "condition", "season", "year")])
+                                            "sex", "condition", "season")])
 
 
 ### AMAZING! ThIs MAKeS SeNSe!!!!
@@ -211,6 +202,6 @@ write.csv(round(
     rbind(EnvTabEF[order(EnvTabEF[, "Pval"]), ], 
           cbind(R2=0, Pval=0),
           HelmTabEF[order(HelmTabEF[, "Pval"]), ]),
-    3), "tables/EnvFitnMDS.csv", 
+    3), "tables/suppl/EnvFitnMDS.csv", 
     )
       
