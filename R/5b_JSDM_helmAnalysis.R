@@ -241,8 +241,7 @@ exp_variables <- colnames(PAModel_area$X)
 exp_variables
 # rename exp variables for nicer plots
 my_variables <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                  "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
-                  "FunM_Species_richness")
+                  "area[Brandenburg]")
 
 ModelFrame_area <- data.frame()
 # betas (coefficients) for each species
@@ -274,8 +273,7 @@ levels(as.factor(ModelFrame_area$Variable))
 ModelFrame_area <- ModelFrame_area %>% 
   mutate(Variable = as.factor(Variable)) %>% 
   mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                                            "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
-                                            "FunM_Species_richness"))) %>% 
+                                            "area[Brandenburg]"))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_area)
 
@@ -353,40 +351,40 @@ plot_2 <- toplot_ModelFrame_area %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
  
-plot_3 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
-                         "FunM_Species_richness")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("\n") +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12)) 
+## plot_3 <- toplot_ModelFrame_area %>% 
+##   filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
+##                          "FunM_Species_richness")) %>%
+##   ggplot(aes(group = Species, colour = Species)) + 
+##   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+##   geom_linerange(aes(x = Variable, ymin = CI_low,
+##                      ymax = CI_high, fill = significant),
+##                  lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+##   geom_linerange(aes(x = Variable, ymin = Q_25,
+##                      ymax = Q_75, fill = significant),
+##                  lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+##   geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+##                       ymax = Q_75, fill = significant),
+##                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+##   scale_fill_manual(values = c("White", "black"), 
+##                     guide = "none")+
+##   coord_flip() +
+##   scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+##                          guide = guide_legend(reverse = TRUE)) +
+##   xlab("") +
+##   ylab("\n") +
+##   theme(
+##     panel.background = element_rect(fill = NA),
+##     panel.grid.major = element_blank(), 
+##     axis.line = element_line(colour = "black"), 
+##     axis.text = element_text(size = 12), 
+##     axis.title = element_text(size = 14, face = "bold"),
+##     legend.title = element_text(size = 14, face = "bold"),
+##     legend.text = element_text(size = 12)) 
 
-(plot_betas <- ggarrange(plot_1, plot_2, plot_3, 
-          ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
-          labels = c("A", "B", "C"), 
-          widths = c(1,1.2,1.4)))
+(plot_betas <- ggarrange(plot_1, plot_2, ## plot_3, 
+          ncol = 2, nrow = 1, common.legend = TRUE, legend="right", 
+          labels = c("A", "B"), 
+          widths = c(1,1.2)))
 
 ggsave(plot = plot_betas, "./figures/PAModel_area_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
@@ -440,8 +438,7 @@ exp_variables <- colnames(PAModel_grad$X)
 exp_variables
 # rename exp variables
 my_variables <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",          
-                  "human_fpi_1000m", "tree_cover_1000m", 
-                  "Diet_Species_richness", "BacM_Species_richness", "FunM_Species_richness")
+                  "human_fpi_1000m", "tree_cover_1000m")
 
 ModelFrame_grad <- data.frame()
 # betas (coefficients) for each species
@@ -471,8 +468,7 @@ ModelFrame_grad
 ModelFrame_grad <- ModelFrame_grad %>% 
   mutate(Variable = as.factor(Variable)) %>% 
   mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",          
-                                            "human_fpi_1000m", "tree_cover_1000m", 
-                                            "Diet_Species_richness", "BacM_Species_richness", "FunM_Species_richness"))) %>% 
+                                            "human_fpi_1000m", "tree_cover_1000m"))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_grad)
 
@@ -546,41 +542,41 @@ plot_2 <- toplot_ModelFrame_grad %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12)) 
 
-plot_3 <- toplot_ModelFrame_grad %>% 
-  filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
-                         "FunM_Species_richness")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("\n") +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12)) 
+## plot_3 <- toplot_ModelFrame_grad %>% 
+##   filter(Variable %in% c("Diet_Species_richness", "BacM_Species_richness",
+##                          "FunM_Species_richness")) %>%
+##   ggplot(aes(group = Species, colour = Species)) + 
+##   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+##   geom_linerange(aes(x = Variable, ymin = CI_low,
+##                      ymax = CI_high, fill = significant),
+##                  lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+##   geom_linerange(aes(x = Variable, ymin = Q_25,
+##                      ymax = Q_75, fill = significant),
+##                  lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+##   geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+##                       ymax = Q_75, fill = significant),
+##                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+##   scale_fill_manual(values = c("White", "black"), 
+##                     guide = "none")+
+##   coord_flip() +
+##   scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+##                          guide = guide_legend(reverse = TRUE)) +
+##   xlab("") +
+##   ylab("\n") +
+##   theme(
+##     panel.background = element_rect(fill = NA),
+##     panel.grid.major = element_blank(), 
+##     axis.line = element_line(colour = "black"), 
+##     axis.text = element_text(size = 12), 
+##     axis.title = element_text(size = 14, face = "bold"),
+##     legend.title = element_text(size = 14, face = "bold"),
+##     legend.text = element_text(size = 12)) 
 
 
-(plot_betas <- ggarrange(plot_1, plot_2, plot_3, 
-                         ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
-                         labels = c("A", "B", "C"), 
-                         widths = c(1,1.2,1.4)))
+(plot_betas <- ggarrange(plot_1, plot_2, ## plot_3, 
+                         ncol = 2, nrow = 1, common.legend = TRUE, legend="right", 
+                         labels = c("A", "B"), 
+                         widths = c(1,1.2)))
 
 ggsave(plot = plot_betas, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
@@ -637,8 +633,7 @@ exp_variables_area <- colnames(PAModel_area$X)
 
 # rename exp variables for nicer plots
 my_variables_area <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                  "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
-                  "FunM_Species_richness")
+                  "area[Brandenburg]")
 
 ModelFrame_Traits_area <- data.frame()
 # betas (coefficients) for each species
@@ -669,8 +664,7 @@ ModelFrame_Traits_area
 ModelFrame_Traits_area <- ModelFrame_Traits_area %>% 
   mutate(Variable = as.factor(Variable)) %>% 
   mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                                            "area[Brandenburg]", "Diet_Species_richness", "BacM_Species_richness", 
-                                            "FunM_Species_richness"))) %>% 
+                                            "area[Brandenburg]"))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_Traits_area)
 
@@ -731,9 +725,7 @@ exp_variables_grad <- colnames(PAModel_grad$X)
 
 # rename exp variables for nicer plots
 my_variables_grad <- c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                       "human_fpi_1000m", "tree_cover_1000m", 
-                       "Diet_Species_richness", "BacM_Species_richness", 
-                       "FunM_Species_richness")
+                       "human_fpi_1000m", "tree_cover_1000m")
 
 ModelFrame_Traits_grad <- data.frame()
 # betas (coefficients) for each species
@@ -753,7 +745,6 @@ for (i in 1:length(m1_trait_grad)){
                                Q_75 = summary(mpost_gamma_tmp)$quantiles[, 4],
                                CI_high = summary(mpost_gamma_tmp)$quantiles[,5],
                                Traits = m1_trait_grad[i]) 
-  
   # Combine these data.frames
   ModelFrame_Traits_grad <- data.frame(rbind(ModelFrame_Traits_grad, modelFrame_tmp))
 }
@@ -764,9 +755,7 @@ ModelFrame_Traits_grad
 ModelFrame_Traits_grad <- ModelFrame_Traits_grad %>% 
   mutate(Variable = as.factor(Variable)) %>% 
   mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg", "season[spring]", "season[winter]",
-                                            "human_fpi_1000m", "tree_cover_1000m", 
-                                            "Diet_Species_richness", "BacM_Species_richness", 
-                                            "FunM_Species_richness"))) %>% 
+                                            "human_fpi_1000m", "tree_cover_1000m"))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_Traits_grad)
 
@@ -966,8 +955,8 @@ ggsave(plot = graph_grad, "./JSDM_models/figures_PA/PAModel_grad_sp_assoc.png",
 ## area model
 head(PAModel_area$X)
 
-VP_area <- computeVariancePartitioning(PAModel_area, group = c(1,1,1, 2,2, 3, 4,4,4), 
-                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Other Microbiomes"))
+VP_area <- computeVariancePartitioning(PAModel_area, group = c(1,1,1, 2,2, 3), 
+                                       groupnames = c("Host-intrinsic", "Season", "Natural envir"))
 plotVariancePartitioning(PAModel_area, VP_area)
 
 # Extract the values for the manual plot
@@ -993,7 +982,7 @@ colnames(VP_vals_area) <- my_species
 VP_toplot_area <- VP_vals_area %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_area), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic")))
+  mutate(Variable = factor(Variable, levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic")))
 
 ## get the species in descending order of host-intrinsic values
 species_order <- VP_toplot_area %>% 
@@ -1065,8 +1054,8 @@ ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",
 ## gradient model
 head(PAModel_grad$X)
 
-VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3, 4,4,4), 
-                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Other Microbiomes"))
+VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3), 
+                                       groupnames = c("Host-intrinsic", "Season", "Natural envir"))
 
 # Extract the values for the manual plot
 VP_vals_grad <- as.data.frame(VP_grad$vals) 
