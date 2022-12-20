@@ -26,7 +26,7 @@ doFilter <- FALSE
 
 doMultiAmp <- FALSE
 
-doTax <- FALSE
+doTax <- TRUE
 ## But remember: if you change the MultiAmplicon Analysis, the
 ## taxonomic annotation might be out of sync...
 
@@ -115,7 +115,8 @@ if(doMultiAmp){
     STF <- getSequenceTable(MAF, dropEmpty=FALSE)
     STFU <- do.call(cbind, STF)
     mode(STFU) <- "integer"
-
+    
+    STFU <- STFU[, !duplicated(colnames(STFU))]
     ## and very very harsh chimera removal
     isCruelBimera <- dada2::isBimeraDenovoTable(STFU, multithread=TRUE,
                                                 minSampleFraction=0.5,
@@ -126,8 +127,8 @@ if(doMultiAmp){
     isPooledBimera <- dada2::isBimeraDenovo(STFU, multithread=TRUE, 
                                             allowOneOff=TRUE, maxShift = 32)
 
-    saveRDS(isCruelBimera, "/SAN/Metabarcoding/AA_Fox/cruelBimera.Rds")
-    saveRDS(isPooledBimera, "/SAN/Metabarcoding/AA_Fox/pooledBimera.Rds")
+    ## saveRDS(isCruelBimera, "/SAN/Metabarcoding/AA_Fox/cruelBimera.Rds")
+    ## saveRDS(isPooledBimera, "/SAN/Metabarcoding/AA_Fox/pooledBimera.Rds")
 
     table(isCruelBimera ,  isPooledBimera)
     
@@ -323,6 +324,24 @@ saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
 ## For Caro and the paper, previously on the server, 
 ## saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds")
 
+
+### and we make the SYNONYMES Capillaria aerophila and Eucoleus
+### aerophilus the same thing
+
+table(tax_table(PS)[tax_table(PS)[, "genus"]%in%
+                    "Eucoleus", "species"])  
+
+table(tax_table(PS)[tax_table(PS)[, "genus"]%in%
+                    "Capillaria", "species"])
+    
+tax_table(PS)[tax_table(PS)[, "genus"]%in%
+                    "Capillaria", "genus"] <- "Eucoleus"
+
+tax_table(PS)[tax_table(PS)[, "genus"]%in%
+                    "Eucoleus", "species"] <- "Eucoleus aerophilus"
+
+table(tax_table(PS)[tax_table(PS)[, "genus"]%in%
+                    "Eucoleus", "family"])
 
 ### Adding Categories to the taxonomy information!
 ### We have to addd this to genus agglommerted data!
