@@ -114,14 +114,17 @@ PERMAallX <- adonis2(HelmDataNA ~ area + tree_cover_1000m +
 
 write.csv(round(PERMA, 3), "tables/Permanova.csv")
 
-write.csv(rbind(PERMAimp, PERMAtree, PERMAhuman), "tables/suppl/PermanovaConti.csv")
+write.csv(rbind(PERMAimp, PERMAtree, PERMAhuman, PERMAallX),
+          "tables/suppl/PermanovaConti.csv")
 
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
                     try=1500, trymax=1500, k=3,
                     center = TRUE)
 
-HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "age", "weight_kg",
-                                            "sex", "condition", "season")])
+HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "human_fpi_1000m", "tree_cover_1000m",
+                                            "imperv_1000m",
+                                            "age", "weight_kg", "sex",
+                                            "condition", "season")])
 
 
 ### AMAZING! ThIs MAKeS SeNSe!!!!
