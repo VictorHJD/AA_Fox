@@ -1,6 +1,6 @@
 t.genus,exact.tax,zoonotic,pet.infecting,livestock.infecting,fox.parasite,transmission.fox,lifecycle,BlastEvaluation,host.range
 Angiostrongylus,Species: A. vasorum,No,Yes,No,Yes,trophic,two.host,Okay,moderate
-Eucoleus,Species: C. aerophila,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Eucoleus,Species: E. aerophilus,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
 Alaria,Species: A. alata,Yes,Yes,Yes,Yes,trophic,three.host,Okay,wide
 Mesocestoides,Genus: two species,No,Yes,No,Yes,trophic,three.host,Okay,wide
 Ancylostoma,Species: A. caninum,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
@@ -38,7 +38,7 @@ Pelodera,Genus: multiple species,Yes,No,No,No,none,free.living,Okay,NA
 Equinia,Genus: multiple species,No,No,Yes,No,none,two.host,Okay,NA
 Cylindrostoma,,No,No,No,No,none,free.living,questionable,
 Uncinaria,Species: U. stenocephala,No,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
-Capillaria,Species: C. aerophila,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
+Capillaria,Species: Eucoleus aerophilus C. aerophila SYNONYMOUS to Eucoleus aerophilus,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,moderate
 Sutarostrongylus,Genus: multiple species,No,No,No,No,none,one.host,Okay,NA
 Strongyloides,Genus: multiple species,Yes,Yes,No,Yes,fecal-oral,one.host,Okay,wide
 Toxocara,Species: T. canis,Yes,Yes,No,Yes,trophic,two.host,Okay,moderate
