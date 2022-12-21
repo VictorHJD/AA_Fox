@@ -82,7 +82,7 @@ tapply(HelmCounts.t["Eucoleus", ], Sdat$area, quantile, 0.75)
 tapply(HelmCounts.t["Eucoleus", ], Sdat$area, mean)
 
 ## Clonorchis more prevalent AND ABUNDANT in Brandenburg
-ctapply(HelmCounts.t["Clonorchis", ], Sdat$area, median)
+tapply(HelmCounts.t["Clonorchis", ], Sdat$area, median)
 tapply(HelmCounts.t["Clonorchis", ], Sdat$area, quantile, 0.75)
 tapply(HelmCounts.t["Clonorchis", ], Sdat$area, mean)
 
@@ -104,13 +104,13 @@ foo <- cbind(HelmCounts, Sdat)
 
 helminths <- c("Ancylostoma", "Aelurostrongylus", "Opisthorchis", "Taenia", 
                "Eucoleus", "Clonorchis", "Mesocestoides", "Angiostrongylus", 
-               "Uncinaria", "Crenosoma", "Capillaria", "Alaria", "Strongyloides", 
+               "Uncinaria", "Crenosoma", "Alaria", "Strongyloides", 
                "Toxocara", "Toxascaris", "Brachylaima", "Pearsonema")
 
 
 FishingM <- lapply(helminths, function (x) {    
     fo <- formula(paste0(x, "/seq.depth ~ area + condition + weight_kg +
-                       sex + age +  season + year"))
+                       sex + age +  season"))
     print(fo)
     tryCatch({
         glm(fo, data=foo, family="quasipoisson", weights=seq.depth)
@@ -129,52 +129,25 @@ lapply(FishingM, summary)
 ## only the converged models
 FishingM <- FishingM[unlist(lapply(FishingM, "[[", "converged"))]
 
+
+## to figure a p-value correction out for stargrazer
+
+lapply(FishingM, function(M) {
+    summary(M)$coefficients[, "Pr(>|t|)"]
+}) %>% do.call(rbind, .)  %>% apply(., 2, p.adjust, method="fdr")
+
+
+
+pCor <- function (x) p.adjust(x, method="fdr", n=length(FishingM))
+
 stargazer(FishingM, out="tables/IndHelmAbu.html", type="html",
           column.labels=names(FishingM), dep.var.caption="",
-          dep.var.labels="", dep.var.labels.include=FALSE
-          )
-
-
-## presence/absence models with all the fox-covariates
-FishingPA <- apply(HelmCounts.t, 1, function (x) {
-    d <- cbind(PA=x>0, Sdat)
-    glm(PA~ area + condition + I(as.numeric(weight_kg)) + sex + age  +
-            season + year,
-        data=d, family="binomial")
-})
-
-
-## only the converged models
-FishingPA <- FishingPA[unlist(lapply(FishingPA, "[[", "converged"))]
-
-PABrand.pvals <- lapply(FishingPA, function(x) {
-    c <- coefficients(summary(x))
-    c["areaBrandenburg","Pr(>|z|)"]
-})
-
-PABrand.effects <- lapply(FishingPA, function(x) {
-    c <- coefficients(summary(x))
-    c["areaBrandenburg","Estimate"]
-})
-
-
-PABrand.pvals.adj <- p.adjust(unlist(PABrand.pvals))
-
-
-AreaModellsPA <- data.frame(cbind(effect.size=
-                                      unlist(MBrand.effects[PABrand.pvals.adj<0.1]),
-                                  adj.p.value=
-                                      unlist(MBrand.pvals.adj[PABrand.pvals.adj<0.1])))
-
-
-AreaModellsPA <- merge(AreaModellsPA, traits, by=0)
-
-AreaModellsPA[order(AreaModellsPA["effect.size"]),
-              c("Row.names", "effect.size", "adj.p.value",
-                "exact.tax", "zoonotic", "transmission.fox", "lifecycle")]
+          dep.var.labels="", dep.var.labels.include=FALSE,
+          apply.p = pCor, notes.append=TRUE,
+          notes= "fals discoverey rate (FDR) corrected for multiple testing")
 
 ## Prevalences:
 apply(HelmCounts.t, 1, function (x){
-    cbind(length(x[x>0]),
-    (length(x[x>0])/length(x))*100)
+    cbind(Numb = round(length(x[x>0])),
+          Prev = round(length(x[x>0])/length(x)*100, 2))
 })
