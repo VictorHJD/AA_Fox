@@ -975,8 +975,6 @@ vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = V
                     name = "Variable group", 
                     labels=c(paste0("Random: site\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
-                             paste0("Other_Microbiomes\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Other Microbiomes"], ")"), 
                              paste0("Nat. Environment\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Natural envir"], ")"),
                              paste0("Season\n(mean = ", 
@@ -1020,7 +1018,7 @@ colnames(mean_vp_grad) <- "mean"
 mean_vp_grad <- mean_vp_grad %>% 
   mutate(percent = round(mean * 100, 2), 
          Variable = factor(rownames(mean_vp_grad), 
-                           levels = c("Random: site", "Other Microbiomes", "Natural envir", "Season", "Host-intrinsic"))
+                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic"))
   )
 
 mean_vp_grad
@@ -1073,8 +1071,6 @@ vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = V
                     name = "Variable group", 
                     labels=c(paste0("Random: site\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
-                             paste0("Other_Microbiomes\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Other Microbiomes"], ")"), 
                              paste0("Nat. Environment\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Natural envir"], ")"),
                              paste0("Season\n(mean = ", 
