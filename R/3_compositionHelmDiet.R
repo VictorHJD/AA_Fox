@@ -34,15 +34,19 @@ PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
 PSGHelm <- subset_samples(PSGHelm, !is.na(sample_data(PSGHelm)[, "condition"]) &
                                    !is.na(sample_data(PSGHelm)[, "weight_kg"]) &
                                    !is.na(sample_data(PSGHelm)[, "season"]) &
-                                   !is.na(sample_data(PSGHelm)[, "tree_cover_1000m"]))
+                                   !is.na(sample_data(PSGHelm)[, "tree_cover_1000m"]) &
+                                   !is.na(sample_data(PSGHelm)[, "DNAng.ul"]) &
+                                   !is.na(sample_data(PSGHelm)[, "DNA260.230"]) &
+                                   !is.na(sample_data(PSGHelm)[, "DNA260.280"]) 
+                          )
 
-PSGHelm ### 114 foxes without NA anywhere
+PSGHelm ### 150 foxes without NA anywhere
 
 ## only taxa with reads
 PSGHelm <- prune_taxa(taxa_sums(PSGHelm) > 0, PSGHelm)
 PSGHelm <- prune_samples(sample_sums(PSGHelm) > 0, PSGHelm)
 
-PSGHelm ## 102 foxes with all samples any taxa
+PSGHelm ## 139 foxes with all samples any taxa
 
 HelmData <- otu_table(PSGHelm)
 colnames(HelmData) <- tax_table(PSGHelm)[, "genus"]
@@ -54,6 +58,10 @@ EnvData$weight_kg <- as.numeric(EnvData$weight_kg)
 EnvData$tree_cover_1000m <- as.numeric(EnvData$tree_cover_1000m)
 EnvData$imperv_1000m <- as.numeric(EnvData$imperv_1000m)
 EnvData$human_fpi_1000m <- as.numeric(EnvData$human_fpi_1000m)
+EnvData$DNAng.ul <- as.numeric(EnvData$DNAng.ul)
+EnvData$DNA260.280 <- as.numeric(EnvData$DNA260.280)
+EnvData$DNA260.230 <- as.numeric(EnvData$DNA260.230)
+
 
 ### This shoud be the same now after removing all the NAs already
 ### above
@@ -63,7 +71,8 @@ HelmDataNA <- HelmData[rownames(EnvDataNA), ]
 ### NO OTHER environmental variables are better explaining composition!
 
 PERMA <- vegan::adonis2(HelmDataNA ~ area + weight_kg + age +
-                     sex  + season + condition, 
+                            sex  + season + condition +
+                            DNAng.ul + DNA260.230 + DNA260.280,
                      data=EnvDataNA, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
@@ -74,37 +83,42 @@ PERMA
 ### environmental predictors) is not as good!
 
 PERMAimp <- adonis2(HelmDataNA ~  imperv_1000m + weight_kg + age +
-                        sex  + season + condition, 
+                        sex  + season + condition +
+                        DNAng.ul + DNA260.230 + DNA260.280,
                     data=EnvDataNA, 
                     na.action = na.fail, by="margin",
                     method="jaccard")
 
 PERMAtree <- adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
-                         sex  + season + condition, 
+                         sex  + season + condition +
+                         DNAng.ul + DNA260.230 + DNA260.280,
                      data=EnvDataNA, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
 
 PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
-                          sex  + season + condition, 
+                          sex  + season + condition +
+                          DNAng.ul + DNA260.230 + DNA260.280, 
                       data=EnvDataNA, 
                       na.action = na.fail, by="margin",
                       method="jaccard")
 
 PERMAall <- adonis2(HelmDataNA ~ human_fpi_1000m + tree_cover_1000m +
                         imperv_1000m + weight_kg + age + condition +
-                          sex  + season, 
+                        sex  + season +
+                        DNAng.ul + DNA260.230 + DNA260.280, 
                       data=EnvDataNA, 
                       na.action = na.fail, by="margin",
                       method="jaccard")
 
 
 PERMAallX <- adonis2(HelmDataNA ~ area + tree_cover_1000m +
-                        imperv_1000m + weight_kg + age + condition +
-                          sex  + season, 
-                      data=EnvDataNA, 
-                      na.action = na.fail, by="margin",
-                      method="jaccard")
+                         imperv_1000m + weight_kg + age + condition +
+                         sex  + season +
+                         DNAng.ul + DNA260.230 + DNA260.280, 
+                     data=EnvDataNA, 
+                     na.action = na.fail, by="margin",
+                     method="jaccard")
 
 
 
@@ -124,7 +138,8 @@ nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
 HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "human_fpi_1000m", "tree_cover_1000m",
                                             "imperv_1000m",
                                             "age", "weight_kg", "sex",
-                                            "condition", "season")])
+                                            "condition", "season",
+                                            "DNAng.ul", "DNA260.230", "DNA260.280")])
 
 
 ### AMAZING! ThIs MAKeS SeNSe!!!!

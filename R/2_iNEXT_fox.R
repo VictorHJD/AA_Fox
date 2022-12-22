@@ -240,37 +240,46 @@ gimmeModels <- function (EA){
     ## all models on the Asymptotic estimate tables from the function
     ## above (wrapping iNEXT)
     EA %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
-                       "human_fpi_1000m"), as.numeric) %>%
+                       "human_fpi_1000m",
+                       "DNAng.ul", "DNA260.230", "DNA260.280"), as.numeric) %>%
     mutate(REstimator = round(Estimator)) -> EA
 
     EA %>%
         filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
         do(modelArea = lm(Estimator~ area + condition + weight_kg + sex + age +
-                              season, 
+                              season +
+                              DNAng.ul + DNA260.230 + DNA260.280, 
                           data = .),
            modelImperv = lm(Estimator~ imperv_1000m + condition + weight_kg +
-                                sex + age  + season, 
+                                sex + age  + season +
+                                DNAng.ul + DNA260.230 + DNA260.280, 
                             data = .),
            modelTree = lm(Estimator~ tree_cover_1000m + condition + weight_kg +
-                              sex + age + season,
+                              sex + age + season +
+                              DNAng.ul + DNA260.230 + DNA260.280,
                           data = .),
            modelHFPI = lm(Estimator~ human_fpi_1000m + condition + weight_kg +
-                              sex + age + season,
+                              sex + age + season +
+                              DNAng.ul + DNA260.230 + DNA260.280,
                           data = .)
            ) -> lmEA
 
     EA %>% filter(Diversity %in% "Species richness") %>% group_by(Diversity) %>%
         do(modelArea = glm(REstimator ~ area + condition + weight_kg +
-                               sex + age  + season,
+                               sex + age  + season
+                           + DNAng.ul + DNA260.230 + DNA260.280,
                            data = ., family = "poisson"),
            modelImperv = glm(REstimator ~ imperv_1000m + condition + weight_kg +
-                                 sex + age + season,
+                                 sex + age + season +
+                                 DNAng.ul + DNA260.230 + DNA260.280,
                              data = ., family = "poisson"),
            modelTree = glm(REstimator ~ tree_cover_1000m + condition + weight_kg +
-                               sex + age + season,
+                               sex + age + season + 
+                               DNAng.ul + DNA260.230 + DNA260.280,
                            data = ., family = "poisson"),
            modelHFPI = glm(REstimator ~ human_fpi_1000m + condition + weight_kg +
-                               sex + age + season,
+                               sex + age + season +
+                               DNAng.ul + DNA260.230 + DNA260.280,
                            data = ., family = "poisson")
            ) -> glmEA
 
@@ -308,7 +317,8 @@ ggsave("figures/Div_Model.png", width = 7, height = 6, bg = "white", dpi = 600)
 
 
 HelmEstimateAsy %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
-                                "human_fpi_1000m"), as.numeric) %>%
+                                "human_fpi_1000m",
+                                "DNAng.ul", "DNA260.230", "DNA260.280"), as.numeric) %>%
     filter(Diversity %in% "Species richness")%>%
     mutate(REstimator = round(Estimator)) -> EA
 
