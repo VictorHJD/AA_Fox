@@ -26,15 +26,19 @@ methods and code an to reproduce the results.
 | Figure 2       | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png                      |
 | suppl. table 1 | outside, manually               | input_data/primer_file_foxes.csv                          |
 | Table 1        | outside, manually               | text only                                                 |
-| Figure S1      | R/1_Fox_general_MA.R            | figures/suppl/AmpSampleHeatmap.png                        |
+| Suppl. text F1 | R/1_Fox_general_MA.R            | figures/suppl/AmpSampleHeatmap.png                        |
+| Suppl. text T1 | R/1_Fox_general_MA.R            | tables/suppl/quant.html                                   |
+| Suppl. text T2 | R/1_Fox_general_MA.R            | tables/suppl/qual1.html                                   |
+| Suppl. text T3 | R/1_Fox_general_MA.R            | tables/suppl/qual2.html                                   |
 | suppl. table 2 | outside, manually               | input_data/helminth_traits.csv                            |
 | Figure 3       | R/2_iNEXT_fox.R                 | figures/Div_Model.png                                     |
+| Suppl. text F2 | R/2_iNEXT_fox.R                 | figures/suppl/DiversityHelminth.png                       |
 | Table 2        | R/2_iNEXT_fox.R                 | tables/HelmDiversityArea.html                             |
-| suppl. table 3 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html                            |
+| Suppl. text T4 | R/2_iNEXT_fox.R                 | tables/HelmDiversityConti.html                            |
 | Table 3        | R/3_compositionHelmDiet.R       | tables/Permanova.csv                                      |
 | suppl.table 4  | R/3_compositionHelmDiet.R       | tables/PermanovaConti.csv                                 |
 | Figure 4       | R/3_compositionHelmDiet.R       | figures/CompositionEnvHelm.png                            |
-| Table 4        | R/3_compositionHelmDiet.R       | tables/suppl/EnvFitnMDS.csv                                     |
+| Table 4        | R/3_compositionHelmDiet.R       | tables/suppl/EnvFitnMDS.csv                               |
 | Table 5        | R/4_abu_models.R                | tables/IndHelmAbu.html                                    |
 | Figure 5       | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                          |
 | Figure 6       | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png                        |

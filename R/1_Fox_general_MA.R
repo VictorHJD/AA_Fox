@@ -19,6 +19,7 @@ library(taxize)
 library(parallel)
 library(tidyr)
 library(dplyr)
+library(stargazer)
 
 ## re-run or use pre-computed results for different parts of the pipeline:
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
@@ -425,9 +426,9 @@ modQual1Extr <- lm(DNA260.280 ~ weight_kg + condition + sex + age + area,
 summary(modQual1Extr)
 ### different (lower) quality in Brandenburg
 
-modQual2Ext <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
+modQual2Extr <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
     data=DNA)
-summary(modQual2Ext)
+summary(modQual2Extr)
 ### different (lower) quality in Brandenburg
 
 ############## WAS BIASED #####################################################
@@ -440,14 +441,14 @@ summary(modQuantSEQ)
 ### lower quantity of DNA for juvenile and heavier foxes, much lower
 ### in Brandenburg!!!
 
-modQual1Extr <- lm(DNA260.280 ~ weight_kg + condition + sex + age + area,
+modQual1SEQ <- lm(DNA260.280 ~ weight_kg + condition + sex + age + area,
                    data=subset(DNA, DNA$sequenced))
 summary(modQual1Extr)
 ### different (lower) quality in Brandenburg
 
-modQual2Ext <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
+modQual2SEQ <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
                   data=subset(DNA, DNA$sequenced))
-summary(modQual2Ext)
+summary(modQual2SEQ)
 ### different (lower) quality in Brandenburg
 
 ############## STILL BIASED #####################################################
@@ -469,6 +470,10 @@ modQual2ANA <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
 summary(modQual2ANA)
 ### different (lower) quality in Brandenburg
 
+stargazer(modQuantExtr, modQuantSEQ, modQuantANA, type="html", out="tables/suppl/quant.html")
+stargazer(modQual1Extr, modQual1SEQ, modQual1ANA, type="html", out="tables/suppl/qual1.html")
+stargazer(modQual2Extr, modQual2SEQ, modQual2ANA, type="html", out="tables/suppl/qual2.html")
+
 ############## BIAS is REMOVED only for DNA quantity in processing and
 ############## potentially only partially !!!
 
@@ -482,12 +487,14 @@ DNAData <- subset(DNA, DNA$analysed)[, c("ID", "DNAng.ul", "DNA260.230", "DNA260
 Sdat <- merge(Sdat, DNAData, by = "ID", all=TRUE)
 rownames(Sdat) <- Sdat$IDb
 
+
 ## they are still alinged
 all(rownames(Sdat) == rownames(PS@sam_data))
 PS@sam_data <- sample_data(Sdat)
 
-### 
-## now directly in the repository (for reproducibilty)
+###
+## Store all this in the central object of the analysis/repository
+## (for reproducibilty)
 saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
 
 ###For primer analysis (Victor), still stored on our server 
