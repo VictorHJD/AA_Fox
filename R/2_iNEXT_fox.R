@@ -324,10 +324,10 @@ HelmEstimateAsy %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
 
 
 ContiRich <- glm(REstimator ~ tree_cover_1000m + 
-                     imperv_1000m + 
-                     human_fpi_1000m + 
-                     + condition + weight_kg +
-                     sex + age  + season,
+                     imperv_1000m +  human_fpi_1000m +
+                     weight_kg + sex + age  + season +
+                     + condition + 
+                     DNAng.ul + DNA260.230 + DNA260.280,
                  data = EA, family = "poisson")
 
 ### The problem is the Continous model has a better AIC but it is not
