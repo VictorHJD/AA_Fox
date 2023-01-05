@@ -15,14 +15,14 @@ recomputejSDMModels <- FALSE
 
 ## to avoid doing now convergence tests (and pdfs of those) every time
 ## the script is run
-newConvergenceTest <- FALSE
+newConvergenceTest <- TRUE
 
 if(!exists("PAModel_area") | !exists("PAModel_grad")){
     if(recomputejSDMModels){
         source("R/4a_JSDM_helminths.R")
     } else {
-        PAModel_area <- readRDS(file="JSDM_models/PAModel_area_jSDM.rds")
-        PAModel_grad <- readRDS(file="JSDM_models/PAModel_grad_jSDM.rds")
+        PAModel_area <- readRDS(file="JSDM_models/PAModel_area_jSDM_DNA.rds")
+        PAModel_grad <- readRDS(file="JSDM_models/PAModel_grad_jSDM_DNA.rds")
     }
 }
 
@@ -238,18 +238,26 @@ m1_species <- colnames(PAModel_area$Y)
 exp_variables <- colnames(PAModel_area$X)
 exp_variables
 # rename exp variables for nicer plots
+
 my_variables <- c("(Intercept)", "sex[male]", "weight_kg",
                   "season[spring]", "season[winter]",
-                  "area[Brandenburg]")
+                  "area[Brandenburg]",
+                                        # NEW ###
+                  "condition[excellent]", "DNAng_ul",
+                  "DNA260_230", "DNA260.280"
+                  )
 
 ModelFrame_area <- data.frame()
-# betas (coefficients) for each species
+
+## betas (coefficients) for each species
 for (i in 1:length(m1_species)){
   # get the variables for each species
   mpost_beta_tmp <- PAMpost_area$Beta[,grep(m1_species[i], colnames(PAMpost_area$Beta[[1]]))]
-  # rename variables
-  for (j in 1:length(mpost_beta_tmp)){
-    colnames(mpost_beta_tmp[[j]]) <- my_variables
+##    print(head(mpost_beta_tmp))
+    ## # rename variables
+    for (j in 1:length(mpost_beta_tmp)){
+  ##      print(colnames(mpost_beta_tmp[[j]]))
+     colnames(mpost_beta_tmp[[j]]) <- my_variables
   }
   # Put model estimates into temporary data.frames. Add variable "Species" for plotting
   modelFrame_tmp <- data.frame(Variable = my_variables,
@@ -267,12 +275,17 @@ for (i in 1:length(m1_species)){
 ModelFrame_area
 
 levels(as.factor(ModelFrame_area$Variable))
-# Relevel factors so they are plotted in the desired order
+
+## Relevel factors so they are plotted in the desired order
 ModelFrame_area <- ModelFrame_area %>% 
   mutate(Variable = as.factor(Variable)) %>% 
     mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg",
                                               "season[spring]", "season[winter]",
-                                              "area[Brandenburg]"))) %>% 
+                                              "area[Brandenburg]",
+                                        # NEW ##
+                                              "condition[excellent]", "DNAng_ul", 
+                                              "DNA260_230", "DNA260.280"
+                                              ))) %>% 
     mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_area)
 
@@ -345,17 +358,46 @@ plot_beta_area <- toplot_ModelFrame_area %>%
     axis.title = element_text(size = 14, face = "bold"),
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
+
+
+plot_beta_sampling <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("DNA260.280", "DNA260_230", "DNAng_ul", "condition[excellent]")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
  
-plot_betas <- ggarrange(plot_beta_weight, plot_beta_area, ## plot_3, 
-          ncol = 2, nrow = 1, common.legend = TRUE, legend="right", 
-          labels = c("A", "B"), 
-          widths = c(1,1.2))
+plot_betas <- ggarrange(plot_beta_weight, plot_beta_area, plot_beta_sampling, 
+          ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
+          labels = c("A", "B", "C"), 
+          widths = c(1,1.2, 1))
 
 ggsave(plot = plot_betas, "./figures/PAModel_area_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
 
-
-# Detail plots for each prediction 
+### Detail plots for each prediction 
 n_cov <- length(PAModel_area$covNames) # Number of covariates without the intercept
 var_code <- vector()
 for (i in 1:n_cov){
@@ -404,7 +446,11 @@ exp_variables
 # rename exp variables
 my_variables <- c("(Intercept)", "sex[male]", "weight_kg",
                   "season[spring]", "season[winter]",          
-                  "human_fpi_1000m", "tree_cover_1000m")
+                  "human_fpi_1000m", "tree_cover_1000m",
+                                        # NEW ###
+                  "condition[excellent]", "DNAng_ul",
+                  "DNA260_230", "DNA260.280"
+                  )
 
 ModelFrame_grad <- data.frame()
 # betas (coefficients) for each species
@@ -434,7 +480,11 @@ ModelFrame_grad <- ModelFrame_grad %>%
   mutate(Variable = as.factor(Variable)) %>% 
     mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg",
                                               "season[spring]", "season[winter]",          
-                                            "human_fpi_1000m", "tree_cover_1000m"))) %>% 
+                                              "human_fpi_1000m", "tree_cover_1000m",
+                                        # NEW ###
+                                              "condition[excellent]", "DNAng_ul", 
+                                              "DNA260_230", "DNA260.280"
+                                              ))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_grad)
 
@@ -451,7 +501,7 @@ toplot_ModelFrame_grad <- ModelFrame_grad %>%
 toplot_ModelFrame_grad[toplot_ModelFrame_grad$significant == "Yes",]
 
 # Plot Effects
-plot_gamma_grad_1 <- toplot_ModelFrame_grad %>% 
+plot_beta_grad_1 <- toplot_ModelFrame_grad %>% 
   filter(Variable %in% c("sex[male]","weight_kg")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
@@ -479,8 +529,9 @@ plot_gamma_grad_1 <- toplot_ModelFrame_grad %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
 
-plot_gamma_grad_2 <- toplot_ModelFrame_grad %>% 
-  filter(Variable %in% c("human_fpi_1000m",  "tree_cover_1000m", "season[spring]", "season[winter]")) %>%
+plot_beta_grad_2 <- toplot_ModelFrame_grad %>% 
+    filter(Variable %in% c("human_fpi_1000m",  "tree_cover_1000m",
+                           "season[spring]", "season[winter]")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -508,10 +559,42 @@ plot_gamma_grad_2 <- toplot_ModelFrame_grad %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12)) 
 
-(plot_betas_grad <- ggarrange(plot_gamma_grad_1, plot_gamma_grad_2,
-                         ncol = 2, nrow = 1, common.legend = TRUE, legend="right", 
-                         labels = c("A", "B"), 
-                         widths = c(1,1.2)))
+plot_beta_grad_3 <- toplot_ModelFrame_grad %>% 
+  filter(Variable %in% c("DNA260.280", "DNA260_230", "DNAng_ul", "condition[excellent]")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+
+
+
+plot_betas_grad <- ggarrange(plot_beta_grad_1, plot_beta_grad_2, plot_beta_grad_3,
+                             ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
+                             labels = c("A", "B", "C"), 
+                             widths = c(1,1.2, 1.2))
 
 ggsave(plot = plot_betas_grad, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
@@ -569,7 +652,10 @@ exp_variables_area <- colnames(PAModel_area$X)
 # rename exp variables for nicer plots
 my_variables_area <- c("(Intercept)", "sex[male]", "weight_kg",
                        "season[spring]", "season[winter]",
-                       "area[Brandenburg]")
+                       "area[Brandenburg]",
+                                        # NEW ###
+                       "condition[excellent]", "DNAng_ul",
+                       "DNA260_230", "DNA260.280")
 
 ModelFrame_Traits_area <- data.frame()
 # betas (coefficients) for each species
@@ -600,7 +686,10 @@ ModelFrame_Traits_area <- ModelFrame_Traits_area %>%
   mutate(Variable = as.factor(Variable)) %>% 
     mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg",
                                               "season[spring]", "season[winter]",
-                                              "area[Brandenburg]"))) %>% 
+                                              "area[Brandenburg]",
+                                        # NEW ###
+                                              "condition[excellent]", "DNAng_ul", 
+                                              "DNA260_230", "DNA260.280"))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_Traits_area)
 
@@ -660,7 +749,12 @@ exp_variables_grad <- colnames(PAModel_grad$X)
 # rename exp variables for nicer plots
 my_variables_grad <- c("(Intercept)", "sex[male]", "weight_kg",
                        "season[spring]", "season[winter]",
-                       "human_fpi_1000m", "tree_cover_1000m")
+                       "human_fpi_1000m", "tree_cover_1000m",
+                                        # NEW ###
+                       "condition[excellent]", "DNAng_ul",
+                       "DNA260_230", "DNA260.280")
+
+### ULTRA ugly, this variable is created and overwritten so often here!
 
 ModelFrame_Traits_grad <- data.frame()
 # betas (coefficients) for each species
@@ -691,7 +785,10 @@ ModelFrame_Traits_grad <- ModelFrame_Traits_grad %>%
   mutate(Variable = as.factor(Variable)) %>% 
     mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg",
                                               "season[spring]", "season[winter]",
-                                              "human_fpi_1000m", "tree_cover_1000m"))) %>% 
+                                              "human_fpi_1000m", "tree_cover_1000m",
+                                        # NEW ###
+                                              "condition[excellent]", "DNAng_ul", 
+                                              "DNA260_230", "DNA260.280"))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_Traits_grad)
 
@@ -893,8 +990,9 @@ mygraph <- graph_from_data_frame(d = edges, vertices = vertices)
 ## area model
 head(PAModel_area$X)
 
-VP_area <- computeVariancePartitioning(PAModel_area, group = c(1,1,1, 2,2, 3), 
-                                       groupnames = c("Host-intrinsic", "Season", "Natural envir"))
+VP_area <- computeVariancePartitioning(PAModel_area,
+                                       group = c(1, 1, 1, 2, 2, 3, 4, 4, 4, 4), 
+                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Sampling"))
 
 ## ## first view?!
 ## plotVariancePartitioning(PAModel_area, VP_area)
@@ -909,8 +1007,8 @@ colnames(mean_vp_area) <- "mean"
 mean_vp_area <- mean_vp_area %>% 
   mutate(percent = round(mean * 100, 2), 
          Variable = factor(rownames(mean_vp_area), 
-                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic"))
-  )  
+                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic", "Sampling"))
+         )  
 mean_vp_area
 
 # set species names
@@ -922,7 +1020,7 @@ colnames(VP_vals_area) <- my_species
 VP_toplot_area <- VP_vals_area %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_area), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic")))
+  mutate(Variable = factor(Variable, levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic", "Sampling")))
 
 ## get the species in descending order of host-intrinsic values
 species_order <- VP_toplot_area %>% 
@@ -980,7 +1078,11 @@ vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = V
                              paste0("Season\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Season"], ")"),
                              paste0("Host-intrinsic\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"))) +
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"),
+                             paste0("Sampling\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Sampling"], ")")
+
+                             )) +
   labs(x = "\nHelminth taxa", 
        y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
@@ -1005,8 +1107,8 @@ ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",
 ## gradient model
 head(PAModel_grad$X)
 
-VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3), 
-                                       groupnames = c("Host-intrinsic", "Season", "Natural envir"))
+VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3, 4, 4, 4, 4), 
+                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Sampling"))
 
 # Extract the values for the manual plot
 VP_vals_grad <- as.data.frame(VP_grad$vals) 
@@ -1018,7 +1120,7 @@ colnames(mean_vp_grad) <- "mean"
 mean_vp_grad <- mean_vp_grad %>% 
   mutate(percent = round(mean * 100, 2), 
          Variable = factor(rownames(mean_vp_grad), 
-                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic"))
+                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic", "Sampling"))
   )
 
 mean_vp_grad
@@ -1032,7 +1134,7 @@ colnames(VP_vals_grad) <- my_species
 VP_toplot_grad <- VP_vals_grad %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_grad), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site",  "Natural envir", "Season", "Host-intrinsic")))
+  mutate(Variable = factor(Variable, levels = c("Random: site",  "Natural envir", "Season", "Host-intrinsic", "Sampling")))
 
 ## get the species in descending order of host-intrinsic values
 species_order_grad <- VP_toplot_grad %>% 
@@ -1076,7 +1178,9 @@ vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = V
                              paste0("Season\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Season"], ")"),
                              paste0("Host-intrinsic\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"))) +
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"),
+                             paste0("Sampling\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_area$Variable == "Sampling"], ")"))) +
   labs(x = "\nHelminth taxa",
        y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
