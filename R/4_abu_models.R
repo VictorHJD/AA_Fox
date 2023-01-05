@@ -147,7 +147,7 @@ stargazer(FishingM, out="tables/IndHelmAbu.html", type="html",
           column.labels=names(FishingM), dep.var.caption="",
           dep.var.labels="", dep.var.labels.include=FALSE,
           apply.p = pCor, notes.append=TRUE,
-          notes= "fals discoverey rate (FDR) corrected for multiple testing")
+          notes= "false discoverey rate (FDR) corrected for multiple testing")
 
 ## Prevalences:
 apply(HelmCounts.t, 1, function (x){
