@@ -1,6 +1,7 @@
 library(phyloseq)
 library(tidyverse)
 library(MASS)
+library(stargazer)
 
 recomputeBioinfo <- FALSE
 
@@ -102,6 +103,8 @@ tapply(HelmCounts.t["Strongyloides", ], Sdat$area, mean)
 
 foo <- cbind(HelmCounts, Sdat)
 
+foo$weight_kg <- as.numeric(foo$weight_kg)
+
 helminths <- c("Ancylostoma", "Aelurostrongylus", "Opisthorchis", "Taenia", 
                "Eucoleus", "Clonorchis", "Mesocestoides", "Angiostrongylus", 
                "Uncinaria", "Crenosoma", "Alaria", "Strongyloides", 
@@ -110,7 +113,7 @@ helminths <- c("Ancylostoma", "Aelurostrongylus", "Opisthorchis", "Taenia",
 
 FishingM <- lapply(helminths, function (x) {    
     fo <- formula(paste0(x, "/seq.depth ~ area + condition + weight_kg +
-                       sex + age +  season"))
+                       sex + age +  season + DNAng.ul + DNA260.230 + DNA260.280"))
     print(fo)
     tryCatch({
         glm(fo, data=foo, family="quasipoisson", weights=seq.depth)
