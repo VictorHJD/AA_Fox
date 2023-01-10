@@ -1,5 +1,15 @@
 # AA_Fox
 
+
+![Schematic representation of potential drivers of helminth community
+ assembly and structure assessed in this study. Black arrows are
+ pointing directly to the response variables investigated here:
+ diversity and composition of helminth communities, grey arrows show
+ potential underlying drivers in a more complex causal
+ network](figures/Fig1_foxhelminths.png?raw=true "Drivers of helminth
+ community structure")
+
+
 ## Setup 
 For a fully reproducible analysis starting from raw sequencing files R
 script have to be executed in numerical order (starting with a "\\d_";
