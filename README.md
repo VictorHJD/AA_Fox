@@ -11,6 +11,12 @@
 
 
 ## Setup 
+
+This readme describes the analysis pipeline in terms of a
+data-processing pipeline: where raw and intermediate data is stored
+and processed. For more insight into the methods used consult the
+manuscript text and the R code. 
+
 For a fully reproducible analysis starting from raw sequencing files R
 script have to be executed in numerical order (starting with a "\\d_";
 e.g. 0_, 1_, ..).
@@ -32,7 +38,7 @@ methods and code an to reproduce the results.
 
 | File reference | Created in                      | File in ropository                                        |
 |:---------------|---------------------------------|:----------------------------------------------------------|
-| Figure 1       | outside, manually               | In this readme (ADD!)                                     |
+| Figure 1       | outside, manually               | Fig1_foxhelminths.png/svg and above, in this readme       |
 | Figure 2       | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png                      |
 | suppl. table 1 | outside, manually               | input_data/primer_file_foxes.csv                          |
 | Table 1        | outside, manually               | text only                                                 |
@@ -104,7 +110,7 @@ this object.
 
 Similarly, the helminth trait data (found in
 input_data/helminth_traits.csv; compiled by Carolin Scholz and Emanuel
-Heitlinger) is storted in the "phloseq" object's "taxon_table"). 
+Heitlinger) is storted in the "phloseq" object's "taxon_table". 
  
 We store output as a phyloseq object in
 'intermediate_data/PhyloSeqCombi.Rds'
