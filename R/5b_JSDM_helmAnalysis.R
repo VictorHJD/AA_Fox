@@ -596,7 +596,7 @@ plot_betas_grad <- ggarrange(plot_beta_grad_1, plot_beta_grad_2, plot_beta_grad_
                              labels = c("A", "B", "C"), 
                              widths = c(1,1.2, 1.2))
 
-ggsave(plot = plot_betas_grad, "./JSDM_models/figures_PA/PAModel_grad_BetaCoefs.png", 
+ggsave(plot = plot_betas_grad, "./figures/suppl/PAModel_grad_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
 
 # Print a plot for each predictor
