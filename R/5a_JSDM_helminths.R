@@ -106,17 +106,29 @@ nrow(foxes) # [1] 139
 
 ### now we need to know how the environmental data for the foxes is
 ### correlated
-envcov_cor <- foxes %>%
+
+### THIS IS SLIGHTLY MISPLACED HERE, SHOULD BE BEFORE ANY OTHER
+### STATISTICAL ANALYSIS, but I'll leave it here now! 
+
+foxes %>%
     dplyr::select(weight_kg, 
                   tree_cover_1000m, imperv_1000m, human_fpi_1000m,
                   DNAng.ul, DNA260.230, DNA260.280) %>%
     mutate_all(as.numeric) %>%
-    cor(x=., use = "pairwise.complete.obs") 
+    cbind(foxes$area) %>%
+    ggpairs() -> Cor_Plot
 
-envcov_cor
+ggsave("figures/suppl/CorrelatPedictors.png", Cor_Plot, device="png")
 
-## ## to look at the correlations
-## ggcorrplot(envcov_cor, type = "lower", lab = TRUE)
+foxes$tree_cover_1000m <- as.numeric(foxes$tree_cover_1000m)
+foxes$imperv_1000m <- as.numeric(foxes$imperv_1000m)
+foxes$human_fpi_1000m <- as.numeric(foxes$human_fpi_1000m)
+
+ggplot(foxes, aes(tree_cover_1000m, imperv_1000m, color=area, size = human_fpi_1000m)) +
+    geom_point() +
+    theme_bw()
+
+
 
 ### and then create a predictor dataset (without non-predictor
 ### variables) and we leave out imperv_1000m as it's highly correlated
