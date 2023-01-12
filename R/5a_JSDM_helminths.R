@@ -120,16 +120,6 @@ foxes %>%
 
 ggsave("figures/suppl/CorrelatPedictors.png", Cor_Plot, device="png")
 
-foxes$tree_cover_1000m <- as.numeric(foxes$tree_cover_1000m)
-foxes$imperv_1000m <- as.numeric(foxes$imperv_1000m)
-foxes$human_fpi_1000m <- as.numeric(foxes$human_fpi_1000m)
-
-ggplot(foxes, aes(tree_cover_1000m, imperv_1000m, color=area, size = human_fpi_1000m)) +
-    geom_point() +
-    theme_bw()
-
-
-
 ### and then create a predictor dataset (without non-predictor
 ### variables) and we leave out imperv_1000m as it's highly correlated
 ### with human_fpi_1000m, which is more relevant (for diversity at least)
