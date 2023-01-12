@@ -157,7 +157,9 @@ if(doMultiAmp){
 ## tracking <- getPipelineSummaryX(MAF)
 ## plotPipelineSummary(tracking)
 
+png("figures/suppl/AmpSampleHeatmapRAW.png", width=24, height=8, units = 'in', res = 300)
 sumPheatmap <- plotAmpliconNumbers(MAF) ### 
+dev.off()
 
 ## everything clustering with Negative controls should be excluded!!
 SampleClusters <- cutree(sumPheatmap$tree_col, 2)
