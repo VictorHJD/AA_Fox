@@ -10,6 +10,7 @@ library(igraph)
 library(ggraph)
 library(tibble)
 library(reshape2)
+library(cowplot)
 
 recomputejSDMModels <- FALSE
 
@@ -95,9 +96,9 @@ PAConv_area %>%
 # A tibble: 3 x 3
 # variable mean.ess mean.gd
 # <chr>       <dbl>   <dbl>
-# 1 beta       49073.    1.00
-# 2 gamma      57321.    1.00
-# 3 omega      32808.    1.00
+# 1 beta       46454    1.00
+# 2 gamma      54360    1.00
+# 3 omega      18904    1.02
 
 ## visually inspecting convergence statistics
 
@@ -244,7 +245,7 @@ my_variables <- c("(Intercept)", "sex[male]", "weight_kg",
                   "area[Brandenburg]",
                                         # NEW ###
                   "condition[excellent]", "DNAng_ul",
-                  "DNA260_230", "DNA260.280"
+                  "DNA260_230", "DNA260_280"
                   )
 
 ModelFrame_area <- data.frame()
@@ -284,7 +285,7 @@ ModelFrame_area <- ModelFrame_area %>%
                                               "area[Brandenburg]",
                                         # NEW ##
                                               "condition[excellent]", "DNAng_ul", 
-                                              "DNA260_230", "DNA260.280"
+                                              "DNA260_230", "DNA260_280"
                                               ))) %>% 
     mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_area)
@@ -359,9 +360,8 @@ plot_beta_area <- toplot_ModelFrame_area %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
 
-
-plot_beta_sampling <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("DNA260.280", "DNA260_230", "DNAng_ul", "condition[excellent]")) %>%
+plot_beta_sampling1 <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -388,13 +388,86 @@ plot_beta_sampling <- toplot_ModelFrame_area %>%
     axis.title = element_text(size = 14, face = "bold"),
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
- 
-plot_betas <- ggarrange(plot_beta_weight, plot_beta_area, plot_beta_sampling, 
-          ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
-          labels = c("A", "B", "C"), 
-          widths = c(1,1.2, 1))
 
-ggsave(plot = plot_betas, "./figures/PAModel_area_BetaCoefs.png", 
+plot_beta_sampling2 <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("DNA260_280")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+
+plot_beta_sampling3 <- toplot_ModelFrame_area %>% 
+  filter(Variable %in% c("DNAng_ul")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+legend <- get_legend(plot_beta_weight)
+
+half_left <- plot_grid(plot_beta_weight + theme(legend.position="none", axis.title = element_blank()), 
+                        plot_beta_sampling1 + theme(legend.position="none"), 
+                        labels = c('A', 'C'), label_size = 12, 
+                        nrow = 2, align = "v",rel_heights = c(1,1))
+
+half_right <- plot_grid(plot_beta_area + theme(legend.position="none", axis.title = element_blank()), 
+                        plot_beta_sampling2 + theme(legend.position="none", axis.title = element_blank()), 
+                        plot_beta_sampling3 + theme(legend.position="none"), 
+                        labels = c('B', 'D', 'E'), label_size = 12, 
+                        nrow = 3, align = "v",rel_heights = c(1,0.5, 0.5))
+
+beta_plot <- plot_grid(half_left, half_right, legend, 
+          ncol = 3, 
+          nrow = 1,
+          rel_widths = c(1,1,0.3))
+
+
+ggsave(plot = beta_plot, "./figures/PAModel_area_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
 
 ### Detail plots for each prediction 
@@ -449,7 +522,7 @@ my_variables <- c("(Intercept)", "sex[male]", "weight_kg",
                   "human_fpi_1000m", "tree_cover_1000m",
                                         # NEW ###
                   "condition[excellent]", "DNAng_ul",
-                  "DNA260_230", "DNA260.280"
+                  "DNA260_230", "DNA260_280"
                   )
 
 ModelFrame_grad <- data.frame()
@@ -483,7 +556,7 @@ ModelFrame_grad <- ModelFrame_grad %>%
                                               "human_fpi_1000m", "tree_cover_1000m",
                                         # NEW ###
                                               "condition[excellent]", "DNAng_ul", 
-                                              "DNA260_230", "DNA260.280"
+                                              "DNA260_230", "DNA260_280"
                                               ))) %>% 
   mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_grad)
@@ -560,7 +633,65 @@ plot_beta_grad_2 <- toplot_ModelFrame_grad %>%
     legend.text = element_text(size = 12)) 
 
 plot_beta_grad_3 <- toplot_ModelFrame_grad %>% 
-  filter(Variable %in% c("DNA260.280", "DNA260_230", "DNAng_ul", "condition[excellent]")) %>%
+  filter(Variable %in% c("DNA260_230", "DNAng_ul", "condition[excellent]")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+plot_beta_grad_4 <- toplot_ModelFrame_grad %>% 
+  filter(Variable %in% c("DNA260_280")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12))
+
+plot_beta_grad_5 <- toplot_ModelFrame_grad %>% 
+  filter(Variable %in% c("DNAng_ul")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -589,15 +720,28 @@ plot_beta_grad_3 <- toplot_ModelFrame_grad %>%
     legend.text = element_text(size = 12))
 
 
+legend_grad <- get_legend(plot_beta_grad_2)
+
+half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position="none", axis.title = element_blank()), 
+                       plot_beta_grad_3 + theme(legend.position="none"), 
+                       labels = c('A', 'C'), label_size = 12, 
+                       nrow = 2, align = "v",rel_heights = c(1,1))
+
+half_right_grad <- plot_grid(plot_beta_grad_2 + theme(legend.position="none", axis.title = element_blank()), 
+                        plot_beta_grad_4 + theme(legend.position="none", axis.title = element_blank()), 
+                        plot_beta_grad_5 + theme(legend.position="none"), 
+                        labels = c('B', 'D', 'E'), label_size = 12, 
+                        nrow = 3, align = "v",rel_heights = c(1,0.5, 0.5))
+
+beta_plot_grad <- plot_grid(half_left, half_right, legend_grad, 
+                       ncol = 3, 
+                       nrow = 1,
+                       rel_widths = c(1,1,0.3))
 
 
-plot_betas_grad <- ggarrange(plot_beta_grad_1, plot_beta_grad_2, plot_beta_grad_3,
-                             ncol = 3, nrow = 1, common.legend = TRUE, legend="right", 
-                             labels = c("A", "B", "C"), 
-                             widths = c(1,1.2, 1.2))
-
-ggsave(plot = plot_betas_grad, "./figures/suppl/PAModel_grad_BetaCoefs.png", 
+ggsave(plot = beta_plot_grad, "./figures/suppl/PAModel_grad_BetaCoefs.png", 
        width = 12, height = 6, dpi = 600)
+
 
 # Print a plot for each predictor
 n_cov <- length(PAModel_grad$covNames) # Number of covariates without the intercept
