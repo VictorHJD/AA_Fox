@@ -486,3 +486,13 @@ HelmModels %>%
               intercept.top=TRUE, intercept.bottom=FALSE
               )
 
+## No pattern here (in the non-infected)
+table(sample_data(PSG)[
+    rowSums(otu_table(subset_taxa(PSG, category %in% "Helminth")))==0,
+    c("sex", "age", "season")])
+
+
+table(sample_data(PSG)[
+    rowSums(otu_table(subset_taxa(PSG, category %in% "Helminth")))==0,
+    c("sex", "area", "season")])
+
