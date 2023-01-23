@@ -128,7 +128,7 @@ PERMAallX <- adonis2(HelmDataNA ~ area + tree_cover_1000m +
 
 write.csv(round(PERMA, 3), "tables/Permanova.csv")
 
-write.csv(rbind(PERMAimp, PERMAtree, PERMAhuman, PERMAallX),
+write.csv(round(rbind(PERMAimp, PERMAtree, PERMAhuman, PERMAallX), 2),
           "tables/suppl/PermanovaConti.csv")
 
 nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
