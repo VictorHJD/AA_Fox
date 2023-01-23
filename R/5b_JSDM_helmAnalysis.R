@@ -1104,7 +1104,8 @@ toplot_ModelFrame_Traits_grad[toplot_ModelFrame_Traits_grad$significant == "Yes"
 
 # Plot Effects
 plot_traits_grad1 <- toplot_ModelFrame_Traits_grad %>% 
-  filter(Variable %in% c("sex[male]","weight_kg", "season[spring]", "season[winter]", "area[Brandenburg]")) %>%
+    filter(Variable %in% c("sex[male]","weight_kg", "season[spring]", "season[winter]",
+                           "area[Brandenburg]", "DNA260_230", "condition[excellent]")) %>%
   ggplot(aes(group = traits_legend, colour = traits_legend)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -1134,6 +1135,36 @@ plot_traits_grad1 <- toplot_ModelFrame_Traits_grad %>%
 
 plot_traits_grad2 <- toplot_ModelFrame_Traits_grad %>% 
   filter(Variable %in% c("DNA260_280")) %>%
+  ggplot(aes(group = Traits, colour = Traits)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12)) 
+
+
+plot_traits_grad4 <- toplot_ModelFrame_Traits_grad %>% 
+  filter(Variable %in% c("human_fpi_1000m", "tree_cover_1000m")) %>%
   ggplot(aes(group = Traits, colour = Traits)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -1192,49 +1223,54 @@ plot_traits_grad3 <- toplot_ModelFrame_Traits_grad %>%
     legend.text = element_text(size = 12)) 
 
 
-plot_traits_grad4 <- toplot_ModelFrame_Traits_grad %>% 
-  filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
-  ggplot(aes(group = Traits, colour = Traits)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("\nCoefficient") +
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12)) 
+## plot_traits_grad4 <- toplot_ModelFrame_Traits_grad %>% 
+##   filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
+##   ggplot(aes(group = Traits, colour = Traits)) + 
+##   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+##   geom_linerange(aes(x = Variable, ymin = CI_low,
+##                      ymax = CI_high, fill = significant),
+##                  lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+##   geom_linerange(aes(x = Variable, ymin = Q_25,
+##                      ymax = Q_75, fill = significant),
+##                  lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+##   geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+##                       ymax = Q_75, fill = significant),
+##                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+##   scale_fill_manual(values = c("White", "black"), 
+##                     guide = "none")+
+##   coord_flip() +
+##   scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+##                          guide = guide_legend(reverse = TRUE)) +
+##   xlab("") +
+##   ylab("\nCoefficient") +
+##   theme(
+##     panel.background = element_rect(fill = NA),
+##     panel.grid.major = element_blank(), 
+##     axis.line = element_line(colour = "black"), 
+##     axis.text = element_text(size = 12), 
+##     axis.title = element_text(size = 14, face = "bold"),
+##     legend.title = element_text(size = 14, face = "bold"),
+##     legend.text = element_text(size = 12)) 
 
 legend_traits_grad <- get_legend(plot_traits_grad1)
 
-half_right_traits_grad <- plot_grid(plot_traits_grad4 + theme(legend.position="none", axis.title = element_blank()), 
-                                    plot_traits_grad2 + theme(legend.position="none", axis.title = element_blank()), 
+half_right_traits_grad <- plot_grid(plot_traits_grad4 +
+                                    theme(legend.position="none",
+                                          axis.title = element_blank()), 
+                                    plot_traits_grad2 +
+                                    theme(legend.position="none",
+                                          axis.title = element_blank()), 
                                     plot_traits_grad3 + theme(legend.position="none"), 
                                     labels = c('B', 'C', 'D'), label_size = 12, 
                                     nrow = 3, align = "v",rel_heights = c(0.8,0.5, 0.7))
 
 traits_plot_grad <- plot_grid(plot_traits_grad1 + theme(legend.position="none"), 
-                              half_right_traits_grad, legend_traits_grad, 
+                              half_right_traits_grad, 
+                              legend_traits_grad, 
                               labels = c('A'), label_size = 12,
                               ncol = 3, 
                               nrow = 1,
-                              rel_widths = c(1,1,0.5))
+                              rel_widths = c(1,1,0.5, 3))
 
 ggsave(plot = traits_plot_grad, "./figures/suppl/PAModel_grad_GammaCoefs_traits.png", 
        width = 9, height = 5, dpi = 600)
