@@ -16,7 +16,7 @@ recomputejSDMModels <- FALSE
 
 ## to avoid doing now convergence tests (and pdfs of those) every time
 ## the script is run
-newConvergenceTest <- TRUE
+newConvergenceTest <- FALSE
 
 if(!exists("PAModel_area") | !exists("PAModel_grad")){
     if(recomputejSDMModels){
@@ -1219,15 +1219,18 @@ associations_area <- cbind.data.frame(assoc_mean, support = assoc_support$value)
 
 colnames(associations_area) <- c("species1", "species2", "mean", "support")
 
-# Select association that are significant in the 95% CI
+## Select association that are significant in the 95% CI -->> NOTHING
+
 associations_area %>%
     filter(support < 0.025 | support > 0.975) %>%
-    filter(species1 != species2)##  %>%
+    filter(species1 != species2)
 
-## ## there are none, nothing to select from!
-##   select(from = species1, to = species2, mean = mean, support = support) 
-
-head(associations_area)
+## use the 75% confidence interval for visualisation
+associations_area %>%
+    filter(support < 0.125 | support > 0.875) %>%
+    filter(species1 != species2)  %>%
+    select(from = species1, to = species2, mean = mean, support = support) ->
+    associations_area75
 
 ## ## plot as hierarchical bundle
 edges <- data.frame(from = "origin", to = associations_area$species1)
@@ -1247,38 +1250,40 @@ vertices$angle<-ifelse(vertices$angle < -90, vertices$angle+180, vertices$angle)
 mygraph <- graph_from_data_frame(d = edges, vertices = vertices)
 
 # The connection object must refer to the ids of the leaves:
-## from <- match(associations_area95$from, vertices$name)
-## to <-  match(associations_area95$to, vertices$name)
+from <- match(associations_area75$from, vertices$name)
+to <-  match(associations_area75$to, vertices$name)
 
-## graph_area <- ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
-##   geom_conn_bundle(data = get_con(from = from, to = to, values = associations_area95$mean), 
-##                    alpha=0.5, width=1.8, tension = 0.8, aes(colour=values), 
-##                    show.legend = TRUE )+
-##   scale_edge_colour_distiller(palette = "Blues",
-##                               direction = +1,
-##                               guide = "edge_colourbar",
-##                               limits = c(0.85, 0.999),
-##                               name = "Correlation\n",
-##                               ) +
-##   geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label = name, angle = angle, hjust=hjust), size=4, alpha=1) +
-##   geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, size=1, alpha=0.5), colour = "grey30") +
-##   expand_limits(x = c(-2, 2), y = c(-2, 2)) +
-##   theme_minimal() +
-##   theme(panel.grid.major = element_blank(),
-##         panel.grid.minor = element_blank(), 
-##         axis.title = element_blank(),
-##         axis.text = element_blank(), 
-##         plot.background=element_rect(fill = "white"),
-##         legend.key = element_rect(color = "gray", fill = "black"),
-##         legend.title = element_text(color = "black"),
-##         legend.text = element_text(color = "black")) +
-##   guides(alpha = "none", 
-##          colour = "none",
-##          size = "none")
+graph_area <- ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
+  geom_conn_bundle(data = get_con(from = from, to = to, values = associations_area75$mean), 
+                   alpha=0.5, width=1.8, tension = 0.8, aes(colour=values), 
+                   show.legend = TRUE )+
+  scale_edge_colour_distiller(palette = "Blues",
+                              direction = +1,
+                              guide = "edge_colourbar",
+                              limits = c(0.65, 0.999),
+                              name = "Correlation\n",
+                              ) +
+    geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label = name,
+                       angle = angle, hjust=hjust), size=4, alpha=1) +
+    geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, size=1, alpha=0.5),
+                    colour = "grey30") +
+  expand_limits(x = c(-2, 2), y = c(-2, 2)) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.title = element_blank(),
+        axis.text = element_blank(), 
+        plot.background=element_rect(fill = "white"),
+        legend.key = element_rect(color = "gray", fill = "black"),
+        legend.title = element_text(color = "black"),
+        legend.text = element_text(color = "black")) +
+  guides(alpha = "none", 
+         colour = "none",
+         size = "none")
 
-## ## NOT clearly assigned yet! -> NOT SIGNIFICANT ANYMORE!!!
-## ggsave(plot = graph_area, "./JSDM_models/figures_PA/PAModel_area_sp_assoc.png", 
-##        width = 6, height = 6, dpi = 600)
+## NOT clearly assigned yet! -> NOT SIGNIFICANT ANYMORE!!!
+ggsave(plot = graph_area, "./figures/suppl/PAModel_area_sp_assoc.png", 
+       width = 6, height = 6, dpi = 600)
 
 
 ## Gradient model
