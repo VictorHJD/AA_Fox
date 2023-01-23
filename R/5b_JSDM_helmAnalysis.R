@@ -602,9 +602,8 @@ plot_beta_grad_1 <- toplot_ModelFrame_grad %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
 
-plot_beta_grad_2 <- toplot_ModelFrame_grad %>% 
-    filter(Variable %in% c("human_fpi_1000m",  "tree_cover_1000m",
-                           "season[spring]", "season[winter]")) %>%
+plot_beta_grad_2a <- toplot_ModelFrame_grad %>% 
+    filter(Variable %in% c("season[spring]", "season[winter]")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -632,8 +631,39 @@ plot_beta_grad_2 <- toplot_ModelFrame_grad %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12)) 
 
+plot_beta_grad_2b <- toplot_ModelFrame_grad %>% 
+    filter(Variable %in% c("human_fpi_1000m",  "tree_cover_1000m")) %>%
+  ggplot(aes(group = Species, colour = Species)) + 
+  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
+  geom_linerange(aes(x = Variable, ymin = CI_low,
+                     ymax = CI_high, fill = significant),
+                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
+  geom_linerange(aes(x = Variable, ymin = Q_25,
+                     ymax = Q_75, fill = significant),
+                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
+  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
+                      ymax = Q_75, fill = significant),
+                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
+  scale_fill_manual(values = c("White", "black"), 
+                    guide = "none")+
+  coord_flip() +
+  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
+                         guide = guide_legend(reverse = TRUE)) +
+  xlab("") +
+  ylab("\nCoefficient") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 14, face = "bold"),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12)) 
+
+
+
 plot_beta_grad_3 <- toplot_ModelFrame_grad %>% 
-  filter(Variable %in% c("DNA260_230", "DNAng_ul", "condition[excellent]")) %>%
+  filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
@@ -720,20 +750,25 @@ plot_beta_grad_5 <- toplot_ModelFrame_grad %>%
     legend.text = element_text(size = 12))
 
 
-legend_grad <- get_legend(plot_beta_grad_2)
+legend_grad <- get_legend(plot_beta_grad_2a)
 
-half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position="none", axis.title = element_blank()), 
+half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position="none",
+                                                     axis.title = element_blank()), 
                        plot_beta_grad_3 + theme(legend.position="none"), 
                        labels = c('A', 'C'), label_size = 12, 
                        nrow = 2, align = "v",rel_heights = c(1,1))
 
-half_right_grad <- plot_grid(plot_beta_grad_2 + theme(legend.position="none", axis.title = element_blank()), 
-                        plot_beta_grad_4 + theme(legend.position="none", axis.title = element_blank()), 
-                        plot_beta_grad_5 + theme(legend.position="none"), 
-                        labels = c('B', 'D', 'E'), label_size = 12, 
-                        nrow = 3, align = "v",rel_heights = c(1,0.5, 0.5))
+half_right_grad <- plot_grid(plot_beta_grad_2a + theme(legend.position="none",
+                                                       axis.title = element_blank()),
+                             plot_beta_grad_2b + theme(legend.position="none",
+                                                       axis.title = element_blank()),
+                             plot_beta_grad_4 + theme(legend.position="none",
+                                                      axis.title = element_blank()), 
+                             plot_beta_grad_5 + theme(legend.position="none"), 
+                             labels = c('B', 'X', 'D', 'E'), label_size = 12, 
+                             nrow = 4, align = "v",rel_heights = c(0.5,0.5, 0.5, 0.5))
 
-beta_plot_grad <- plot_grid(half_left, half_right, legend_grad, 
+beta_plot_grad <- plot_grid(half_left_grad, half_right_grad, legend_grad, 
                        ncol = 3, 
                        nrow = 1,
                        rel_widths = c(1,1,0.3))
