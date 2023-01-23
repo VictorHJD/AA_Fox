@@ -755,7 +755,7 @@ legend_grad <- get_legend(plot_beta_grad_2a)
 half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position="none",
                                                      axis.title = element_blank()), 
                        plot_beta_grad_3 + theme(legend.position="none"), 
-                       labels = c('A', 'C'), label_size = 12, 
+                       labels = c('A', 'D'), label_size = 12, 
                        nrow = 2, align = "v",rel_heights = c(1,1))
 
 half_right_grad <- plot_grid(plot_beta_grad_2a + theme(legend.position="none",
@@ -765,7 +765,7 @@ half_right_grad <- plot_grid(plot_beta_grad_2a + theme(legend.position="none",
                              plot_beta_grad_4 + theme(legend.position="none",
                                                       axis.title = element_blank()), 
                              plot_beta_grad_5 + theme(legend.position="none"), 
-                             labels = c('B', 'X', 'D', 'E'), label_size = 12, 
+                             labels = c('B', 'C', 'E', 'F'), label_size = 12, 
                              nrow = 4, align = "v",rel_heights = c(0.5,0.5, 0.5, 0.5))
 
 beta_plot_grad <- plot_grid(half_left_grad, half_right_grad, legend_grad, 
