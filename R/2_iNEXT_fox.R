@@ -28,26 +28,9 @@ if(!exists("PSG")){
     }
 }
 
-## set theme for plots
-# theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
-# theme_update(
-#     axis.title.x = element_text(margin = margin(t = 12)),
-#     axis.title.y = element_text(margin = margin(r = 12)),
-#     strip.text = element_text(face = "bold", color = "black", size = 12, margin = margin(b = 10)),
-#     legend.title = element_text(size = 12, face = "bold"),
-#     legend.text = element_text(size = 12),
-#     panel.spacing.x = unit(2, "lines"),
-#     panel.grid.minor = element_blank(),
-#     plot.margin = margin(rep(12, 4))
-# )
-
-## font for numeric label
-#font_num <- "Roboto Condensed"
-
-
 ### WARNING: most of the functions in this script are more complicatd
 ### than necessary for the present (Dec 2022) manuscript. The
-### functions allow a general assesment of diversity (q=0, 1 and 2)
+### functions allow a general assessment of diversity (q=0, 1 and 2)
 ### for different taxonomic (phyla) subsets. I've put all off this in
 ### two big functions. One runs iNEXT, compiles the data and generates
 ### plots (getAllDiversity) the other one (gimmeModels) runs all the
@@ -76,7 +59,7 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
     ## now add the sample data and also the zero and 1 "Assemblages" (foxes
     ## back into this, by "all.y")
 
-    zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = 0, all.y = TRUE)
+    zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = 0, all.y = TRUE) ## TODO: doesn't work for me, no col assemblage
 
     ## UGLY set theme again within function
     ## set theme for plots

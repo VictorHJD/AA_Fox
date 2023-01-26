@@ -9,7 +9,6 @@
 ## using the dev version!
 devtools::load_all("../MultiAmplicon")
 
-library(ggplot2)
 library(dada2)
 library(reshape)
 library(phyloseq)
@@ -19,7 +18,6 @@ library(taxize)
 library(parallel)
 library(tidyr)
 library(dplyr)
-library(stargazer)
 
 ## re-run or use pre-computed results for different parts of the pipeline:
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
@@ -116,8 +114,7 @@ if(doMultiAmp){
     STF <- getSequenceTable(MAF, dropEmpty=FALSE)
     STFU <- do.call(cbind, STF)
     mode(STFU) <- "integer"
-    
-    STFU <- STFU[, !duplicated(colnames(STFU))]
+
     ## and very very harsh chimera removal
     isCruelBimera <- dada2::isBimeraDenovoTable(STFU, multithread=TRUE,
                                                 minSampleFraction=0.5,
@@ -128,8 +125,8 @@ if(doMultiAmp){
     isPooledBimera <- dada2::isBimeraDenovo(STFU, multithread=TRUE, 
                                             allowOneOff=TRUE, maxShift = 32)
 
-    ## saveRDS(isCruelBimera, "/SAN/Metabarcoding/AA_Fox/cruelBimera.Rds")
-    ## saveRDS(isPooledBimera, "/SAN/Metabarcoding/AA_Fox/pooledBimera.Rds")
+    saveRDS(isCruelBimera, "/SAN/Metabarcoding/AA_Fox/cruelBimera.Rds")
+    saveRDS(isPooledBimera, "/SAN/Metabarcoding/AA_Fox/pooledBimera.Rds")
 
     table(isCruelBimera ,  isPooledBimera)
     
@@ -157,9 +154,7 @@ if(doMultiAmp){
 ## tracking <- getPipelineSummaryX(MAF)
 ## plotPipelineSummary(tracking)
 
-png("figures/suppl/AmpSampleHeatmapRAW.png", width=24, height=8, units = 'in', res = 300)
 sumPheatmap <- plotAmpliconNumbers(MAF) ### 
-dev.off()
 
 ## everything clustering with Negative controls should be excluded!!
 SampleClusters <- cutree(sumPheatmap$tree_col, 2)
@@ -201,9 +196,7 @@ exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
 ## We exclude like this
 MAFinal <- MAF2[which(!exclude.primers), which(!exclude.samples)]
 
-png("figures/suppl/AmpSampleHeatmap.png", width=24, height=8, units = 'in', res = 300)
 plotAmpliconNumbers(MAFinal)
-dev.off()
 
 PS.l <- toPhyloseq(MAFinal,
                    samples=colnames(MAFinal),
@@ -318,185 +311,7 @@ PS@sam_data <- sample_data(cbind(PS@sam_data, sample.data[rownames(sample_data(P
 ## make weight numeric
 PS@sam_data[, "weight_kg"] <- as.numeric(unlist(PS@sam_data[, "weight_kg"] ))
 
-
-################ Analysing DNA quality and quantity ###########
-### ############ and addint it to the sample data ########
-
-### we do this without the "b" post-fixes in sample names
-sample.data$ID <- paste("Fox", gsub(" |b", "", sample.data$IZW_ID))
-
-## The sampples producing good sequencing data ###################
-SD <- sample_data(PS)
-SD$ID <- gsub("b", "", rownames(SD))
-
-
-## All obtained sampels #########################################
-Meta <- read.csv("input_data/AllSamples.csv")
-Meta <- Meta[!is.na(Meta$IZW.ID), ]
-Meta$ID <- paste("Fox", gsub(" ", "", Meta$IZW.ID))
-
-length(unique(Meta$ID))
-## 619 foxes sampled                               <-- RESULT?!
-dupes <- Meta$ID[duplicated(Meta$ID)]
-Meta[Meta$ID%in%dupes, ]
-## strange errors in raw data for three samples
-
-### but lukiely these samples were not used furhter
-table(SD$ID%in%dupes)
-## simply ignore them
-Meta <- Meta[!duplicated(Meta$ID), ]
-
-## And their DNA measurements
-DNA <- read.csv("input_data/nanodrop_1-4_zusammen.csv")
-DNA$ID <- paste("Fox", gsub(" |b|\\.2", "", DNA$Sample.ID))
-
-length(DNA$ID)
-length(unique(DNA$ID)) ## 474 foxes processed
-
-## for those DNA was extracted twice we use the sample with the higher
-## DNA quantity
-DNA %>% group_by(ID) %>%
-    filter(ng.ul == max(ng.ul)) -> DNA
-
-length(DNA$ID) ## unique now!!
-length(unique(DNA$ID)) ## 474 foxes processed
-
-## merge the Metadata and the DNA data
-### 473 match                               <<- RESULT, extracted DNA!!
-DNA <- merge(DNA, Meta, by="ID")
-
-length(DNA$ID) ## unique still!!
-length(unique(DNA$ID)) ## 474 foxes processed
-
-DNA$sequenced <- DNA$ID%in%sample.data$ID
-table(DNA$sequenced)
-## 226                                       <<- RESULT, sequenced!
-
-DNA$analysed <- DNA$ID%in%SD$ID
-table(DNA$analysed) ## 152, so we're missing DNA qual for 3 foxes
-
-DNA$age..j.a.[DNA$age..j.a.%in%"juvenil"] <- "juvenile"
-
-colnames(DNA) <- gsub("\\..*", "", colnames(DNA))
-
-DNA$weight_kg <- as.numeric(DNA$weight)
-
-colnames(DNA)[colnames(DNA)%in%"ng"] <- "DNAng.ul"
-
-colnames(DNA)[colnames(DNA)%in%"X260"] <- c("DNA260.280", "DNA260.230")
-
-
-#### confirming: sequenced were the better samples (in terms of quantity)
-tapply(DNA$DNAng.ul, DNA$sequenced, median)
-tapply(DNA$DNAng.ul, DNA$sequenced, mean)
-
-### 260.230 ratio was important for selection for sequencing 
-tapply(DNA$DNA260.230, DNA$sequenced, median)
-tapply(DNA$DNA260.230, DNA$sequenced, mean)
-
-### 260.280 ratio was NOT important for selection for sequencing 
-tapply(DNA$DNA260.280, DNA$sequenced, median)
-tapply(DNA$DNA260.280, DNA$sequenced, mean)
-
-
-
-## lower DNA quantity sampels tend to not be analysed futher... they
-## failed in sequencing and were screened
-tapply(DNA[DNA$sequenced, "DNAng.ul"], DNA[DNA$sequenced, "analysed"], median)
-tapply(DNA[DNA$sequenced, "DNAng.ul"], DNA[DNA$sequenced, "analysed"], mean)
-
-## again the same for DNA quality in 260.230 tend to not be analysed
-## futher... they failed in sequencing and were screened
-tapply(DNA[DNA$sequenced, "DNA260.230"], DNA[DNA$sequenced, "analysed"], median)
-tapply(DNA[DNA$sequenced, "DNA260.230"], DNA[DNA$sequenced, "analysed"], mean)
-
-## and not so for 260.280
-tapply(DNA[DNA$sequenced, "DNA260.280"], DNA[DNA$sequenced, "analysed"], median)
-tapply(DNA[DNA$sequenced, "DNA260.280"], DNA[DNA$sequenced, "analysed"], mean)
-
-
-############## OVERALL EXTRACTION #############################################
-
-modQuantExtr <- lm(DNAng.ul ~ weight_kg + condition + sex + age + area,
-                   data=DNA)
-summary(modQuantExtr)
-### lower quantity of DNA for juvenile and heavier foxes, much lower
-### in Brandenburg!!!
-
-modQual1Extr <- lm(DNA260.280 ~ weight_kg + condition + sex + age + area,
-                   data=DNA)
-summary(modQual1Extr)
-### different (lower) quality in Brandenburg
-
-modQual2Extr <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
-    data=DNA)
-summary(modQual2Extr)
-### different (lower) quality in Brandenburg
-
-############## WAS BIASED #####################################################
-
-
-############## SEQUENCED SAMPLES  #############################################
-modQuantSEQ <- lm(DNAng.ul ~ weight_kg + condition + sex + age + area,
-                  data=subset(DNA, DNA$sequenced))
-summary(modQuantSEQ)
-### lower quantity of DNA for juvenile and heavier foxes, much lower
-### in Brandenburg!!!
-
-modQual1SEQ <- lm(DNA260.280 ~ weight_kg + condition + sex + age + area,
-                   data=subset(DNA, DNA$sequenced))
-summary(modQual1Extr)
-### different (lower) quality in Brandenburg
-
-modQual2SEQ <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
-                  data=subset(DNA, DNA$sequenced))
-summary(modQual2SEQ)
-### different (lower) quality in Brandenburg
-
-############## STILL BIASED #####################################################
-
-############## ANALYSED SAMPLES  #############################################
-modQuantANA <- lm(DNAng.ul ~ weight_kg + condition + sex + age + area,
-                  data=subset(DNA, DNA$analysed))
-summary(modQuantANA)
-### lower quantity of DNA for juvenile and heavier foxes and lower
-### in Brandenburg... significance gone... but still worriesome
-
-modQual1ANA <- lm(DNA260.280 ~ weight_kg + condition + sex + age + area,
-                   data=subset(DNA, DNA$analysed))
-summary(modQual1ANA)
-### different (lower) quality in Brandenburg
-
-modQual2ANA <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
-                  data=subset(DNA, DNA$analysed))
-summary(modQual2ANA)
-### different (lower) quality in Brandenburg
-
-stargazer(modQuantExtr, modQuantSEQ, modQuantANA, type="html", out="tables/suppl/quant.html")
-stargazer(modQual1Extr, modQual1SEQ, modQual1ANA, type="html", out="tables/suppl/qual1.html")
-stargazer(modQual2Extr, modQual2SEQ, modQual2ANA, type="html", out="tables/suppl/qual2.html")
-
-############## BIAS is REMOVED only for DNA quantity in processing and
-############## potentially only partially !!!
-
-PS@sam_data$IDb <- rownames(PS@sam_data)
-PS@sam_data$ID <- gsub("b", "", rownames(PS@sam_data))
-
-Sdat <- as.data.frame(as(sample_data(PS), "matrix"))
-
-DNAData <- subset(DNA, DNA$analysed)[, c("ID", "DNAng.ul", "DNA260.230", "DNA260.280")]
-
-Sdat <- merge(Sdat, DNAData, by = "ID", all=TRUE)
-rownames(Sdat) <- Sdat$IDb
-
-
-## they are still alinged
-all(rownames(Sdat) == rownames(PS@sam_data))
-PS@sam_data <- sample_data(Sdat)
-
-###
-## Store all this in the central object of the analysis/repository
-## (for reproducibilty)
+## now directly in the repository (for reproducibilty)
 saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
 
 ###For primer analysis (Victor), still stored on our server 
@@ -505,24 +320,6 @@ saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
 ## For Caro and the paper, previously on the server, 
 ## saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds")
 
-
-### and we make the SYNONYMES Capillaria aerophila and Eucoleus
-### aerophilus the same thing
-
-table(tax_table(PS)[tax_table(PS)[, "genus"]%in%
-                    "Eucoleus", "species"])  
-
-table(tax_table(PS)[tax_table(PS)[, "genus"]%in%
-                    "Capillaria", "species"])
-    
-tax_table(PS)[tax_table(PS)[, "genus"]%in%
-                    "Capillaria", "genus"] <- "Eucoleus"
-
-tax_table(PS)[tax_table(PS)[, "genus"]%in%
-                    "Eucoleus", "species"] <- "Eucoleus aerophilus"
-
-table(tax_table(PS)[tax_table(PS)[, "genus"]%in%
-                    "Eucoleus", "family"])
 
 ### Adding Categories to the taxonomy information!
 ### We have to addd this to genus agglommerted data!
@@ -619,10 +416,8 @@ table(sample_data(PSG)$weight_imputed)
 table(sample_data(PSG)$condition_imputed)
 
 ## and the areas by season for the methods part
-## write.csv(table(season=sample_data(PSG)$season, area=sample_data(PSG)$area),
-##           file="tables/seasonArea.csv")
-## ## this is now only in-text
-table(season=sample_data(PSG)$season, area=sample_data(PSG)$area)
+write.csv(table(season=sample_data(PSG)$season, area=sample_data(PSG)$area),
+          file="tables/seasonArea.csv")
 
 ## and save PSG for further use 
 saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")

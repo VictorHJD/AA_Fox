@@ -18,9 +18,9 @@ foxsample_data <- read.csv("input_data/Fox_data.csv")
 
 ## remove foxes with geocoordinate information 
 filter(foxsample_data, !is.na(location_long) & !is.na(location_lat)) %>%
-    st_as_sf(coords = c("location_long", "location_lat"), crs = 4236) %>%
-    st_transform(crs = 3035) ->
-fox_sp 
+  st_as_sf(coords = c("location_long", "location_lat"), crs = 4236) %>%
+  st_transform(crs = 3035) ->
+  fox_sp 
 
 
 #########################################################################
@@ -82,7 +82,7 @@ human_fpi <- raster(paste0(rawdata_dir, "/HFP2009_int_3035.tif"))
 filepath <- "intermediate_data/Fox_data_envir.RDS"
 
 if(!file.exists(filepath)) {
-
+  
   # 1000m buffer 
   envcov_1 <- raster::extract(tree_cover_bb, fox_sp, buffer = 1000,
                               fun = mean, na.rm = TRUE, sp = TRUE)
@@ -129,7 +129,7 @@ fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs 
 b <- as(extent(4400000, 4700000, 3100000, 3400000), 'SpatialPolygons')
 crs(b) <- crs(imperv)
 human_fpi_crop <-  st_as_stars(crop(human_fpi, b))
-#human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b), fact = 10, fun = "mean"))
+human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b), fact = 10, fun = "mean"))
 
 ## shape of federal states
 boundaries <- 
@@ -146,24 +146,21 @@ theme_update(
   plot.margin = margin(rep(5, 4))
 )
 
-map_study <- 
-  ggplot() +
+
+## map study area
+map_study_base <- 
+  ggplot(fox_envcov_sf) +
   geom_stars(data = human_fpi_crop) +
-  #geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf), fill = "black", alpha = .15) +
   ## state boundaries
   geom_sf(data = boundaries, fill = NA, color = "black") +
   ## 1000m buffer
-  geom_sf(data = fox_envcov_sf, size = 5, shape = 21, stroke = 1.2, fill = "white", color = "white") +
-  geom_sf(data = fox_envcov_sf, size = 5, shape = 21, stroke = 0, fill = "white") +
-  geom_sf(data = fox_envcov_sf, aes(color = human_fpi_1000m), shape = 16, size = 5, alpha = .7) +
+  geom_sf(size = 5, shape = 21, stroke = 1.2, fill = "white", color = "white") +
+  geom_sf(size = 5, shape = 21, stroke = 0, fill = "white") +
+  geom_sf(aes(color = human_fpi_1000m), shape = 16, size = 5, alpha = .7) +
   ## 100m buffer
-  geom_sf(data = fox_envcov_sf, size = 1.2, shape = 21, stroke = .8, fill = "white", color = "black") +
-  geom_sf(data = fox_envcov_sf, size = 1.2, shape = 21, stroke = 0, fill = "white") +
-  geom_sf(data = fox_envcov_sf, aes(color = human_fpi_100m), shape = 16, size = 1.2, alpha = .7) +
-  ggspatial::annotation_scale(
-    location = "bl", text_family = "Open Sans", text_cex = 1.2
-  ) +
-  ggspatial::annotation_north_arrow(location = "tr") +
+  geom_sf(size = 1.2, shape = 21, stroke = .8, fill = "white", color = "black") +
+  geom_sf(size = 1.2, shape = 21, stroke = 0, fill = "white") +
+  geom_sf(aes(color = human_fpi_100m), shape = 16, size = 1.2, alpha = .7) +
   coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
   scale_fill_gradient(low = "grey30", high = "grey97", guide = "none") +
   scale_color_scico(
@@ -174,8 +171,25 @@ map_study <-
   ) +
   labs(x = NULL, y = NULL)
 
-#map_study
+map_study <- map_study_base +
+  ggspatial::annotation_scale(
+    location = "bl", text_family = "Open Sans", text_cex = 1.2
+  ) +
+  ggspatial::annotation_north_arrow(location = "tr")
+
 ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
+
+
+## map Berlin
+map_berlin <- map_study_base +
+  coord_sf(xlim = c(4531042, 4576603), ylim = c(3253866, 3290780)) +
+  theme_void() + 
+  theme(
+    legend.position = "none", 
+    panel.border = element_rect(color = "black", fill = NA, size = .8)
+  )
+
+ggsave("figures/raw/map_berlin.png", width = 4, height = 3.7, dpi = 600)
 
 
 ## overview map
@@ -234,37 +248,45 @@ ggsave("figures/raw/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
 
 theme_set(theme_minimal(base_family = "Open Sans", base_size = 15))
 theme_update(
-  panel.grid.minor = element_blank()#,
-  #axis.text.y = element_text(family = font_num) # missing the font_num object
+  panel.grid.minor = element_blank()
 )
 
 colors <- c("#e7b800", "#2e6c61")
 
-fox_envcov %>% group_by(area) %>%
-  summarize(treeCoverCor=cor(tree_cover_1000m, tree_cover_100m,
-                             use="pairwise.complete.obs"),
-            impervCor=cor(imperv_100m, imperv_1000m,
-                          use="pairwise.complete.obs"),
-            hfpiCor=cor(human_fpi_100m, human_fpi_1000m, 
-                        use="pairwise.complete.obs")) 
+fox_envcov %>% 
+  group_by(area) %>%
+  summarize(
+    treeCoverCor = cor(tree_cover_1000m, tree_cover_100m,
+                       use = "pairwise.complete.obs"),
+    impervCor = cor(imperv_100m, imperv_1000m,
+                    use = "pairwise.complete.obs"),
+    hfpiCor = cor(human_fpi_100m, human_fpi_1000m, 
+                  use = "pairwise.complete.obs")) 
 
-tree_cover <- ggplot(fox_envcov, aes(tree_cover_1000m, tree_cover_100m, color=area)) +
-  geom_point(size = 2.5)  +
-  scale_colour_manual(values = colors, name = "Study area:") +
-  labs(x = "Tree cover (1000 m buffer)", y = "Tree cover (100 m buffer)")
+plot_corr_buffer <- function(x, y, label) {
+  g <- 
+    ggplot(fox_envcov, aes_string(x, y, fill = "area")) +
+    geom_point(aes(color = area), shape = 21, size = 2.5, stroke = .8, fill = "white") +
+    geom_point(shape = 21, size = 2.5, alpha = .3, stroke = .8, color = "NA") +
+    scale_color_manual(values = colors, name = "Study area:") +
+    scale_fill_manual(values = colors, name = "Study area:") +
+    labs(x = paste(label, "(1000 m buffer)"), y = paste(label, "(100 m buffer)"))
+  
+  return(g)
+}
 
-imperv <- ggplot(fox_envcov, aes(imperv_1000m, imperv_100m, color=area)) +
-  geom_point(size = 2.5) +
-  scale_colour_manual(values = colors, name = "Study area:") +
-  labs(x = "Imperviousness (1000 m buffer)", y = "Imperviousness (100 m buffer)")
+tree_cover <- plot_corr_buffer(
+  x = "tree_cover_1000m", y = "tree_cover_100m", label = "Tree cover"
+)
 
-hfpi <- ggplot(fox_envcov, aes(human_fpi_1000m, human_fpi_100m, color=area)) +
-  geom_point(size = 2.5) +
-  scale_colour_manual(values = colors, name = "Study area:") +
-  labs(x = "Human FPI (1000 m buffer)", y = "Human FPI (100 m buffer)")
+imperv <- plot_corr_buffer(
+  x = "imperv_1000m", y = "imperv_100m", label = "Imperviousness"
+)
 
-tree_cover + imperv + hfpi + plot_layout(guides = "collect")
+hfpi <- plot_corr_buffer(
+  x = "human_fpi_1000m", y = "human_fpi_100m", label = "Human FPI"
+)
+
+panel <- tree_cover + imperv + hfpi + plot_layout(guides = "collect")
 
 ggsave("figures/suppl/Env100_1000Cors.png", width = 18, height = 7, bg = "white", dpi = 600)
-
-
