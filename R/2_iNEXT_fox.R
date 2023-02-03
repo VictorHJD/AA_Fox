@@ -17,6 +17,14 @@ library(sjlabelled)
 ## within itself for now. But we can still read it's single final
 ## output object.
 
+iNV <- packageVersion("iNEXT")
+if (iNV < 3){
+    stop(paste("We need iNEXT version < 3, your version is",
+               iNV))
+}
+    
+
+
 recomputeBioinfo <- FALSE
 ## recomputeBioinfo <- TRUE
 
@@ -58,7 +66,7 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
 
     ## now add the sample data and also the zero and 1 "Assemblages" (foxes
     ## back into this, by "all.y")
-
+    
     zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = 0, all.y = TRUE) ## TODO: doesn't work for me, no col assemblage
 
     ## UGLY set theme again within function
