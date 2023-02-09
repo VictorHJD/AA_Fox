@@ -213,19 +213,20 @@ ggHelmEnvHelm <-
     data = subset(HelmEnvFitDf, pvals < 0.1),
     aes(x = NMDS1, y = NMDS2 + offset),
     label = row.names(subset(HelmEnvFitDf, pvals < 0.1)), size = 5.5,
-    color = "darkgrey", family = "Open Sans", fontface = "bold"
+    color = "#757575", bg.colour = "white", family = "Open Sans", fontface = "bold"
   ) +
   shadowtext::geom_shadowtext( ## TODO: why are the text labels not colored with the same gradient?
     data = subset(HelmHelmDf, pvals < 0.1), aes(x = NMDS1, y = NMDS2 + offset),
     label = row.names(subset(HelmHelmDf, pvals < 0.1)), size = 4.5,
     color = pal[1], bg.colour = "white", family = "Open Sans", fontface = "bold"
   ) +
+  scale_x_continuous(limits = c(-2.9, NA)) +
   scale_color_gradientn(colors = pal, name = "log(pvals)") +
-  theme(legend.margin = margin(l = 20),
-        legend.title = element_text(margin = margin(b = 4)))
+  theme(legend.box.margin = margin(l = 30),
+        legend.title = element_text(margin = margin(t = 1, b = 3)))
 
 ggsave("figures/CompositionEnvHelm.png", ggHelmEnvHelm, 
-       width = 18, height = 7, bg = "white", dpi = 600)
+       width = 14, height = 6, bg = "white", dpi = 600)
 
 
 ## now for the table
