@@ -331,11 +331,12 @@ plot(ggeffect(AreaRich, terms = c("weight_kg", "season", "area")), rawdata = TRU
   labs(x = "Weight (kg)", y = "Species richness (Hill number q=0)") +
   coord_cartesian(expand = FALSE, clip = "off") +
   scale_color_manual(values = colors_seasons, 
-                     #labels = c("Spring", "Summer + Autumn", "Winter"),
+                     labels = c("Spring", "Summer + Autumn", "Winter"),
                      name = "Season:") +
   scale_fill_manual(values = colors_seasons, guide = "none") +
   ## need to repeat theme because it is overwritten by the wrapper
-  theme_custom()
+  theme_custom() +
+  theme(plot.margin = margin(.5, .5, 2, 0))
 
 ggsave("figures/Div_Model.png", width = 11, height = 7, bg = "white", dpi = 600)
 
