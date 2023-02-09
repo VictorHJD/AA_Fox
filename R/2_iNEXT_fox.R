@@ -13,6 +13,8 @@ library(sjPlot)
 library(sjmisc)
 library(sjlabelled)
 
+source("./R/plot_setup.R")
+
 ## The "bioinformatics" script "1_Fox_general_MA.R" has finer controls
 ## within itself for now. But we can still read it's single final
 ## output object.
@@ -69,39 +71,29 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
     
     zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = 0, all.y = TRUE) ## TODO: doesn't work for me, no col assemblage
 
-    ## UGLY set theme again within function
-    ## set theme for plots
-    theme_set(theme_minimal(base_family = "Open Sans", base_size = 12))
-    theme_update(
-      axis.title.x = element_text(margin = margin(t = 12)),
-      axis.title.y = element_text(margin = margin(r = 12)),
-      strip.text = element_text(face = "bold", color = "black", size = 12, margin = margin(b = 10)),
-      legend.title = element_text(size = 12, face = "bold"),
-      legend.text = element_text(size = 12),
-      panel.spacing.x = unit(2, "lines"),
-      panel.grid.minor = element_blank(),
-      plot.margin = margin(rep(12, 4))
-    )
     
     ## Now the plot gets a bit messy redo by hand
-    alphaDivFox <- ggplot(zet, aes(x = x, y = y, colour = area, group=Assemblage)) +
-        geom_line(data = subset(zet, Method %in% "Rarefaction"),
-                  lwd = 1.5, alpha = 0.3) +
-        geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
-                   fill = "white", size = 2.7, stroke = .8) + 
-        geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
-                   fill = "transparent", size = 2.7, stroke = .8) + 
-        scale_colour_manual(values = c("#e7b800", "#2e6c61")) +
-        scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
-        scale_x_continuous(labels = scales::label_comma()) +
-        xlab("Number of sequence reads") +
-        ylab(paste0(deparse(substitute(output_string)), " diversity")) +
-        theme(legend.position = "none")
+    alphaDivFox <- 
+      ggplot(zet, aes(x = x, y = y, colour = area, group=Assemblage)) +
+      geom_line(data = subset(zet, Method %in% "Rarefaction"),
+                lwd = 1.5, alpha = 0.3) +
+      geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
+                 fill = "white", size = 2.7, stroke = .8) + 
+      geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
+                 fill = "transparent", size = 2.7, stroke = .8) + 
+      coord_cartesian(clip = "off") +
+      scale_colour_manual(values = colors_regions, guide = "none") +
+      scale_x_continuous(labels = scales::label_comma(), expand = c(0, 0), limits = c(0, NA)) +
+      scale_y_continuous(breaks = 2:10, expand = c(0, 0)) +
+      labs(x = "Number of sequence reads",
+           #y = paste0(deparse(substitute(output_string)), " diversity"))
+           y = paste0('"', output_string, '" diversity')) +
+      theme(plot.margin = margin(rep(20, 4)))
 
     ##  get the the asymptotic diversity estimates
     EstimatesAsy <- OTU_inext_imp$AsyEst
 
-    ## ## ## observed diverstiy of 1 and 0 div samples
+    ## ## ## observed diversity of 1 and 0 div samples
     NullOne <- as.data.frame(cbind(Observed =  colSums(Counts[, colSums(Counts > 0) < 2] > 0),
                                    Estimator = colSums(Counts[, colSums(Counts > 0) < 2] > 0)))
     NullOne$Assemblage <- rownames(NullOne)
@@ -116,19 +108,20 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
     ## now  add back the pure observed diversity for all the excluded samples
     EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x = "Assemblage", by.y = 0)
     
-    alphaCompared <- ggplot(EstimatesAsy,
-                            aes(area, Estimator, color = area,
-                                fill = after_scale(lighten(color, .7)))) +
-        geom_boxplot(outlier.shape = NA) +
-        geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
-                   fill = "white", size = 1.3, stroke = .7) +
-        scale_y_continuous(name = NULL) +
-        scale_x_discrete(name = NULL) +
-        facet_wrap(~Diversity, scales = "free_y") +
-        scale_colour_manual(values = c("#e7b800", "#2e6c61")) +
-        scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
-        theme(legend.position = "none", 
-              panel.grid.major.x = element_blank())
+    alphaCompared <- 
+      ggplot(EstimatesAsy,
+             aes(area, Estimator, color = area,
+                 fill = after_scale(lighten(color, .7)))) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
+                 fill = "white", size = 1.3, stroke = .7) +
+      facet_wrap(~Diversity, scales = "free_y") +
+      coord_cartesian(clip = "off") +
+      scale_x_discrete(expand = c(.2, .3), name = NULL) +
+      scale_y_continuous(expand = c(.005, .005), name = NULL) +
+      scale_colour_manual(values = colors_regions, guide = "none") +
+      theme(panel.grid.major.x = element_blank(),
+            plot.margin = margin(rep(20, 4)))
 
     ## Now: the way Caro designed the analysis it distinguishes between
     ## Berlin and Brandenburg as a whole (and between male and female,
@@ -145,18 +138,20 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
                                   Brandenburg = t(PresArea$Brandenburg)), 
                              q = 0, datatype = "incidence_raw")
 
-    gammaDivFox <- ggiNEXT(Fox_inext_area1) +
-        scale_colour_manual(values = c("#e7b800", "#2e6c61")) +
-        scale_fill_manual(values = c("#e7b800", "#2e6c61")) +
-        xlab("Number of sampled foxes") +
-        ylab(paste0(deparse(substitute(output_string)), " diversity")) +
-        ## need to repeat theme because it is overwritten by the wrapper
-        theme_minimal(base_family = "Open Sans", base_size = 12) +
-        theme(legend.position = "none", 
-              axis.title.x = element_text(margin = margin(t = 12)),
-              axis.title.y = element_text(margin = margin(r = 12)),
-              panel.grid.minor = element_blank(),
-              plot.margin = margin(rep(12, 4)))
+    gammaDivFox <- 
+      ggiNEXT(Fox_inext_area1) +
+      coord_cartesian(expand = FALSE, clip = "off") +
+      scale_x_continuous(breaks = c(1, seq(50, 200, by = 50))) +
+      scale_y_continuous(breaks = seq(0, 20, by = 5)) + 
+      scale_colour_manual(values = colors_regions) +
+      scale_fill_manual(values = colors_regions) +
+      labs(x = "Number of sampled foxes",
+           #y = paste0(deparse(substitute(output_string)), " diversity")) +
+           y = paste0('"', output_string, '" diversity')) +
+      ## need to repeat theme because it is overwritten by the wrapper
+      theme_custom() +
+      theme(legend.position = "none",
+            plot.margin = margin(rep(20, 4)))
 
     ## beta diversity
     JaccPairsDist <- beta.pair(t(apply(Counts > 0, 2, as.numeric)),
@@ -168,55 +163,88 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
     print(anova(JaccGrups))
     message("\n")
 
-    data.frame(distances = JaccGrups$distances,
-               area = JaccGrups$group) %>%
-        ggplot(aes(area, distances, color = area, fill = after_scale(lighten(color, .7)))) +
-        geom_boxplot(outlier.shape = NA) +
-        geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
-                   fill = "white", size = 2, stroke = .7) +
-        ##geom_point(position = position_jitter(width = .3, seed = 2021)) +
-        scale_y_continuous(name = "Distance to area centroid") +
-        scale_x_discrete(name = NULL) +
-        scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-        scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-        guides(fill = guide_legend(title.position = "top", title.hjust = .5),
-               color = guide_legend(title.position = "top", title.hjust = .5)) +
-        theme(legend.position = "top", 
-              panel.grid.major.x = element_blank()) ->
-        betaDivJac
+    betaDivJac <- 
+      data.frame(distances = JaccGrups$distances,
+                 area = JaccGrups$group) %>%
+      ggplot(aes(area, distances, color = area, fill = after_scale(lighten(color, .7)))) +
+      geom_boxplot(outlier.shape = NA) +
+      geom_point(shape = 21, position = position_jitter(width = .25, seed = 2021),
+                 fill = "white", size = 2, stroke = .7) +
+      ##geom_point(position = position_jitter(width = .3, seed = 2021)) +
+      coord_cartesian(clip = "off") +
+      scale_x_discrete(expand = c(.2, .3), name = NULL) +
+      scale_y_continuous(expand = c(0, 0), name = "Distance to area centroid") +
+      scale_colour_manual(values = colors_regions, name = "Study area:") +
+      guides(fill = guide_legend(title.position = "top", title.hjust = .5),
+             color = guide_legend(title.position = "top", title.hjust = .5)) +
+      theme(legend.position = "top",  ## TODO: why do we keep the legend here? Why boxplots as legend keys?
+            panel.grid.major.x = element_blank(),
+            plot.margin = margin(rep(20, 4)))
 
+    # betaDivJacMulti <- 
+    #   wrap_elements(full =
+    #                   ~(plot(JaccGrups, col = colors_regions, main = "",
+    #                          label = FALSE, sub = "")))
+
+    dat <- data.frame(vec_x = JaccGrups$vectors[,1],
+                      vec_y = JaccGrups$vectors[,2],
+                      region = JaccGrups$group)
+    
+    dat$centr_x <- ifelse(dat$region == "Berlin", JaccGrups$centroids[1,1], JaccGrups$centroids[2,1])
+    dat$centr_y <- ifelse(dat$region == "Berlin", JaccGrups$centroids[1,2], JaccGrups$centroids[2,2])
+    
+    hull_dat <- 
+      dat %>%
+      group_by(region) %>% 
+      slice(chull(vec_x, vec_y))
+    
     betaDivJacMulti <- 
-        wrap_elements(full =
-                          ~(plot(JaccGrups, col = c("#e7b800", "#2e6c61"), main = "",
-                                 label = FALSE, sub = "")))
-
+      ggplot(dat, aes(vec_x, vec_y, color = region, fill = region, shape = region)) +
+      #ggConvexHull::geom_convexhull(alpha = .2, lwd = 1.5) +
+      geom_polygon(data = hull_dat, alpha = .2, lwd = 1.5) +
+      #geom_segment(aes(xend = centr_x, yend = centr_y), color = "grey65", lwd = .4) +
+      geom_segment(aes(xend = centr_x, yend = centr_y), color = "white", lwd = .4) +
+      geom_segment(aes(xend = centr_x, yend = centr_y), alpha = .4, lwd = .4) +
+      geom_point(aes(centr_x, centr_y), shape = 21, color = "white", stroke = .7, size = 4, shape = 16) +
+      geom_point(fill = "white", size = 2.5, stroke = .8) +
+      coord_cartesian(clip = "off") +
+      scale_x_continuous(expand = c(.005, .005), name = "PCoA 1", 
+                         breaks = -3:3 * .2) +
+      scale_y_continuous(expand = c(.005, .005), name = "PCoA 2",
+                         breaks = -3:3 * .2) +
+      scale_shape_manual(values = c(21, 23), guide = "none") +
+      scale_colour_manual(values = colors_regions, guide = "none") +
+      scale_fill_manual(values = colors_regions, guide = "none") +
+      theme(plot.margin = margin(rep(20, 4)))
+      
+    
     wrap_plots(
-        ## place first two plots
-        alphaDivFox, alphaCompared, ## -> A + B
-        ## place the legend in the middle
-        guide_area(), ## -> C
-        ## ... then the other three plots
-        betaDivJacMulti, betaDivJac, gammaDivFox, ## -> D, E + F
-        ## you can build more complex layouzts by providing simple letters that are
-        ## then filled accordingly by the plots you defined in the previous step;
-        ## the plots are "named" as the appear here: the first one is A, the next B and so on...
-        design = "AAABBB\n##CC##\nDDEEFF",
-        ## by default all rows and columns have similar widths and heights but we
-        ## don't want our legend to fill up 1/3 of the plot height
-        heights = c(21/45, 3/45, 21/45),
-        ## this tells ggplot to just draw the legend once, not six times
-        guides = "collect"
+      ## place first two plots
+      alphaDivFox, alphaCompared, ## -> A + B
+      ## place the legend in the middle
+      guide_area(), ## -> C
+      ## ... then the other three plots
+      betaDivJacMulti, betaDivJac, gammaDivFox, ## -> D, E + F
+      ## you can build more complex layouzts by providing simple letters that are
+      ## then filled accordingly by the plots you defined in the previous step;
+      ## the plots are "named" as the appear here: the first one is A, the next B and so on...
+      design = "AAABBB\n##CC##\nDDEEFF",
+      ## by default all rows and columns have similar widths and heights but we
+      ## don't want our legend to fill up 1/3 of the plot height
+      heights = c(21/45, 3/45, 21/45),
+      ## this tells ggplot to just draw the legend once, not six times
+      guides = "collect"
     ) +
-        plot_annotation(tag_levels = 'a')
+    plot_annotation(tag_levels = 'a', theme = theme(legend.title = element_text(hjust = .5)))
     
     if(plot %in% c("pdf", "png")){
         if(plot %in% "pdf"){
             f4 <- paste0("figures/suppl/Diversity", output_string, ".pdf")
-            ggsave(f4, width = 13, height = 9, device = cairo_pdf)
+            ggsave(f4, width = 16.5, height = 10.5, device = cairo_pdf)
         }
         if(plot %in% "png"){
             f4 <- paste0("figures/suppl/Diversity", output_string, ".png")
-            ggsave(f4, width = 13, height = 9, bg = "white", dpi = 600, device="png")
+            ggsave(f4, width = 16.5, height = 10.5, bg = "white", dpi = 600)
         }
     } else{
         message("to produce plots give \"pdf\" or \"png\" as argument")
@@ -230,10 +258,10 @@ getAllDiversity <- function (ps, output_string, plot=FALSE) {
 gimmeModels <- function (EA){
     ## all models on the Asymptotic estimate tables from the function
     ## above (wrapping iNEXT)
-    EA %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
-                       "human_fpi_1000m",
-                       "DNAng.ul", "DNA260.230", "DNA260.280"), as.numeric) %>%
-    mutate(REstimator = round(Estimator)) -> EA
+    EA %>% 
+      mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m", "human_fpi_1000m", 
+                  "DNAng.ul", "DNA260.230", "DNA260.280"), as.numeric) %>%
+      mutate(REstimator = round(Estimator)) -> EA
 
     EA %>%
         filter(!Diversity %in% "Species richness") %>% group_by(Diversity) %>%
@@ -296,20 +324,26 @@ HelmEstimateAsy <- getAllDiversity(subset_taxa(PSG, category %in% c("Helminth"))
 HelmModels <- gimmeModels(HelmEstimateAsy)
 
 AreaRich <- HelmModels %>%
-    filter(Diversity %in% "Species richness")%>%
-    dplyr::select(model) %>% .[["model"]] %>% .[[1]]
+  filter(Diversity %in% "Species richness")%>%
+  dplyr::select(model) %>% .[["model"]] %>% .[[1]]
 
-plot(ggeffect(AreaRich, terms=c("weight_kg", "season", "area")),
-                     rawdata=TRUE) +
-    scale_y_continuous("Species richness (Hill number q=0)")
+plot(ggeffect(AreaRich, terms = c("weight_kg", "season", "area")), rawdata = TRUE) +
+  labs(x = "Weight (kg)", y = "Species richness (Hill number q=0)") +
+  coord_cartesian(expand = FALSE, clip = "off") +
+  scale_color_manual(values = colors_seasons, 
+                     #labels = c("Spring", "Summer + Autumn", "Winter"),
+                     name = "Season:") +
+  scale_fill_manual(values = colors_seasons, guide = "none") +
+  ## need to repeat theme because it is overwritten by the wrapper
+  theme_custom()
 
-ggsave("figures/Div_Model.png", width = 7, height = 6, bg = "white", dpi = 600)
+ggsave("figures/Div_Model.png", width = 11, height = 7, bg = "white", dpi = 600)
 
 
 
-HelmEstimateAsy %>% mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m",
-                                "human_fpi_1000m",
-                                "DNAng.ul", "DNA260.230", "DNA260.280"), as.numeric) %>%
+HelmEstimateAsy %>% 
+  mutate_at(c("weight_kg","tree_cover_1000m" ,"imperv_1000m", "human_fpi_1000m", 
+              "DNAng.ul", "DNA260.230", "DNA260.280"), as.numeric) %>%
     filter(Diversity %in% "Species richness")%>%
     mutate(REstimator = round(Estimator)) -> EA
 
@@ -382,8 +416,8 @@ gimmeModels(ApicoEnvirEstimateAsy)
 ##     pivot_longer(cols = contains("1000m")) %>%
 ##     ggplot(aes(value, Estimator, color = area)) +
 ##     geom_point() +
-##     scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-##     scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+##     scale_colour_manual(values = colors_regions, name = "Study area:") +
+##     scale_fill_manual(values = colors_regions, name = "Study area:") +
 ##     facet_wrap(name~Diversity, scales = "free") + 
 ##     stat_smooth() +
 ##     geom_smooth(aes(value, Estimator), color = "black") +
@@ -399,11 +433,11 @@ HelmEstimateAsy %>% dplyr::select(Diversity, Estimator, area,
     pivot_longer(cols = contains("1000m")) %>%
     ggplot(aes(value, Estimator, color = area)) +
     geom_point() +
-    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
+    scale_colour_manual(values = colors_regions, name = "Study area:") +
+    scale_fill_manual(values = colors_regions, name = "Study area:") +
     facet_wrap(~name, nrow=1, scales = "free") + 
     stat_smooth() +
-    geom_smooth(aes(value, Estimator), color="black") +
+    geom_smooth(aes(value, Estimator), color = "black") +
     scale_y_continuous("Helminth species richness (Hill number q=0)")
 
 ggsave("figures/suppl/HelmRich_Conti_Env.png", 

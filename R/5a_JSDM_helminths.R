@@ -7,11 +7,11 @@ library(abind)
 library(MCMCvis)
 library(corrplot)
 library(reshape2)
-library(ggplot2)
-library(patchwork)
 library(ggcorrplot)
 library(tidyr)
 library(forcats)
+
+source("./R/plot_setup.R")
 
 ## # JSDM model for fox parasites
 

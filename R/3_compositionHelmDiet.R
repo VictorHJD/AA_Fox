@@ -1,9 +1,10 @@
 library(vegan)
 library(tidyverse)
 library(phyloseq)
-library(ggplot2)
 library(patchwork)
 library(ggnewscale)
+
+source("./R/plot_setup.R")
 
 recomputeBioinfo <- FALSE
 
@@ -175,59 +176,56 @@ HelmHelmDf <-
 dev.off() ## this had somehow opened a graphics device?!
 
 
-ScoresHelm <-  as.data.frame(scores(nMDSHelm)$sites)
+ScoresHelm <-  as.data.frame(scores(nMDSHelm))
 ScoresHelm <- cbind(ScoresHelm, EnvData)
-
-## theme_set(theme_minimal(base_family = "Roboto", base_size = 12))
-theme_update(
-    axis.title.x = element_text(margin = margin(t = 12)),
-    axis.title.y = element_text(margin = margin(r = 12)),
-    strip.text = element_text(face = "bold", color = "black", size = 12, margin = margin(b = 10)),
-    legend.title = element_text(size = 12, face = "bold"),
-    legend.text = element_text(size = 12),
-    panel.spacing.x = unit(2, "lines"),
-    panel.grid.minor = element_blank(),
-    plot.margin = margin(rep(12, 4))
-)
-## font for numeric label
-font_num <- "Roboto Condensed"
+ScoresHelm$season <- factor(ScoresHelm$season, levels = c("spring", "S_autumn", "winter"))
 
 ## arrow head size and offsetting for the graphic
 arrowhead <- 0.04
 offset <- 0.04
 
-ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
-    geom_point(data = ScoresHelm, aes(colour = area, shape = season), size = 3) +
-    scale_colour_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    scale_fill_manual(values = c("#e7b800", "#2e6c61"), name = "Study area:") +
-    new_scale_color()+
-    ### ordiArrowMul didn't work somehow have to scale manually
-    geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2,
-                     color = log(pvals)),
-                 data = subset(HelmEnvFitDf, pvals < 0.1),
-                 arrow = arrow(length = unit(arrowhead, "npc"), angle=23),
-                 size=1.5) +
-    scale_color_viridis_c(option = "cividis") + 
-    geom_text(data = subset(HelmEnvFitDf, pvals<0.1),
-              aes(x = NMDS1, y = NMDS2 + offset),
-              label = row.names(subset(HelmEnvFitDf, pvals<0.1)), size=5.5,
-              color="darkgrey") +
-    theme_bw() ->
-    ggHelmEnv
+ggHelmEnv <- 
+  ggplot(data = ScoresHelm, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(data = ScoresHelm, aes(fill = area, color = after_scale(fill), shape = season), 
+             size = 3, alpha = .5, stroke = .8) +
+  #scale_colour_manual(values = colors_regions, name = "Study area:") +
+  scale_fill_manual(values = colors_regions, name = "Study area:") +
+  ### ordiArrowMul didn't work somehow have to scale manually
+  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2,
+                   color = log(pvals)),
+               data = subset(HelmEnvFitDf, pvals < 0.1),
+               arrow = arrow(length = unit(arrowhead, "npc"), angle = 23, type = "closed"),
+               size = 1.5) +
+  coord_cartesian(clip = "off") +
+  scale_color_viridis_c(option = "cividis", name = "log(pvals)") +
+  scale_shape_manual(values = c(21, 22, 23), name = "Season:", 
+                     labels = c("Spring", "Summer + Autumn", "Winter"),
+                     guide = guide_legend(override.aes = list(alpha = 1, color = "black", fill = "black")))
+    
+pal <- scico::scico(palette = "batlowK", n = 100, begin = .1, end = .8)
 
-ggHelmEnv +
-    geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, color = pvals),
-                 data = subset(HelmHelmDf, pvals<=0.1),
-                 arrow = arrow(length = unit(arrowhead, "npc"), angle=23), size=1.5) +
-    geom_text(data = subset(HelmHelmDf, pvals<0.1), aes(x = NMDS1, y = NMDS2 + offset),
-              label = row.names(subset(HelmHelmDf, pvals<0.1)), size=4.5,
-              color="blue")+
-    scale_color_viridis_c(option = "plasma") + 
-    theme_bw() -> ggHelmEnvHelm
+ggHelmEnvHelm <-
+  ggHelmEnv +
+  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, color = pvals),
+               data = subset(HelmHelmDf, pvals < 0.1),
+               arrow = arrow(length = unit(arrowhead, "npc"), angle = 23, type = "closed"), size = 1.5) +
+  shadowtext::geom_shadowtext( ## TODO: moved down here to avoid text overplotting
+    data = subset(HelmEnvFitDf, pvals < 0.1),
+    aes(x = NMDS1, y = NMDS2 + offset),
+    label = row.names(subset(HelmEnvFitDf, pvals < 0.1)), size = 5.5,
+    color = "darkgrey", family = "Open Sans", fontface = "bold"
+  ) +
+  shadowtext::geom_shadowtext( ## TODO: why are the text labels not colored with the same gradient?
+    data = subset(HelmHelmDf, pvals < 0.1), aes(x = NMDS1, y = NMDS2 + offset),
+    label = row.names(subset(HelmHelmDf, pvals < 0.1)), size = 4.5,
+    color = pal[1], bg.colour = "white", family = "Open Sans", fontface = "bold"
+  ) +
+  scale_color_gradientn(colors = pal, name = "log(pvals)") +
+  theme(legend.margin = margin(l = 20),
+        legend.title = element_text(margin = margin(b = 4)))
 
 ggsave("figures/CompositionEnvHelm.png", ggHelmEnvHelm, 
-       width = 18, height = 7, bg = "white", dpi = 600,
-       device="png")
+       width = 18, height = 7, bg = "white", dpi = 600)
 
 
 ## now for the table

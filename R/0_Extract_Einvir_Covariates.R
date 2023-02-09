@@ -9,6 +9,8 @@ library(systemfonts)
 library(scico)
 #library(tmap)
 
+source("./R/plot_setup.R")
+
 #devtools::install_github("EcoDynIZW/d6berlin")
 
 
@@ -137,15 +139,6 @@ boundaries <-
   st_transform(crs = st_crs(fox_envcov_sf)) %>% 
   filter(GEN %in% c("Berlin", "Brandenburg"))
 
-theme_set(theme_void(base_family = "Open Sans", base_size = 15))
-theme_update(
-  legend.position = "top", legend.justification = "left", 
-  axis.text = element_text(color = "black", size = rel(.8), margin = margin(rep(5, 4))),
-  axis.ticks.length = unit(.4, "lines"), axis.ticks = element_line(color = "grey75"),
-  plot.tag = element_text(face = "bold"),
-  plot.margin = margin(rep(5, 4))
-)
-
 
 ## map study area
 map_study_base <- 
@@ -162,14 +155,15 @@ map_study_base <-
   geom_sf(size = 1.2, shape = 21, stroke = 0, fill = "white") +
   geom_sf(aes(color = human_fpi_100m), shape = 16, size = 1.2, alpha = .7) +
   coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
-  scale_fill_gradient(low = "grey30", high = "grey97", guide = "none") +
+  scale_fill_gradient(low = "grey30", high = "grey96", guide = "none") +
   scale_color_scico(
     palette = "batlow", begin = .1,
     name = "Human Footprint Index (2009)", limits = c(0, 50), breaks = 1:9*5, 
     guide = guide_colorsteps(barwidth = unit(18, "lines"), barheight = unit(.6, "lines"),
                              title.position = "top", title.hjust = 0, show.limits = TRUE)
   ) +
-  labs(x = NULL, y = NULL)
+  labs(x = NULL, y = NULL) +
+  theme_map()
 
 map_study <- map_study_base +
   ggspatial::annotation_scale(
@@ -184,10 +178,8 @@ ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", 
 map_berlin <- map_study_base +
   coord_sf(xlim = c(4531042, 4576603), ylim = c(3253866, 3290780)) +
   theme_void() + 
-  theme(
-    legend.position = "none", 
-    panel.border = element_rect(color = "black", fill = NA, size = .8)
-  )
+  theme(legend.position = "none", 
+        panel.border = element_rect(color = "black", fill = NA, size = .8))
 
 ggsave("figures/raw/map_berlin.png", width = 4, height = 3.7, dpi = 600)
 
@@ -202,7 +194,7 @@ sf_world <-
 
 map_europe <- 
   ggplot(sf_world) +
-  geom_sf(fill = "grey80", color = "grey95", lwd = .1) +
+  geom_sf(fill = "grey80", color = "grey96", lwd = .1) +
   geom_rect(
     xmin = 4430000, xmax = 4640000, ymin = 3160000, ymax = 3385000,
     color = "#212121", fill = "#a4cbb6", size = .7
@@ -220,15 +212,16 @@ map_europe <-
   ) +
   coord_sf(xlim = c(2650000, 5150000), ylim = c(1650000, 5100000)) +
   scale_x_continuous(expand = c(0, 0), breaks = seq(-10, 30, by = 10)) +
+  labs(x = NULL, y = NULL) +
+  theme_map() +
   theme(panel.ontop = FALSE,
-        panel.grid.major = element_line(color = "grey75", linetype = "15", size = .3)) +
-  labs(x = NULL, y = NULL)
+        panel.grid.major = element_line(color = "grey75", linetype = "15", size = .3))
 
 #map_europe
 ggsave("figures/raw/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
 
 
-map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey95", bg = TRUE)
+map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey96", bg = TRUE)
 
 #map_globe
 ggsave("figures/raw/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
@@ -246,12 +239,6 @@ ggsave("figures/raw/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
 ###################################################
 ### Plots comparing values at the two buffers 
 
-theme_set(theme_minimal(base_family = "Open Sans", base_size = 15))
-theme_update(
-  panel.grid.minor = element_blank()
-)
-
-colors <- c("#e7b800", "#2e6c61")
 
 fox_envcov %>% 
   group_by(area) %>%
@@ -268,8 +255,8 @@ plot_corr_buffer <- function(x, y, label) {
     ggplot(fox_envcov, aes_string(x, y, fill = "area")) +
     geom_point(aes(color = area), shape = 21, size = 2.5, stroke = .8, fill = "white") +
     geom_point(shape = 21, size = 2.5, alpha = .3, stroke = .8, color = "NA") +
-    scale_color_manual(values = colors, name = "Study area:") +
-    scale_fill_manual(values = colors, name = "Study area:") +
+    scale_color_manual(values = colors_regions, name = "Study area:") +
+    scale_fill_manual(values = colors_regions, name = "Study area:") +
     labs(x = paste(label, "(1000 m buffer)"), y = paste(label, "(100 m buffer)"))
   
   return(g)
