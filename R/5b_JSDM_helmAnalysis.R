@@ -11,6 +11,9 @@ library(ggraph)
 library(tibble)
 library(reshape2)
 library(cowplot)
+# read custom theme for plotting
+source("./R/plot_setup.R")
+
 
 recomputejSDMModels <- FALSE
 
@@ -302,6 +305,10 @@ toplot_ModelFrame_area <- ModelFrame_area %>%
 
 toplot_ModelFrame_area[toplot_ModelFrame_area$significant == "Yes",]
 
+# prepare colour scale for plotting
+my_palette <- rcartocolor::carto_pal(10, "Prism")
+my_palette <- colorspace::desaturate(my_palette, .22)
+
 # Plot Effects
 plot_beta_weight <- toplot_ModelFrame_area %>% 
   filter(Variable %in% c("sex[male]","weight_kg")) %>%
@@ -319,11 +326,13 @@ plot_beta_weight <- toplot_ModelFrame_area %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   ylab("\n") +
-  theme(
-    panel.background = element_rect(fill = NA),
+  theme_custom() +
+  theme(    
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -347,12 +356,14 @@ plot_beta_area <- toplot_ModelFrame_area %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -376,12 +387,14 @@ plot_beta_sampling1 <- toplot_ModelFrame_area %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -405,12 +418,14 @@ plot_beta_sampling2 <- toplot_ModelFrame_area %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -435,12 +450,14 @@ plot_beta_sampling3 <- toplot_ModelFrame_area %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -453,13 +470,13 @@ legend <- get_legend(plot_beta_weight)
 half_left <- plot_grid(plot_beta_weight + theme(legend.position="none", axis.title = element_blank()), 
                         plot_beta_sampling1 + theme(legend.position="none"), 
                         labels = c('A', 'C'), label_size = 12, 
-                        nrow = 2, align = "v",rel_heights = c(1,1))
+                        nrow = 2, align = "v",rel_heights = c(0.95,1.05))
 
 half_right <- plot_grid(plot_beta_area + theme(legend.position="none", axis.title = element_blank()), 
                         plot_beta_sampling2 + theme(legend.position="none", axis.title = element_blank()), 
                         plot_beta_sampling3 + theme(legend.position="none"), 
                         labels = c('B', 'D', 'E'), label_size = 12, 
-                        nrow = 3, align = "v",rel_heights = c(1,0.5, 0.5))
+                        nrow = 3, align = "v",rel_heights = c(0.95,0.48, 0.57))
 
 beta_plot <- plot_grid(half_left, half_right, legend, 
           ncol = 3, 
@@ -468,7 +485,9 @@ beta_plot <- plot_grid(half_left, half_right, legend,
 
 
 ggsave(plot = beta_plot, "./figures/PAModel_area_BetaCoefs.png", 
-       width = 12, height = 6, dpi = 600)
+       width = 12, height = 6, dpi = 600, 
+       bg = "white")
+
 
 ### Detail plots for each prediction 
 n_cov <- length(PAModel_area$covNames) # Number of covariates without the intercept
@@ -573,6 +592,10 @@ toplot_ModelFrame_grad <- ModelFrame_grad %>%
 
 toplot_ModelFrame_grad[toplot_ModelFrame_grad$significant == "Yes",]
 
+# define colour palette
+my_palette <- rcartocolor::carto_pal(10, "Prism")
+my_palette <- colorspace::desaturate(my_palette, .22)
+
 # Plot Effects
 plot_beta_grad_1 <- toplot_ModelFrame_grad %>% 
   filter(Variable %in% c("sex[male]","weight_kg")) %>%
@@ -588,13 +611,15 @@ plot_beta_grad_1 <- toplot_ModelFrame_grad %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   ylab("\n") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -616,14 +641,16 @@ plot_beta_grad_2a <- toplot_ModelFrame_grad %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -645,22 +672,22 @@ plot_beta_grad_2b <- toplot_ModelFrame_grad %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
     axis.title = element_text(size = 14, face = "bold"),
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12)) 
-
-
 
 plot_beta_grad_3 <- toplot_ModelFrame_grad %>% 
   filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
@@ -676,14 +703,16 @@ plot_beta_grad_3 <- toplot_ModelFrame_grad %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -707,12 +736,14 @@ plot_beta_grad_4 <- toplot_ModelFrame_grad %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -734,14 +765,16 @@ plot_beta_grad_5 <- toplot_ModelFrame_grad %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -752,21 +785,28 @@ plot_beta_grad_5 <- toplot_ModelFrame_grad %>%
 
 legend_grad <- get_legend(plot_beta_grad_2a)
 
-half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position="none",
+half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position ="none",
                                                      axis.title = element_blank()), 
                        plot_beta_grad_3 + theme(legend.position="none"), 
                        labels = c('A', 'D'), label_size = 12, 
-                       nrow = 2, align = "v",rel_heights = c(1,1))
+                       nrow = 2, align = "v",rel_heights = c(0.95,1.05))
 
-half_right_grad <- plot_grid(plot_beta_grad_2a + theme(legend.position="none",
+half_left_grad <- plot_grid(plot_beta_grad_1 + theme(legend.position = "none",
+                                                     axis.title = element_blank()), 
+                            plot_beta_grad_2a + theme(legend.position = "none", 
+                                                     axis.title = element_blank()),
+                            plot_beta_grad_4 + theme(legend.position = "none"),
+                            labels = c('A', 'C', "E"), label_size = 12, 
+                            nrow = 3, align = "v",rel_heights = c(1.2,1.2, 0.8))
+
+
+half_right_grad <- plot_grid(plot_beta_grad_2b + theme(legend.position="none",
                                                        axis.title = element_blank()),
-                             plot_beta_grad_2b + theme(legend.position="none",
+                             plot_beta_grad_3 + theme(legend.position="none",
                                                        axis.title = element_blank()),
-                             plot_beta_grad_4 + theme(legend.position="none",
-                                                      axis.title = element_blank()), 
                              plot_beta_grad_5 + theme(legend.position="none"), 
-                             labels = c('B', 'C', 'E', 'F'), label_size = 12, 
-                             nrow = 4, align = "v",rel_heights = c(0.5,0.5, 0.5, 0.5))
+                             labels = c('B', 'D', 'F'), label_size = 12, 
+                             nrow = 3, align = "v",rel_heights = c(1.2, 1.2, 0.8))
 
 beta_plot_grad <- plot_grid(half_left_grad, half_right_grad, legend_grad, 
                        ncol = 3, 
@@ -775,7 +815,8 @@ beta_plot_grad <- plot_grid(half_left_grad, half_right_grad, legend_grad,
 
 
 ggsave(plot = beta_plot_grad, "./figures/suppl/PAModel_grad_BetaCoefs.png", 
-       width = 12, height = 6, dpi = 600)
+       width = 12, height = 6, dpi = 600, 
+       bg = "white")
 
 
 # Print a plot for each predictor
@@ -886,6 +927,9 @@ toplot_ModelFrame_Traits_area <- ModelFrame_Traits_area %>%
 
 toplot_ModelFrame_Traits_area[toplot_ModelFrame_Traits_area$significant == "Yes",]
 
+# define colour palette
+my_palette <- rcartocolor::carto_pal(4, "Antique")
+
 # Plot Effects
 plot_traits_area1 <- toplot_ModelFrame_Traits_area %>% 
   filter(Variable %in% c("sex[male]","weight_kg", "season[spring]", "season[winter]", "area[Brandenburg]")) %>%
@@ -901,14 +945,17 @@ plot_traits_area1 <- toplot_ModelFrame_Traits_area %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE), name = "Traits") +
+  scale_colour_manual(values = my_palette, 
+                      name = "Traits",
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -930,14 +977,16 @@ plot_traits_area2 <- toplot_ModelFrame_Traits_area %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -960,14 +1009,16 @@ plot_traits_area3 <- toplot_ModelFrame_Traits_area %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -990,14 +1041,16 @@ plot_traits_area4 <- toplot_ModelFrame_Traits_area %>%
                       ymax = Q_75, fill = significant),
                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
   scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
+                    guide = "none") +
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -1016,7 +1069,7 @@ half_right_traits_area <- plot_grid(plot_traits_area4 + theme(legend.position="n
                              plot_traits_area2 + theme(legend.position="none", axis.title = element_blank()), 
                              plot_traits_area3 + theme(legend.position="none"), 
                              labels = c('B', 'C', 'D'), label_size = 12, 
-                             nrow = 3, align = "v",rel_heights = c(0.8,0.5, 0.7))
+                             nrow = 3, align = "v",rel_heights = c(0.8,0.45, 0.55))
 
 traits_plot_area <- plot_grid(plot_traits_area1 + theme(legend.position="none"), 
                               half_right_traits_area, legend_traits_area, 
@@ -1026,7 +1079,8 @@ traits_plot_area <- plot_grid(plot_traits_area1 + theme(legend.position="none"),
                             rel_widths = c(1,1,0.5))
 
 ggsave(plot = traits_plot_area, "./figures/PAModel_area_GammaCoefs_traits.png", 
-       width = 9, height = 5, dpi = 600)
+       width = 9, height = 5, dpi = 600, 
+       bg = "white")
 
 
 ## gradient model
@@ -1102,6 +1156,9 @@ toplot_ModelFrame_Traits_grad <- ModelFrame_Traits_grad %>%
 
 toplot_ModelFrame_Traits_grad[toplot_ModelFrame_Traits_grad$significant == "Yes",]
 
+# define colour palette
+my_palette <- rcartocolor::carto_pal(4, "Antique")
+
 # Plot Effects
 plot_traits_grad1 <- toplot_ModelFrame_Traits_grad %>% 
     filter(Variable %in% c("sex[male]","weight_kg", "season[spring]", "season[winter]",
@@ -1120,12 +1177,15 @@ plot_traits_grad1 <- toplot_ModelFrame_Traits_grad %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE), name = "Traits") +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE), 
+                      name = "Traits") +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -1149,12 +1209,14 @@ plot_traits_grad2 <- toplot_ModelFrame_Traits_grad %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(1,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -1179,12 +1241,14 @@ plot_traits_grad4 <- toplot_ModelFrame_Traits_grad %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
@@ -1209,48 +1273,20 @@ plot_traits_grad3 <- toplot_ModelFrame_Traits_grad %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-                         guide = guide_legend(reverse = TRUE)) +
+  scale_colour_manual(values = my_palette, 
+                      guide = guide_legend(reverse = TRUE)) +
   xlab("") +
-  ylab("\nCoefficient") +
+  ylab("Coefficient") +
+  theme_custom() +
   theme(
-    panel.background = element_rect(fill = NA),
+    plot.margin = margin(2,1,3,1),
+    panel.background = element_rect(fill = NA, colour = NA),
     panel.grid.major = element_blank(), 
     axis.line = element_line(colour = "black"), 
     axis.text = element_text(size = 12), 
     axis.title = element_text(size = 14, face = "bold"),
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12)) 
-
-
-## plot_traits_grad4 <- toplot_ModelFrame_Traits_grad %>% 
-##   filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
-##   ggplot(aes(group = Traits, colour = Traits)) + 
-##   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-##   geom_linerange(aes(x = Variable, ymin = CI_low,
-##                      ymax = CI_high, fill = significant),
-##                  lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-##   geom_linerange(aes(x = Variable, ymin = Q_25,
-##                      ymax = Q_75, fill = significant),
-##                  lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-##   geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-##                       ymax = Q_75, fill = significant),
-##                   lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-##   scale_fill_manual(values = c("White", "black"), 
-##                     guide = "none")+
-##   coord_flip() +
-##   scale_colour_viridis_d(option = "viridis", begin = 0, end = 1, 
-##                          guide = guide_legend(reverse = TRUE)) +
-##   xlab("") +
-##   ylab("\nCoefficient") +
-##   theme(
-##     panel.background = element_rect(fill = NA),
-##     panel.grid.major = element_blank(), 
-##     axis.line = element_line(colour = "black"), 
-##     axis.text = element_text(size = 12), 
-##     axis.title = element_text(size = 14, face = "bold"),
-##     legend.title = element_text(size = 14, face = "bold"),
-##     legend.text = element_text(size = 12)) 
 
 legend_traits_grad <- get_legend(plot_traits_grad1)
 
@@ -1262,7 +1298,7 @@ half_right_traits_grad <- plot_grid(plot_traits_grad4 +
                                           axis.title = element_blank()), 
                                     plot_traits_grad3 + theme(legend.position="none"), 
                                     labels = c('B', 'C', 'D'), label_size = 12, 
-                                    nrow = 3, align = "v",rel_heights = c(0.8,0.5, 0.7))
+                                    nrow = 3, align = "v",rel_heights = c(0.8,0.45, 0.55))
 
 traits_plot_grad <- plot_grid(plot_traits_grad1 + theme(legend.position="none"), 
                               half_right_traits_grad, 
@@ -1270,10 +1306,11 @@ traits_plot_grad <- plot_grid(plot_traits_grad1 + theme(legend.position="none"),
                               labels = c('A'), label_size = 12,
                               ncol = 3, 
                               nrow = 1,
-                              rel_widths = c(1,1,0.5, 3))
+                              rel_widths = c(1,1,0.5))
 
 ggsave(plot = traits_plot_grad, "./figures/suppl/PAModel_grad_GammaCoefs_traits.png", 
-       width = 9, height = 5, dpi = 600)
+       width = 9, height = 5, dpi = 600, 
+       bg = "white")
 
 
 ############################
@@ -1512,12 +1549,14 @@ multihost_sp <- species_order %>%
 
 
 
+## load theme for the plot
+source("./R/plot_setup.R")
 
 ## plot
 vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = Variable)) +
   geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
-    scale_fill_manual(values = alpha(c("lightyellow", "darkorange3",
-                                       "darkgreen", "darkblue", "firebrick4"), 0.7),
+    scale_fill_manual(values = alpha(c("lightyellow", "darkgreen", "darkorange3",
+                                                    "firebrick4", "darkblue"), 0.7),
                     name = "Variable group", 
                     labels=c(paste0("Random: site\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
@@ -1534,19 +1573,26 @@ vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = V
   labs(x = "\nHelminth taxa", 
        y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
-  theme_bw()+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), panel.border = element_blank(),
+  # theme_bw()+
+  theme_custom() +
+  theme(panel.grid.minor = ggplot2::element_blank(),
+        panel.grid.major = ggplot2::element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=10, colour = multihost_sp$colour_text, face = "italic"),
-        axis.text.y = element_text(colour = "black", size = 10),
-        axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
-        legend.key.height = unit(1.5, "lines"),
-  )
+                                   size=12, colour = multihost_sp$colour_text, face = "italic"),
+        plot.margin = ggplot2::margin(4,1, 1, 1),
+        legend.text = element_text(margin = margin(t = 5, b = 5), size = 12),
+        axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
+        axis.title.y = ggplot2::element_text(angle = 90, margin = ggplot2::margin(r = 6)), 
+        axis.text.y = element_text(colour = "black", size = 12)
+        )
+  #       axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
+  #       legend.key.height = unit(1.5, "lines"),
+  # )
 
 ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",  
-       dpi = 600, width = 6, height = 5)
+       dpi = 600, width = 6, height = 5,
+       bg = "white")
 
 
 
@@ -1614,10 +1660,10 @@ multihost_sp_grad <- species_order_grad %>%
   dplyr::select(Species, colour_text)
 
 
-
 vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = Variable)) +
   geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
-  scale_fill_manual(values = alpha(c("lightyellow", "darkorange3", "darkgreen", "darkblue", "firebrick4"), 0.7),
+  scale_fill_manual(values = alpha(c("lightyellow", "darkgreen", "darkorange3",
+                                                  "firebrick4", "darkblue"), 0.7),
                     name = "Variable group", 
                     labels=c(paste0("Random: site\n(mean = ", 
                                     mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
@@ -1632,17 +1678,20 @@ vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = V
   labs(x = "\nHelminth taxa",
        y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
-  theme_bw()+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), panel.border = element_blank(),
+  theme_custom() +
+  theme(panel.grid.minor = ggplot2::element_blank(),
+        panel.grid.major = ggplot2::element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=10, colour = multihost_sp_grad$colour_text, face = "italic"),
-        axis.text.y = element_text(colour = "black", size = 10),
-        axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
-        legend.key.height = unit(1.5, "lines"),
+                                   size=12, colour = multihost_sp$colour_text, face = "italic"),
+        plot.margin = ggplot2::margin(4,1, 1, 1),
+        legend.text = element_text(margin = margin(t = 5, b = 5), size = 12),
+        axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
+        axis.title.y = ggplot2::element_text(angle = 90, margin = ggplot2::margin(r = 6)), 
+        axis.text.y = element_text(colour = "black", size = 12)
   )
 
 ggsave(plot = vp_plot_grad, "./figures/suppl/VarPart_PAModel_grad.png",  
-       dpi = 600, width = 6, height = 5)
+       dpi = 600, width = 6, height = 5,
+       bg = "white")
 
