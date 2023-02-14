@@ -276,4 +276,5 @@ hfpi <- plot_corr_buffer(
 
 panel <- tree_cover + imperv + hfpi + plot_layout(guides = "collect")
 
-ggsave("figures/suppl/Env100_1000Cors.png", width = 18, height = 7, bg = "white", dpi = 600)
+## Not explored in the currently submitted version (Februrary 2023)
+## ggsave("figures/suppl/Env100_1000Cors.png", width = 18, height = 7, bg = "white", dpi = 600)
