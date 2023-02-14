@@ -2,13 +2,8 @@
 
 ## require(devtools)
 ## devtools::install_github("derele/MultiAmplicon", force= T)
-## devtools::install_github("derele/dada2", force= T)
 
-## library(MultiAmplicon)
-
-## using the dev version!
-devtools::load_all("../MultiAmplicon")
-
+library(MultiAmplicon)
 library(dada2)
 library(reshape)
 library(phyloseq)
@@ -416,8 +411,7 @@ table(sample_data(PSG)$weight_imputed)
 table(sample_data(PSG)$condition_imputed)
 
 ## and the areas by season for the methods part
-write.csv(table(season=sample_data(PSG)$season, area=sample_data(PSG)$area),
-          file="tables/seasonArea.csv")
+table(season=sample_data(PSG)$season, area=sample_data(PSG)$area)
 
 ## and save PSG for further use 
 saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
