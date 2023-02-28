@@ -595,3 +595,18 @@ table(season=sample_data(PSG)$season, area=sample_data(PSG)$area)
 
 ## and save PSG for further use 
 saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
+
+
+## writing a csv export for further use in Dep. 6 and in
+## collaborations. I'd always recommend to use the "phyloseq" object
+## intermediate_data/PhyloSeqGenus.Rds for more control of the
+## sequencing raw data though.
+
+MoltenPSG <- psmelt(PSG)
+
+MoltenPSG$OTU <- NULL ## removed to save space (otherwise file too large for git)
+MoltenPSG$ASVn <- NULL ## same as OTU
+MoltenPSG$readsF  <-  NULL
+MoltenPSG$readsR  <-  NULL
+
+write.csv(MoltenPSG, "intermediate_data/FoxPhyloSeqGenus.csv", row.names=FALSE)
