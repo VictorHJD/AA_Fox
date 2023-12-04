@@ -16,111 +16,84 @@ if(!exists("PSG")){
     }
 }
 
-## ## Dec 2022 we don't need this anymore -> Excluded!
-## recomputeDiversity <- FALSE
-
-## if(!"FunM_Species_richness"%in%colnames(sample_data(PSG))|
-##    recomputeDiversity){
-##     source("R/2_iNEXT_fox.R")
-## }
-
-## ## We also don't us this here!!
-## ## Helminth traits
-## traits <- read.csv("input_data/helminth_traits.csv")
-## traits %>%
-##     column_to_rownames("t.genus")  -> traits 
-
+## extract the Helminths
 PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
 
-PSGHelm <- subset_samples(PSGHelm, !is.na(sample_data(PSGHelm)[, "condition"]) &
-                                   !is.na(sample_data(PSGHelm)[, "weight_kg"]) &
-                                   !is.na(sample_data(PSGHelm)[, "season"]) &
-                                   !is.na(sample_data(PSGHelm)[, "tree_cover_1000m"]) &
-                                   !is.na(sample_data(PSGHelm)[, "DNAng.ul"]) &
-                                   !is.na(sample_data(PSGHelm)[, "DNA260.230"]) &
-                                   !is.na(sample_data(PSGHelm)[, "DNA260.280"]) 
-                          )
+## remove the juveniles
+PSGHelm <- subset_samples(PSGHelm, age %in% "adult" &
+                          !is.na(sample_data(PSGHelm)[, "tree_cover_1000m"]))
 
-PSGHelm ### 150 foxes without NA anywhere
-
-## only taxa with reads
 PSGHelm <- prune_taxa(taxa_sums(PSGHelm) > 0, PSGHelm)
 PSGHelm <- prune_samples(sample_sums(PSGHelm) > 0, PSGHelm)
 
-PSGHelm ## 139 foxes with all samples any taxa
+PSGHelm ### 131 foxes without NA anywhere
 
-HelmData <- otu_table(PSGHelm)
+HelmData <- as.data.frame(otu_table(PSGHelm))
 colnames(HelmData) <- tax_table(PSGHelm)[, "genus"]
+class(HelmData) <- "data.frame"
 
-EnvData <- sample_data(PSGHelm)[, !colnames(sample_data(PSGHelm))%in%c("date",
-                                                                       "date_found")]
+EnvData <- as.data.frame(
+    sample_data(PSGHelm)[,
+                         !colnames(sample_data(PSGHelm))%in%c("date",
+                                                              "date_found")])
 class(EnvData) <- "data.frame"
+
+EnvData <- EnvData[rownames(HelmData), ]
+
 EnvData$weight_kg <- as.numeric(EnvData$weight_kg)
 EnvData$tree_cover_1000m <- as.numeric(EnvData$tree_cover_1000m)
 EnvData$imperv_1000m <- as.numeric(EnvData$imperv_1000m)
 EnvData$human_fpi_1000m <- as.numeric(EnvData$human_fpi_1000m)
-EnvData$DNAng.ul <- as.numeric(EnvData$DNAng.ul)
-EnvData$DNA260.280 <- as.numeric(EnvData$DNA260.280)
-EnvData$DNA260.230 <- as.numeric(EnvData$DNA260.230)
+EnvData$DNAng.ul <- NULL
+EnvData$DNA260.280 <- NULL
+EnvData$DNA260.230 <- NULL
+EnvData$age <- NULL
 
-
-### This shoud be the same now after removing all the NAs already
-### above
-EnvDataNA <- na.omit(EnvData)
-HelmDataNA <- HelmData[rownames(EnvDataNA), ]
+HelmData$Aelurostrongylus <- NULL
 
 ### NO OTHER environmental variables are better explaining composition!
-
-PERMA <- vegan::adonis2(HelmDataNA ~ area + weight_kg + age +
-                            sex  + season + condition +
-                            DNAng.ul + DNA260.230 + DNA260.280,
-                     data=EnvDataNA, 
-                     na.action = na.fail, by="margin",
-                     method="jaccard")
+PERMA <- vegan::adonis2(HelmData>0 ~ area + weight_kg +
+                            sex  + season, 
+                        data=EnvData, 
+                        na.action = na.fail, by="margin",
+                        method="jaccard")
 
 PERMA
 
 ### still area is the best model, everything below (the other
 ### environmental predictors) is not as good!
-
-PERMAimp <- adonis2(HelmDataNA ~  imperv_1000m + weight_kg + age +
-                        sex  + season + condition +
-                        DNAng.ul + DNA260.230 + DNA260.280,
-                    data=EnvDataNA, 
+PERMAimp <- adonis2(HelmData>0 ~  imperv_1000m + weight_kg + 
+                        sex  + season,
+                    data=EnvData, 
                     na.action = na.fail, by="margin",
                     method="jaccard")
 
-PERMAtree <- adonis2(HelmDataNA ~ tree_cover_1000m + weight_kg + age +
-                         sex  + season + condition +
-                         DNAng.ul + DNA260.230 + DNA260.280,
-                     data=EnvDataNA, 
+PERMAtree <- adonis2(HelmData>0 ~ tree_cover_1000m + weight_kg +
+                         sex  + season,
+                     data=EnvData, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
 
-PERMAhuman <- adonis2(HelmDataNA ~ human_fpi_1000m + weight_kg + age +
-                          sex  + season + condition +
-                          DNAng.ul + DNA260.230 + DNA260.280, 
-                      data=EnvDataNA, 
+PERMAhuman <- adonis2(HelmData>0 ~ human_fpi_1000m + weight_kg + 
+                          sex  + season,
+                      data=EnvData, 
                       na.action = na.fail, by="margin",
                       method="jaccard")
 
-PERMAall <- adonis2(HelmDataNA ~ human_fpi_1000m + tree_cover_1000m +
-                        imperv_1000m + weight_kg + age + condition +
-                        sex  + season +
-                        DNAng.ul + DNA260.230 + DNA260.280, 
-                      data=EnvDataNA, 
+PERMAall <- adonis2(HelmData>0 ~ human_fpi_1000m + tree_cover_1000m +
+                        imperv_1000m + weight_kg +
+                        sex  + season, 
+                      data=EnvData, 
                       na.action = na.fail, by="margin",
                       method="jaccard")
 
 
-PERMAallX <- adonis2(HelmDataNA ~ area + tree_cover_1000m +
-                         imperv_1000m + weight_kg + age + condition +
-                         sex  + season +
-                         DNAng.ul + DNA260.230 + DNA260.280, 
-                     data=EnvDataNA, 
+PERMAallX <- adonis2(HelmData>0 ~ area + tree_cover_1000m +
+                         imperv_1000m + weight_kg + 
+                         sex  + season, 
+                     data=EnvData, 
                      na.action = na.fail, by="margin",
                      method="jaccard")
-
 
 
 ## this does not work, let's stick with the csv
@@ -136,11 +109,12 @@ nMDSHelm <- metaMDS(HelmData, distance = "jaccard", weakties = FALSE,
                     try=1500, trymax=1500, k=3,
                     center = TRUE)
 
-HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "human_fpi_1000m", "tree_cover_1000m",
+HelmEnvFit <- envfit(nMDSHelm, EnvData[ , c("area", "human_fpi_1000m",
+                                            "tree_cover_1000m",
                                             "imperv_1000m",
-                                            "age", "weight_kg", "sex",
-                                            "condition", "season",
-                                            "DNAng.ul", "DNA260.230", "DNA260.280")])
+                                            "weight_kg", "sex",
+                                            "season"
+                                            )])
 
 
 ### AMAZING! ThIs MAKeS SeNSe!!!!
@@ -176,7 +150,7 @@ HelmHelmDf <-
 dev.off() ## this had somehow opened a graphics device?!
 
 
-ScoresHelm <-  as.data.frame(scores(nMDSHelm))
+ScoresHelm <-  as.data.frame(scores(nMDSHelm)$sites)
 ScoresHelm <- cbind(ScoresHelm, EnvData)
 ScoresHelm$season <- factor(ScoresHelm$season, levels = c("spring", "S_autumn", "winter"))
 
@@ -195,7 +169,7 @@ ggHelmEnv <-
                    color = log(pvals)),
                data = subset(HelmEnvFitDf, pvals < 0.1),
                arrow = arrow(length = unit(arrowhead, "npc"), angle = 23, type = "closed"),
-               size = 1.5) +
+               linewidth = 1.5) +
   coord_cartesian(clip = "off") +
   scale_color_viridis_c(option = "cividis", name = "log(pvals)") +
   scale_shape_manual(values = c(21, 22, 23), name = "Season:", 
@@ -208,7 +182,8 @@ ggHelmEnvHelm <-
   ggHelmEnv +
   geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2, color = pvals),
                data = subset(HelmHelmDf, pvals < 0.1),
-               arrow = arrow(length = unit(arrowhead, "npc"), angle = 23, type = "closed"), size = 1.5) +
+               arrow = arrow(length = unit(arrowhead, "npc"), angle = 23, type = "closed"),
+               linewidth = 1.5) +
   shadowtext::geom_shadowtext( ## TODO: moved down here to avoid text overplotting
     data = subset(HelmEnvFitDf, pvals < 0.1),
     aes(x = NMDS1, y = NMDS2 + offset),
