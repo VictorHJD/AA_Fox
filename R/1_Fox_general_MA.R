@@ -478,23 +478,12 @@ DNAData <- subset(DNA, DNA$analysed)[, c("ID", "DNAng.ul", "DNA260.230", "DNA260
 Sdat <- merge(Sdat, DNAData, by = "ID", all=TRUE)
 rownames(Sdat) <- Sdat$IDb
 
-
 ## they are still alinged
 all(rownames(Sdat) == rownames(PS@sam_data))
 PS@sam_data <- sample_data(Sdat)
 
-
-
-
 ## now directly in the repository (for reproducibilty)
 saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
-
-###For primer analysis (Victor), still stored on our server 
-## saveRDS(PS.l, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqList.Rds") 
-
-## For Caro and the paper, previously on the server, 
-## saveRDS(PS, file="/SAN/Metabarcoding/AA_Fox/PhyloSeqCombi.Rds")
-
 
 ### Adding Categories to the taxonomy information!
 ### We have to addd this to genus agglommerted data!
@@ -593,10 +582,6 @@ table(sample_data(PSG)$condition_imputed)
 ## and the areas by season for the methods part
 table(season=sample_data(PSG)$season, area=sample_data(PSG)$area)
 
-## and save PSG for further use 
-saveRDS(PSG, file="intermediate_data/PhyloSeqGenus.Rds")
-
-
 ## writing a csv export for further use in Dep. 6 and in
 ## collaborations. I'd always recommend to use the "phyloseq" object
 ## intermediate_data/PhyloSeqGenus.Rds for more control of the
@@ -611,6 +596,16 @@ MoltenPSG$readsR  <-  NULL
 
 write.csv(MoltenPSG, "intermediate_data/FoxPhyloSeqGenus.csv", row.names=FALSE)
 
+## WE EXCLUDE the JUVENILES
+## WE EXCLUDE everything with NAs
+## remove the juveniles
+PSG <- subset_samples(PSG, age %in% "adult" &
+                           !is.na(sample_data(PSG)[, "tree_cover_1000m"]))
 
+## extract the Helminths
+PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
+
+## and save PSG for further use 
+saveRDS(PSGHelm, file="intermediate_data/PhyloSeqGenus.Rds")
 
 

@@ -8,20 +8,14 @@ source("./R/plot_setup.R")
 
 recomputeBioinfo <- FALSE
 
-if(!exists("PSG")){
+if(!exists("PSGHelm")){
     if(recomputeBioinfo){
         source("R/1_Fox_general_MA.R")
     } else {
-        PSG <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
+        PSGHelm <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
     }
 }
 
-## extract the Helminths
-PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
-
-## remove the juveniles
-PSGHelm <- subset_samples(PSGHelm, age %in% "adult" &
-                          !is.na(sample_data(PSGHelm)[, "tree_cover_1000m"]))
 
 PSGHelm <- prune_taxa(taxa_sums(PSGHelm) > 0, PSGHelm)
 PSGHelm <- prune_samples(sample_sums(PSGHelm) > 0, PSGHelm)
