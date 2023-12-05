@@ -482,9 +482,6 @@ rownames(Sdat) <- Sdat$IDb
 all(rownames(Sdat) == rownames(PS@sam_data))
 PS@sam_data <- sample_data(Sdat)
 
-## now directly in the repository (for reproducibilty)
-saveRDS(PS, file="intermediate_data/PhyloSeqCombi.Rds")
-
 ### Adding Categories to the taxonomy information!
 ### We have to addd this to genus agglommerted data!
 ## collapse to genus level
@@ -566,22 +563,6 @@ sum(otu_table(subset_taxa(PSG, genus%in%NOPara)))
 ### Exclude the bad taxa
 PSG <- subset_taxa(PSG, !genus%in%BADtaxa)
 
-## the categories of gut content
-table(tax_table(PSG)[, "category"])
-
-### Short overview of what has been imputed in the final dataset
-## season/year
-table(sample_data(PSG)$SY_imputed)
-
-## weight
-table(sample_data(PSG)$weight_imputed)
-
-## condition
-table(sample_data(PSG)$condition_imputed)
-
-## and the areas by season for the methods part
-table(season=sample_data(PSG)$season, area=sample_data(PSG)$area)
-
 ## writing a csv export for further use in Dep. 6 and in
 ## collaborations. I'd always recommend to use the "phyloseq" object
 ## intermediate_data/PhyloSeqGenus.Rds for more control of the
@@ -602,10 +583,28 @@ write.csv(MoltenPSG, "intermediate_data/FoxPhyloSeqGenus.csv", row.names=FALSE)
 PSG <- subset_samples(PSG, age %in% "adult" &
                            !is.na(sample_data(PSG)[, "tree_cover_1000m"]))
 
+## the categories of gut content
+table(tax_table(PSG)[, "category"])
+### -> When we'll pick this up for future work!
+
 ## extract the Helminths
 PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
+
+## the categories of gut content
+table(tax_table(PSGHelm)[, "category"])
 
 ## and save PSG for further use 
 saveRDS(PSGHelm, file="intermediate_data/PhyloSeqGenus.Rds")
 
+### Some summary data
+## this regular seasons would mean only 5 summer samples... 
+table(ifelse(month(sample_data(PSGHelm)$date)>11, "winter",
+      ifelse(month(sample_data(PSGHelm)$date)>8, "autumn",
+      ifelse(month(sample_data(PSGHelm)$date)>5, "summer",
+      ifelse(month(sample_data(PSGHelm)$date)>2, "spring", "winter")))))
 
+
+## and the areas by season for the methods part
+table(season=sample_data(PSGHelm)$season, area=sample_data(PSGHelm)$area)
+
+table(sample_data(PSGHelm)$sex)

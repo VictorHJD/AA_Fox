@@ -42,11 +42,6 @@ methods and code an to reproduce the results.
 | Figure 2        | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png                |
 | suppl. table 1  | outside, manually               | input_data/primer_file_foxes.csv                    |
 | Table 1         | outside, manually               | text only                                           |
-| Suppl. text F1a | R/1_Fox_general_MA.R            | figures/suppl/AmpSampleHeatmapRAW.png               |
-| Suppl. text F1b | R/1_Fox_general_MA.R            | figures/suppl/AmpSampleHeatmap.png                  |
-| Suppl. text T1  | R/1_Fox_general_MA.R            | tables/suppl/quant.html                             |
-| Suppl. text T2  | R/1_Fox_general_MA.R            | tables/suppl/qual1.html                             |
-| Suppl. text T3  | R/1_Fox_general_MA.R            | tables/suppl/qual2.html                             |
 | suppl. table 2  | outside, manually               | input_data/helminth_traits.csv                      |
 | Figure 3        | R/2_iNEXT_fox.R                 | figures/Div_Model.png                               |
 | Suppl. text F2  | R/2_iNEXT_fox.R                 | figures/suppl/CorrelatPedictors.png                 |
