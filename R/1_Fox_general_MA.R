@@ -174,11 +174,6 @@ MAF2 <- blastTaxAnnot(MAF,
                       infasta = "/SAN/Metabarcoding/AA_Fox/in.fasta",
                       outblast = "/SAN/Metabarcoding/AA_Fox/out.blt",
                       num_threads = 96)
-##to phyloseq
-
-### PACKAGE PROBLEM WITH NULL SLOTs
-## exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
-##                          function (x) is.null(dim(x))))
 
 ## but also problem with empty tables
 exclude.primers <- unlist(lapply(getSequenceTableNoChime(MAF2),
@@ -461,12 +456,13 @@ modQual2ANA <- lm(DNA260.230 ~ weight_kg + condition + sex + age + area,
 summary(modQual2ANA)
 ### different (lower) quality in Brandenburg
 
-stargazer(modQuantExtr, modQuantSEQ, modQuantANA, type="html", out="tables/suppl/quant.html")
-stargazer(modQual1Extr, modQual1SEQ, modQual1ANA, type="html", out="tables/suppl/qual1.html")
-stargazer(modQual2Extr, modQual2SEQ, modQual2ANA, type="html", out="tables/suppl/qual2.html")
+## stargazer(modQuantExtr, modQuantSEQ, modQuantANA, type="html",
+## out="tables/suppl/quant.html")
+## stargazer(modQual1Extr, modQual1SEQ, modQual1ANA, type="html",
+## out="tables/suppl/qual1.html")
+## stargazer(modQual2Extr, modQual2SEQ, modQual2ANA, type="html",
+## out="tables/suppl/qual2.html")
 
-############## BIAS is REMOVED only for DNA quantity in processing and
-############## potentially only partially !!!
 
 PS@sam_data$IDb <- rownames(PS@sam_data)
 PS@sam_data$ID <- gsub("b", "", rownames(PS@sam_data))

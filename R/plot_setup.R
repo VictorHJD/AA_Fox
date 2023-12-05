@@ -7,7 +7,7 @@ theme_custom <-
     ) %+replace% 
     ggplot2::theme(
       panel.grid.minor = ggplot2::element_blank(),
-      panel.grid.major = ggplot2::element_line(color = "grey96", size = .8),
+      panel.grid.major = ggplot2::element_line(color = "grey96", linewidth = .8),
       axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 12)),
       axis.title.y = ggplot2::element_text(angle = 90, margin = ggplot2::margin(r = 12)), 
       legend.title = ggplot2::element_text(face = "bold", hjust = 0),
