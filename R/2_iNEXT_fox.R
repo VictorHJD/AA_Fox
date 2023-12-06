@@ -188,5 +188,6 @@ wrap_plots(
 
 ggsave("figures/Fig2DivModel.png", width = 12.5, height = 10.5, units = "in")
 
-stargazer(AreaRich, type="html",
+
+stargazer(lapply(models, "[[", 1), type="html",
           out="tables/HelmDiversityq0.html")
