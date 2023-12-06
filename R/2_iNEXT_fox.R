@@ -15,7 +15,7 @@ library(sjmisc)
 library(sjlabelled)
 
 ## extrafont::font_import() ## only run once
-## extrafont::loadfonts(device = "all") ## only run once
+extrafont::loadfonts(device = "all") ## run every time
 
 source("./R/plot_setup.R")
 
@@ -42,33 +42,46 @@ if(!exists("PSGHelm")){
 
 
 getAllDiversity <- function (ps) {
-    Counts <- as(otu_table(ps), "matrix")
-    Counts <- as.data.frame(t(Counts))
+    Counts <- as.data.frame(t(unclass(otu_table(ps))))
     rownames(Counts) <- make.unique(tax_table(ps)[, "genus"])
     
     ## For inext diversity analysis we need to keep only samples with
     ## at least two species
     indCounts <- Counts[, colSums(Counts > 0) > 1]    
-    
+        
     ## Sample data in data frame
-    Sdat <- as.data.frame(as(sample_data(ps), "matrix"))
+    Sdat <- as.data.frame(unclass(sample_data(ps)))
 
     ## same for the data
-    SdatHPres <- Sdat[rowSums(Counts > 0) > 1, ]
+    SdatHPres <- Sdat[colSums(Counts > 0) > 1, ]
+    rownames(SdatHPres) <- SdatHPres$IDb
+    
+    ## a Hack including othr reads as an additional animal
+    ## (assemblage), which I then remove
 
+    if(!all(rownames(SdatHPres)== colnames(indCounts))){
+        stop("Sample data and counts do not match")
+    }
+    
+    indCounts <- rbind(indCounts, ALLSEQ = SdatHPres$nSeq - 
+                                      colSums(indCounts))
+    
     OTU_inext_imp <- iNEXT(indCounts, datatype = "abundance", q = 0)
+
     
     zet <- fortify(OTU_inext_imp)
+    ## remove estimates for the "ALLSEQ" pseudo sample
+    zet <- zet[!zet$Assemblage%in%"ALLSEQ", ]
 
     ## now add the sample data and also the zero and 1 "Assemblages" (foxes
     ## back into this, by "all.y")
-    
-    zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = 0, all.y = TRUE) 
+    zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = "IDb", all.y = TRUE) 
     
     ## Now the plot gets a bit messy redo by hand
     ##  get the the asymptotic diversity estimates
     EstimatesAsy <- OTU_inext_imp$AsyEst
-
+    EstimatesAsy <- EstimatesAsy[!EstimatesAsy$Assemblage%in%"ALLSEQ", ]
+    
     ## ## ## observed diversity of 1 and 0 div samples
     NullOne <- as.data.frame(cbind(Observed =  colSums(Counts[, colSums(Counts > 0) < 2] > 0),
                                    Estimator = colSums(Counts[, colSums(Counts > 0) < 2] > 0)))
@@ -82,7 +95,7 @@ getAllDiversity <- function (ps) {
     EstimatesAsy <- rbind(EstimatesAsy, NullOne[, colnames(EstimatesAsy)])
     
     ## now  add back the pure observed diversity for all the excluded samples
-    EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x = "Assemblage", by.y = 0)
+    EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x = "Assemblage", by.y = "IDb")
     return(list(EstimatesAsy, zet))
 }
 
@@ -143,7 +156,8 @@ alphaDivFox <-
 AreaRich <- models %>%
     .[["modelArea"]] %>% .[[1]]
 
-modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "area")),
+modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "area"),
+                          type="response"),
                  rawdata = TRUE) +
     labs(x = "Weight (kg)", y = "Species richness (Hill number q=0)") +
     coord_cartesian(expand = FALSE, clip = "off") +
@@ -155,26 +169,22 @@ modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "ar
     theme_custom() +
     theme(plot.margin = margin(.5, .5, 2, 0))
 
-
-
 wrap_plots(
   ## place first two plots
       alphaDivFox,  ## -> A
-      ## ... then the other three plots
+      ## ... then the other plot
       modelFig, ## -> B
-      ## you can build more complex layouzts by providing simple letters that are
+      ## you can build more complex layouts by providing simple letters that are
       ## then filled accordingly by the plots you defined in the previous step;
       ## the plots are "named" as the appear here: the first one is A, the next B and so on...
       design = "A\nB"
       ## by default all rows and columns have similar widths and heights but we
       ## don't want our legend to fill up 1/3 of the plot height
     ## heights = c(21/45, 3/45, 21/45),
-      ## this tells ggplot to just draw the legend once, not six times
+    ## this tells ggplot to just draw the legend once, not six times
     ##  guides = "collect"
-    ) +
+) +
     plot_annotation(tag_levels = 'a', theme = theme(legend.title = element_text(hjust = .5)))
 
-
-
-
+ggsave("figures/Fig2DivModel.png", width = 12.5, height = 10.5, units = "in")
 
