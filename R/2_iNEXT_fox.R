@@ -113,15 +113,15 @@ gimmeModels <- function (EA){
         do(modelArea = glm(Estimator~ area + weight_kg + sex +
                               season, 
                           data = ., family = "poisson"),
-           modelImperv = lm(Estimator~ imperv_1000m + weight_kg +
+           modelImperv = glm(Estimator~ imperv_1000m + weight_kg +
                                 sex  + season, 
-                            data = .),
-           modelTree = lm(Estimator~ tree_cover_1000m + weight_kg +
+                            data = ., family = "poisson"),
+           modelTree = glm(Estimator~ tree_cover_1000m + weight_kg +
                               sex + season,
-                          data = .),
-           modelHFPI = lm(Estimator~ human_fpi_1000m + weight_kg +
+                          data = ., family = "poisson"),
+           modelHFPI = glm(Estimator~ human_fpi_1000m + weight_kg +
                               sex + season,
-                          data = .)
+                          data = ., family = "poisson")
            ) -> lmEA
     lmEA
 }
