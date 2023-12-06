@@ -110,9 +110,9 @@ gimmeModels <- function (EA){
 
     EA %>%
         filter(Diversity %in% "Species richness") %>% 
-        do(modelArea = lm(Estimator~ area + weight_kg + sex +
+        do(modelArea = glm(Estimator~ area + weight_kg + sex +
                               season, 
-                          data = .),
+                          data = ., family = "poisson"),
            modelImperv = lm(Estimator~ imperv_1000m + weight_kg +
                                 sex  + season, 
                             data = .),
@@ -156,10 +156,10 @@ alphaDivFox <-
 AreaRich <- models %>%
     .[["modelArea"]] %>% .[[1]]
 
-modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "area"),
-                          type="response"),
+modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "area")),
                  rawdata = TRUE) +
-    labs(x = "Weight (kg)", y = "Species richness (Hill number q=0)") +
+    labs(x = "Weight (kg)", y = "Species richness (Hill number q=0)",
+         title = "") +
     coord_cartesian(expand = FALSE, clip = "off") +
     scale_color_manual(values = colors_seasons, 
                        labels = c("Spring", "Summer + Autumn", "Winter"),
@@ -188,3 +188,5 @@ wrap_plots(
 
 ggsave("figures/Fig2DivModel.png", width = 12.5, height = 10.5, units = "in")
 
+stargazer(AreaRich, type="html",
+          out="tables/HelmDiversityq0.html")
