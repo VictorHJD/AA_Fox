@@ -471,6 +471,11 @@ Sdat <- as.data.frame(as(sample_data(PS), "matrix"))
 
 DNAData <- subset(DNA, DNA$analysed)[, c("ID", "DNAng.ul", "DNA260.230", "DNA260.280")]
 
+## overall sequencing depth
+nSeq <- data.frame(nSeq=rowSums(otu_table(PS)))
+
+Sdat <- merge(Sdat, nSeq, by.x="IDb", by.y=0)
+
 Sdat <- merge(Sdat, DNAData, by = "ID", all=TRUE)
 rownames(Sdat) <- Sdat$IDb
 
