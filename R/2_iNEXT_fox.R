@@ -32,12 +32,10 @@ if (iNV < 3){
 recomputeBioinfo <- FALSE
 ## recomputeBioinfo <- TRUE
 
-if(!exists("PSGHelm")){
-    if(recomputeBioinfo){
-        source("R/1_Fox_general_MA.R")
-    } else {
-        PSGHelm <- readRDS(file = "intermediate_data/PhyloSeqGenus.Rds")
-    }
+if(recomputeBioinfo){
+    source("R/1_Fox_general_MA.R")
+} else {
+    PSGHelm <- readRDS(file = "intermediate_data/PhyloSeqGenus.Rds")
 }
 
 
@@ -47,13 +45,13 @@ getAllDiversity <- function (ps) {
     
     ## For inext diversity analysis we need to keep only samples with
     ## at least two species
-    indCounts <- Counts[, colSums(Counts > 0) > 1]    
+    indCounts <- Counts[, colSums(Counts > 0) > 0]    
         
     ## Sample data in data frame
     Sdat <- as.data.frame(unclass(sample_data(ps)))
 
     ## same for the data
-    SdatHPres <- Sdat[colSums(Counts > 0) > 1, ]
+    SdatHPres <- Sdat[colSums(Counts > 0) > 0, ]
     rownames(SdatHPres) <- SdatHPres$IDb
     
     ## a Hack including othr reads as an additional animal
@@ -76,15 +74,12 @@ getAllDiversity <- function (ps) {
     ## now add the sample data and also the zero and 1 "Assemblages" (foxes
     ## back into this, by "all.y")
     zet <- merge(zet, Sdat, by.x = "Assemblage", by.y = "IDb", all.y = TRUE) 
-    
-    ## Now the plot gets a bit messy redo by hand
-    ##  get the the asymptotic diversity estimates
-    EstimatesAsy <- OTU_inext_imp$AsyEst
-    EstimatesAsy <- EstimatesAsy[!EstimatesAsy$Assemblage%in%"ALLSEQ", ]
-    
+        
     ## ## ## observed diversity of 1 and 0 div samples
-    NullOne <- as.data.frame(cbind(Observed =  colSums(Counts[, colSums(Counts > 0) < 2] > 0),
-                                   Estimator = colSums(Counts[, colSums(Counts > 0) < 2] > 0)))
+    NullOne <- as.data.frame(cbind(Observed =
+                                       colSums(Counts[, colSums(Counts > 0) < 1] > 0)+1,
+                                   Estimator =
+                                       colSums(Counts[, colSums(Counts > 0) < 1] > 0)+1))
     NullOne$Assemblage <- rownames(NullOne)
     NullOne <- NullOne[rep(1:nrow(NullOne), each = 3),]
     NullOne$Diversity <-  c("Species richness",
@@ -92,7 +87,28 @@ getAllDiversity <- function (ps) {
                             "Simpson diversity")
     NullOne$s.e. <- NullOne$LCL <- NullOne$UCL <- NA
 
+    NullOne <- merge(NullOne, Sdat[, c("IDb", "nSeq")], by.x="Assemblage", by.y="IDb")
+
+    ## after iNext has run, zet is also allowed to contain the zero species samples
+    zet <- merge(zet, NullOne, all=TRUE)
+    zet[is.na(zet$x), "x"] <- zet$nSeq[is.na(zet$x)]
+    zet[is.na(zet$y), "y"] <- zet$Observed[is.na(zet$y)]
+    zet[is.na(zet$Method), "Method"] <- "Observed"
+
+
+    ## Now the plot gets a bit messy redo by hand
+    ##  get the the asymptotic diversity estimates
+    EstimatesAsy <- OTU_inext_imp$AsyEst
+    EstimatesAsy <- EstimatesAsy[!EstimatesAsy$Assemblage%in%"ALLSEQ", ]
+
     EstimatesAsy <- rbind(EstimatesAsy, NullOne[, colnames(EstimatesAsy)])
+
+    ## Now remove one from the diversity estimates for the
+    ## non-Helminth read coutns
+    ## ## THIS WOULD NOT WORK FOR THE OTHER DIVERSITY ESTIMATORS
+    EstimatesAsy[EstimatesAsy$Diversity %in% "Species richness", "Estimator"] <- 
+        EstimatesAsy[EstimatesAsy$Diversity %in% "Species richness", "Estimator"] - 1
+    zet$y <- zet$y -1
     
     ## now  add back the pure observed diversity for all the excluded samples
     EstimatesAsy <- merge(EstimatesAsy, Sdat, by.x = "Assemblage", by.y = "IDb")
@@ -148,7 +164,7 @@ alphaDivFox <-
                        expand = c(0, 0), limits = c(0, NA)) +
     scale_y_continuous(breaks = 2:10, expand = c(0, 0)) +
     labs(x = "Number of sequence reads",
-         y = "Helminth diversity",
+         y = "Helminth species richness",
          title = "") +
     theme(plot.margin = margin(rep(20, 4)))
 
@@ -158,7 +174,7 @@ AreaRich <- models %>%
 
 modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "area")),
                  rawdata = TRUE) +
-    labs(x = "Weight (kg)", y = "Species richness (Hill number q=0)",
+    labs(x = "Fox weight (kg)", y = "Helminth species richness",
          title = "") +
     coord_cartesian(expand = FALSE, clip = "off") +
     scale_color_manual(values = colors_seasons, 
