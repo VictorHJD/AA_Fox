@@ -162,7 +162,7 @@ alphaDivFox <-
     scale_colour_manual(values = colors_regions, guide = "none") +
     scale_x_continuous(labels = scales::label_comma(),
                        expand = c(0, 0), limits = c(0, NA)) +
-    scale_y_continuous(breaks = 2:10, expand = c(0, 0)) +
+    scale_y_continuous(breaks = 0:10, expand = c(0, 0)) +
     labs(x = "Number of sequence reads",
          y = "Helminth species richness",
          title = "") +
@@ -181,6 +181,7 @@ modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "ar
                        labels = c("Spring", "Summer + Autumn", "Winter"),
                        name = "Season:") +
     scale_fill_manual(values = colors_seasons, guide = "none") +
+    scale_y_continuous(breaks = 0:10, expand = c(0, 0)) +
     ## need to repeat theme because it is overwritten by the wrapper
     theme_custom() +
     theme(plot.margin = margin(.5, .5, 2, 0))
@@ -202,7 +203,7 @@ wrap_plots(
 ) +
     plot_annotation(tag_levels = 'a', theme = theme(legend.title = element_text(hjust = .5)))
 
-ggsave("figures/Fig2DivModel.png", width = 12.5, height = 10.5, units = "in")
+ggsave("figures/Fig2_DivModel.png", width = 12.5, height = 10.5, units = "in")
 
 
 stargazer(lapply(models, "[[", 1), type="html",
