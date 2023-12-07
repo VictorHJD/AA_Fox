@@ -5,19 +5,20 @@ library(patchwork)
 library(ggnewscale)
 
 source("./R/plot_setup.R")
+## extrafont::font_import() ## only run once
+extrafont::loadfonts(device = "all") ## run every time
 
 recomputeBioinfo <- FALSE
 
-if(!exists("PSGHelm")){
-    if(recomputeBioinfo){
-        source("R/1_Fox_general_MA.R")
-    } else {
-        PSGHelm <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
-    }
+if(recomputeBioinfo){
+    source("R/1_Fox_general_MA.R")
+} else {
+    PSGHelm <- readRDS(file="intermediate_data/PhyloSeqGenus.Rds")
 }
 
 
-PSGHelm <- prune_taxa(taxa_sums(PSGHelm) > 0, PSGHelm)
+## Composition differences can only be analysed for foxes with at
+## least one helminth
 PSGHelm <- prune_samples(sample_sums(PSGHelm) > 0, PSGHelm)
 
 PSGHelm ### 131 foxes without NA anywhere
