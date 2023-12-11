@@ -594,6 +594,20 @@ PSGHelm <- phyloseq::subset_taxa(PSG, category%in%"Helminth")
 ## the categories of gut content
 table(tax_table(PSGHelm)[, "category"])
 
+## now we merge Eucoleus and Capillaria
+PSGHelm <- merge_taxa(PSGHelm,
+                      eqtaxa = rownames(tax_table(PSGHelm))[
+                          tax_table(PSGHelm)[, "genus"] %in%
+                          c("Eucoleus", "Capillaria")],
+                      archetype =
+                          rownames(tax_table(PSGHelm))[
+                              tax_table(PSGHelm)[, "genus"] %in%
+                              "Eucoleus"])
+
+
+tax_table(PSGHelm)[is.na(tax_table(PSGHelm))[, "genus"] ,"genus"] <- "Eucoleus"
+
+
 ## and save PSG for further use 
 saveRDS(PSGHelm, file="intermediate_data/PhyloSeqGenus.Rds")
 
