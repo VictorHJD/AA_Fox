@@ -1,18 +1,12 @@
 library(phyloseq)
 library(iNEXT)
-library(vegan)
-library(betapart)
 library(tidyverse)
 library(patchwork)
 library(colorspace)
-library(MASS)
-library(broom)
 library(stargazer)
 library(ggplot2)
 library(ggeffects)
-library(sjPlot)
-library(sjmisc)
-library(sjlabelled)
+library(gt)
 
 ## extrafont::font_import() ## only run once
 extrafont::loadfonts(device = "all") ## run every time
@@ -38,6 +32,35 @@ if(recomputeBioinfo){
     PSGHelm <- readRDS(file = "intermediate_data/PhyloSeqGenus.Rds")
 }
 
+## Table 1 of helminth prevalences ##
+## 98 samples for Berlin, 43 for Brandenburg
+psmelt(PSGHelm) %>%
+    group_by(genus, area) %>%
+    summarise(prevalence = sum(Abundance > 0) / n() *100,
+              count = sum(Abundance > 0), 
+              N=n()) %>%
+    ungroup() %>%
+    pivot_wider(names_from = area, values_from = c(prevalence, count, N)) %>%
+    mutate(prevalence_total = (count_Berlin + count_Brandenburg) /
+               (N_Berlin + N_Brandenburg) * 100) %>%
+    dplyr::select(starts_with(c("prevalence", "genus"))) %>%
+    arrange(desc(prevalence_total)) %>%
+    relocate(starts_with("prevalence"), .after = genus) %>%
+    mutate(across(where(is.numeric), round, 2))%>%
+    gt() %>%
+    cols_label( 
+        prevalence_Berlin = html("% prevalence <br> Berlin (n=98)"),
+        prevalence_Brandenburg = html("% prevalence <br> Brandenburg (n=43)"),
+        prevalence_total = html("% prevalence <br> Total (n=141)")
+    ) %>%
+    tab_style(
+        style = cell_text(style = "italic"),
+        locations = cells_body(columns = genus)
+    ) -> prevtab
+
+gtsave(prevtab, "tables/prevalences.html")
+    
+    
 
 getAllDiversity <- function (ps) {
     Counts <- as.data.frame(t(unclass(otu_table(ps))))
