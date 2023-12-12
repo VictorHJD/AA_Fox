@@ -13,7 +13,7 @@ library(reshape2)
 library(cowplot)
 # read custom theme for plotting
 source("./R/plot_setup.R")
-
+extrafont::loadfonts(device = "all") ## run every time
 
 recomputejSDMModels <- FALSE
 
@@ -96,12 +96,13 @@ PAConv_area %>%
   group_by(variable) %>% 
   summarise(mean.ess = mean(ESS, na.rm = TRUE),
             mean.gd = mean(GELMAN.est, na.rm = TRUE))
-# A tibble: 3 x 3
-# variable mean.ess mean.gd
-# <chr>       <dbl>   <dbl>
-# 1 beta       46454    1.00
-# 2 gamma      54360    1.00
-# 3 omega      18904    1.02
+
+## # A tibble: 3 × 3
+##   variable mean.ess mean.gd
+##   <chr>       <dbl>   <dbl>
+## 1 beta       49303.    1.00
+## 2 gamma      57686.    1.00
+## 3 omega      24539.    1.01
 
 ## visually inspecting convergence statistics
 
@@ -149,13 +150,13 @@ PAConv_grad %>%
   group_by(variable) %>% 
   summarise(mean.ess = mean(ESS, na.rm = TRUE),
             mean.gd = mean(GELMAN.est, na.rm = TRUE))
-# A tibble: 3 x 3
-# variable mean.ess mean.gd
-# <chr>       <dbl>   <dbl>
-# 1 beta       47245.    1.00
-# 2 gamma      56997.    1.00
-# 3 omega      27881.    1.01
 
+## ## A tibble: 3 × 3
+##   variable mean.ess mean.gd
+##   <chr>       <dbl>   <dbl>
+## 1 beta       45996.    1.00
+## 2 gamma      57624.    1.00
+## 3 omega      17592.    1.01
 ## visually inspecting convergence statistics
 
 ## effective sample size
@@ -201,9 +202,9 @@ PApreds_area <- computePredictedValues(PAModel_area, expected = TRUE)
 # Obtain R2 of area model 
 modelr2.explanatory <- evaluateModelFit(hM = PAModel_area, predY = PApreds_area)
 # OBtain explanatory power of the model based on R2
-mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.1642869
+mean(modelr2.explanatory$TjurR2, na.rm=TRUE) ## [1] 0.1779459
 # Obtain AUC of the model
-mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8212681
+mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8260046
 
 
 ## gradient model
@@ -212,9 +213,9 @@ PApreds_grad <- computePredictedValues(PAModel_grad, expected = TRUE)
 # Obtain R2 of gradient model 
 modelr2.explanatory <- evaluateModelFit(hM = PAModel_grad, predY = PApreds_grad)
 # OBtain explanatory power of the model based on R2
-mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.1714437
+mean(modelr2.explanatory$TjurR2, na.rm=TRUE) # [1] 0.1839139
 # Obtain AUC of the model
-mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8296823
+mean(modelr2.explanatory$AUC, na.rm=TRUE) # [1] 0.8326632
 
 
 
@@ -245,10 +246,7 @@ exp_variables
 
 my_variables <- c("(Intercept)", "sex[male]", "weight_kg",
                   "season[spring]", "season[winter]",
-                  "area[Brandenburg]",
-                                        # NEW ###
-                  "condition[excellent]", "DNAng_ul",
-                  "DNA260_230", "DNA260_280"
+                  "area[Brandenburg]"
                   )
 
 ModelFrame_area <- data.frame()
@@ -285,10 +283,7 @@ ModelFrame_area <- ModelFrame_area %>%
   mutate(Variable = as.factor(Variable)) %>% 
     mutate(Variable = fct_relevel(Variable, c("(Intercept)", "sex[male]", "weight_kg",
                                               "season[spring]", "season[winter]",
-                                              "area[Brandenburg]",
-                                        # NEW ##
-                                              "condition[excellent]", "DNAng_ul", 
-                                              "DNA260_230", "DNA260_280"
+                                              "area[Brandenburg]"
                                               ))) %>% 
     mutate(Variable = fct_rev(Variable))
 summary(ModelFrame_area)
@@ -315,10 +310,10 @@ plot_beta_weight <- toplot_ModelFrame_area %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
+                     ymax = CI_high),
                  lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
   geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
+                     ymax = Q_75),
                  lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
   geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
                       ymax = Q_75, fill = significant),
@@ -326,9 +321,11 @@ plot_beta_weight <- toplot_ModelFrame_area %>%
   scale_fill_manual(values = c("White", "black"), 
                     guide = "none")+
   coord_flip() +
-  scale_colour_manual(values = my_palette, 
-                      guide = guide_legend(reverse = TRUE)) +
-  ylab("\n") +
+    scale_colour_manual("Genus",
+        values = my_palette, 
+        guide = guide_legend(reverse = TRUE)) +
+    ylab("") +
+    xlab("") +
   theme_custom() +
   theme(    
     plot.margin = margin(1,1,3,1),
@@ -338,17 +335,18 @@ plot_beta_weight <- toplot_ModelFrame_area %>%
     axis.text = element_text(size = 12), 
     axis.title = element_text(size = 14, face = "bold"),
     legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12))
+    legend.text = element_text(size = 12,
+                               face = "italic"))
 
 plot_beta_area <- toplot_ModelFrame_area %>% 
   filter(Variable %in% c("area[Brandenburg]", "season[spring]", "season[winter]")) %>%
   ggplot(aes(group = Species, colour = Species)) + 
   geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
   geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
+                     ymax = CI_high),
                  lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
   geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
+                     ymax = Q_75),
                  lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
   geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
                       ymax = Q_75, fill = significant),
@@ -357,9 +355,9 @@ plot_beta_area <- toplot_ModelFrame_area %>%
                     guide = "none")+
   coord_flip() +
   scale_colour_manual(values = my_palette, 
-                      guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("Coefficient") +
+                      guide = "none") +
+  xlab("Variable") +
+  ylab("") +
   theme_custom() +
   theme(
     plot.margin = margin(1,1,3,1),
@@ -371,117 +369,10 @@ plot_beta_area <- toplot_ModelFrame_area %>%
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 12))
 
-plot_beta_sampling1 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("DNA260_230", "condition[excellent]")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_manual(values = my_palette, 
-                      guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("Coefficient") +
-  theme_custom() +
-  theme(
-    plot.margin = margin(2,1,3,1),
-    panel.background = element_rect(fill = NA, colour = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12))
-
-plot_beta_sampling2 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("DNA260_280")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_manual(values = my_palette, 
-                      guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("Coefficient") +
-  theme_custom() +
-  theme(
-    plot.margin = margin(2,1,3,1),
-    panel.background = element_rect(fill = NA, colour = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12))
-
-
-plot_beta_sampling3 <- toplot_ModelFrame_area %>% 
-  filter(Variable %in% c("DNAng_ul")) %>%
-  ggplot(aes(group = Species, colour = Species)) + 
-  geom_hline(yintercept = 0, colour = gray(1/2), lty = 2) + 
-  geom_linerange(aes(x = Variable, ymin = CI_low,
-                     ymax = CI_high, fill = significant),
-                 lwd = 0.8, position = position_dodge(width = 1.5/2)) + 
-  geom_linerange(aes(x = Variable, ymin = Q_25,
-                     ymax = Q_75, fill = significant),
-                 lwd = 1.5, position = position_dodge(width = 1.5/2)) + 
-  geom_pointrange(aes(x = Variable, y = Coefficient, ymin = Q_25,
-                      ymax = Q_75, fill = significant),
-                  lwd = 1/2, shape = 21, position = position_dodge(width = 1.5/2)) +
-  scale_fill_manual(values = c("White", "black"), 
-                    guide = "none")+
-  coord_flip() +
-  scale_colour_manual(values = my_palette, 
-                      guide = guide_legend(reverse = TRUE)) +
-  xlab("") +
-  ylab("Coefficient") +
-  theme_custom() +
-  theme(
-    plot.margin = margin(2,1,3,1),
-    panel.background = element_rect(fill = NA, colour = NA),
-    panel.grid.major = element_blank(), 
-    axis.line = element_line(colour = "black"), 
-    axis.text = element_text(size = 12), 
-    axis.title = element_text(size = 14, face = "bold"),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 12))
-
-legend <- get_legend(plot_beta_weight)
-
-half_left <- plot_grid(plot_beta_weight + theme(legend.position="none", axis.title = element_blank()), 
-                        plot_beta_sampling1 + theme(legend.position="none"), 
-                        labels = c('A', 'C'), label_size = 12, 
-                        nrow = 2, align = "v",rel_heights = c(0.95,1.05))
-
-half_right <- plot_grid(plot_beta_area + theme(legend.position="none", axis.title = element_blank()), 
-                        plot_beta_sampling2 + theme(legend.position="none", axis.title = element_blank()), 
-                        plot_beta_sampling3 + theme(legend.position="none"), 
-                        labels = c('B', 'D', 'E'), label_size = 12, 
-                        nrow = 3, align = "v",rel_heights = c(0.95,0.48, 0.57))
-
-beta_plot <- plot_grid(half_left, half_right, legend, 
-          ncol = 3, 
+beta_plot <- plot_grid(plot_beta_area, plot_beta_weight,
+          ncol = 2, 
           nrow = 1,
-          rel_widths = c(1,1,0.3))
+          rel_widths = c(1,1.4))
 
 
 ggsave(plot = beta_plot, "./figures/PAModel_area_BetaCoefs.png", 
