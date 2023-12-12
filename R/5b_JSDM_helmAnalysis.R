@@ -900,8 +900,8 @@ ggsave(plot = traits_plot_grad, "./figures/suppl/PAModel_grad_GammaCoefs_traits.
 OmegaCor_area <- computeAssociations(PAModel_area)
 
 # get associations for manual plotting - replicate
-assoc_mean <- melt(OmegaCor_area[[1]]$mean)
-assoc_support <- melt(OmegaCor_area[[1]]$support)
+assoc_mean <- reshape2::melt(OmegaCor_area[[1]]$mean)
+assoc_support <- reshape2::melt(OmegaCor_area[[1]]$support)
 
 associations_area <- cbind.data.frame(assoc_mean, support = assoc_support$value)
 
@@ -915,9 +915,10 @@ associations_area %>%
 
 ## use the 75% confidence interval for visualisation
 associations_area %>%
-    filter(support < 0.125 | support > 0.875) %>%
-    filter(species1 != species2)  %>%
-    select(from = species1, to = species2, mean = mean, support = support) ->
+    filter(support < 0.25 | support > 0.75)%>%
+    filter(species1 != species2) %>%
+    dplyr::rename(from = species1,
+                  to = species2) ->
     associations_area75
 
 ## ## plot as hierarchical bundle
@@ -978,8 +979,8 @@ ggsave(plot = graph_area, "./figures/suppl/PAModel_area_sp_assoc.png",
 OmegaCor_grad <- computeAssociations(PAModel_grad)
 
 # get associations for manual plotting - replicate
-assoc_mean <- melt(OmegaCor_grad[[1]]$mean)
-assoc_support <- melt(OmegaCor_grad[[1]]$support)
+assoc_mean <- reshape2::melt(OmegaCor_grad[[1]]$mean)
+assoc_support <- reshape2::melt(OmegaCor_grad[[1]]$support)
 
 associations_grad <- cbind.data.frame(assoc_mean, support = assoc_support$value)
 
@@ -1055,9 +1056,8 @@ mygraph <- graph_from_data_frame(d = edges, vertices = vertices)
 ## area model
 head(PAModel_area$X)
 
-VP_area <- computeVariancePartitioning(PAModel_area,
-                                       group = c(1, 1, 1, 2, 2, 3, 4, 4, 4, 4), 
-                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Sampling"))
+## No grouping necessary anymore!
+VP_area <- computeVariancePartitioning(PAModel_area)
 
 ## ## first view?!
 ## plotVariancePartitioning(PAModel_area, VP_area)
@@ -1070,11 +1070,10 @@ VP_vals_area
 mean_vp_area <- as.data.frame(rowSums(VP_vals_area)/ncol(VP_vals_area))
 colnames(mean_vp_area) <- "mean"
 mean_vp_area <- mean_vp_area %>% 
-  mutate(percent = round(mean * 100, 2), 
-         Variable = factor(rownames(mean_vp_area), 
-                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic", "Sampling"))
-         )  
-mean_vp_area
+    mutate(percent = round(mean * 100, 2), 
+           Variable = factor(rownames(mean_vp_area),
+                             levels = c("area", "weight_kg", "season",
+                                        "sex", "Random: site")))
 
 # set species names
 my_species <- colnames(PAModel_area$Y) 
@@ -1085,11 +1084,13 @@ colnames(VP_vals_area) <- my_species
 VP_toplot_area <- VP_vals_area %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_area), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic", "Sampling")))
+    mutate(Variable = factor(Variable,
+                             levels = c("area", "weight_kg", "season",
+                                        "sex", "Random: site")))
 
 ## get the species in descending order of host-intrinsic values
 species_order <- VP_toplot_area %>% 
-  filter(Variable == "Host-intrinsic") %>% 
+  filter(Variable == "area") %>% 
   arrange(desc(value))
   
 ## order and add colours to plot
@@ -1099,76 +1100,62 @@ VP_toplot_area2 <- VP_toplot_area %>%
 ## add colour to the species based on one-host or multi-host trait
 multihost_sp <- species_order %>% 
   left_join(PAModel_area$Tr %>% 
-              as.data.frame() %>% 
-              rownames_to_column(var = "Species"), by = "Species") %>% 
-  as.data.frame() %>% 
-  mutate(multihost = case_when(
-    lifecyclethree.host == 1 ~ "Three",
-    lifecycletwo.host == 1 ~ "Two",
-    TRUE ~ "One"
-  )) %>% 
-  mutate(colour_text = case_when(
-    multihost == "Three" ~ "orange",
-    multihost == "Two" ~ "darkgreen",
-    multihost == "One" ~ "grey40"
-  )) %>% 
-  dplyr::select(Species, colour_text)
-
-##            Species colour_text
-## 1       Pearsonema   darkgreen two
-## 2        Uncinaria      grey40 one
-## 3        Crenosoma   darkgreen two
-## 4         Toxocara   darkgreen two
-## 5    Mesocestoides      orange three
-## 6    Strongyloides      grey40 one 
-## 7  Angiostrongylus   darkgreen two
-## 8       Clonorchis   darkgreen two
-## 9           Alaria      orange three
-## 10      Capillaria      grey40 one 
-## 11        Eucoleus      grey40 one
-
-
+            as.data.frame() %>% 
+            rownames_to_column(var = "Species"), by = "Species") %>% 
+    as.data.frame() %>% 
+    mutate(multihost = case_when(
+               lifecyclethree.host == 1 ~ "Three",
+               lifecycletwo.host == 1 ~ "Two",
+               TRUE ~ "One"
+           )) %>% 
+    mutate(colour_text = case_when(
+               multihost == "Three" ~ "orange",
+               multihost == "Two" ~ "darkgreen",
+               multihost == "One" ~ "grey40"
+           )) %>% 
+    dplyr::select(Species, colour_text)
 
 ## load theme for the plot
 source("./R/plot_setup.R")
 
 ## plot
 vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = Variable)) +
-  geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
+    geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
     scale_fill_manual(values = alpha(c("lightyellow", "darkgreen", "darkorange3",
-                                                    "firebrick4", "darkblue"), 0.7),
-                    name = "Variable group", 
-                    labels=c(paste0("Random: site\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
-                             paste0("Nat. Environment\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Natural envir"], ")"),
-                             paste0("Season\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Season"], ")"),
-                             paste0("Host-intrinsic\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"),
-                             paste0("Sampling\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Sampling"], ")")
-
-                             )) +
-  labs(x = "\nHelminth taxa", 
-       y = "Variance partitioning (%)\n", col = "black") +
-  scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
-  # theme_bw()+
-  theme_custom() +
-  theme(panel.grid.minor = ggplot2::element_blank(),
-        panel.grid.major = ggplot2::element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=12, colour = multihost_sp$colour_text, face = "italic"),
-        plot.margin = ggplot2::margin(4,1, 1, 1),
-        legend.text = element_text(margin = margin(t = 5, b = 5), size = 12),
-        axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
-        axis.title.y = ggplot2::element_text(angle = 90, margin = ggplot2::margin(r = 6)), 
-        axis.text.y = element_text(colour = "black", size = 12)
-        )
-  #       axis.title.y = element_text(hjust = 0.5, vjust = 1.5),
-  #       legend.key.height = unit(1.5, "lines"),
-  # )
+                                       "firebrick4", "darkblue"), 0.7),
+                      name = "Variable", 
+                      labels=c(paste0("Admin. area\n(mean = ", 
+                                      mean_vp_area$percent[mean_vp_area$Variable ==
+                                                           "area"], ")"),
+                               paste0("Weight\n(mean = ", 
+                                      mean_vp_area$percent[mean_vp_area$Variable ==
+                                                           "weight_kg"], ")"),
+                               paste0("Season\n(mean = ", 
+                                      mean_vp_area$percent[mean_vp_area$Variable ==
+                                                           "season"], ")"),
+                               paste0("sex\n(mean = ", 
+                                      mean_vp_area$percent[mean_vp_area$Variable ==
+                                                           "sex"], ")"),
+                               paste0("Random: site\n(mean = ", 
+                                      mean_vp_area$percent[mean_vp_area$Variable ==
+                                                           "Random: site"], ")")
+                               )) +
+    labs(x = "\nHelminth genus", 
+         y = "Variance partitioning (%)\n", col = "black") +
+    scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
+    theme_custom() +
+    theme(panel.grid.minor = ggplot2::element_blank(),
+          panel.grid.major = ggplot2::element_blank(),
+          axis.line = element_line(colour = "black"),
+          axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
+                                     size=12, colour = multihost_sp$colour_text,
+                                     face = "italic"),
+          plot.margin = ggplot2::margin(4,1, 1, 1),
+          legend.text = element_text(margin = margin(t = 5, b = 5), size = 12),
+          axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
+          axis.title.y = ggplot2::element_text(angle = 90, margin = ggplot2::margin(r = 6)), 
+          axis.text.y = element_text(colour = "black", size = 12)
+          )
 
 ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",  
        dpi = 600, width = 6, height = 5,
@@ -1181,8 +1168,7 @@ ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",
 ## gradient model
 head(PAModel_grad$X)
 
-VP_grad <- computeVariancePartitioning(PAModel_grad, group = c(1,1,1, 2,2, 3,3, 4, 4, 4, 4), 
-                                       groupnames = c("Host-intrinsic", "Season", "Natural envir", "Sampling"))
+VP_grad <- computeVariancePartitioning(PAModel_grad)
 
 # Extract the values for the manual plot
 VP_vals_grad <- as.data.frame(VP_grad$vals) 
@@ -1193,9 +1179,10 @@ mean_vp_grad <- as.data.frame(rowSums(VP_vals_grad)/ncol(VP_vals_grad))
 colnames(mean_vp_grad) <- "mean"
 mean_vp_grad <- mean_vp_grad %>% 
   mutate(percent = round(mean * 100, 2), 
-         Variable = factor(rownames(mean_vp_grad), 
-                           levels = c("Random: site", "Natural envir", "Season", "Host-intrinsic", "Sampling"))
-  )
+         Variable = factor(rownames(mean_vp_grad),
+                           levels = c("human_fpi_1000m", "tree_cover_1000m",
+                                      "weight_kg", "season",
+                                      "sex", "Random: site")))
 
 mean_vp_grad
 
@@ -1208,11 +1195,15 @@ colnames(VP_vals_grad) <- my_species
 VP_toplot_grad <- VP_vals_grad %>% 
   pivot_longer(everything(), names_to = "Species") %>% 
   mutate(Variable = rep(rownames(VP_vals_grad), each = length(my_species))) %>% 
-  mutate(Variable = factor(Variable, levels = c("Random: site",  "Natural envir", "Season", "Host-intrinsic", "Sampling")))
+    mutate(Variable = factor(Variable,
+                             levels = c("human_fpi_1000m", "tree_cover_1000m",
+                                        "weight_kg", "season",
+                                        "sex", "Random: site")))
+                             
 
 ## get the species in descending order of host-intrinsic values
 species_order_grad <- VP_toplot_grad %>% 
-  filter(Variable == "Host-intrinsic") %>% 
+  filter(Variable == "human_fpi_1000m") %>% 
   arrange(desc(value)) %>% 
   ungroup() 
 
@@ -1241,20 +1232,28 @@ multihost_sp_grad <- species_order_grad %>%
 
 
 vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = Variable)) +
-  geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
-  scale_fill_manual(values = alpha(c("lightyellow", "darkgreen", "darkorange3",
-                                                  "firebrick4", "darkblue"), 0.7),
-                    name = "Variable group", 
-                    labels=c(paste0("Random: site\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Random: site"], ")"),
-                             paste0("Nat. Environment\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Natural envir"], ")"),
+    geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
+    scale_fill_manual(values = alpha(c("lightyellow", "lightblue", "darkgreen",
+                                       "darkorange3","firebrick4", "darkblue"), 0.7),
+                    name = "Variable", 
+                    labels=c(paste0("Human FPI\n(mean = ", 
+                                    mean_vp_grad$percent[mean_vp_grad$Variable ==
+                                                         "human_fpi_1000m"], ")"),
+                             paste0("Tree cover\n(mean = ", 
+                                    mean_vp_grad$percent[mean_vp_grad$Variable ==
+                                                         "tree_cover_1000m"], ")"),
+                             paste0("Weight\n(mean = ", 
+                                    mean_vp_grad$percent[mean_vp_grad$Variable ==
+                                                         "weight_kg"], ")"),
                              paste0("Season\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Season"], ")"),
-                             paste0("Host-intrinsic\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Host-intrinsic"], ")"),
-                             paste0("Sampling\n(mean = ", 
-                                    mean_vp_area$percent[mean_vp_area$Variable == "Sampling"], ")"))) +
+                                    mean_vp_area$percent[mean_vp_grad$Variable ==
+                                                         "season"], ")"),
+                             paste0("Sex\n(mean = ", 
+                                    mean_vp_area$percent[mean_vp_grad$Variable ==
+                                                         "sex"], ")"),
+                             paste0("Random: site\n(mean = ", 
+                                    mean_vp_grad$percent[mean_vp_grad$Variable ==
+                                                         "Random: site"], ")"))) +
   labs(x = "\nHelminth taxa",
        y = "Variance partitioning (%)\n", col = "black") +
   scale_y_continuous(limits = c(0,1.01), expand = c(0, 0)) +
