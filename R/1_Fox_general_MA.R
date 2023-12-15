@@ -623,3 +623,79 @@ table(ifelse(month(sample_data(PSGHelm)$date)>11, "winter",
 table(season=sample_data(PSGHelm)$season, area=sample_data(PSGHelm)$area)
 
 table(sample_data(PSGHelm)$sex)
+
+
+
+### now we need to know how the environmental data for the foxes is
+### correlated
+
+sample_data(PSGHelm) %>% unclass() %>% as.data.frame() %>%
+    dplyr::select(weight_kg, sex, season, condition,
+                  area, tree_cover_1000m, imperv_1000m, human_fpi_1000m,
+                   nSeq, DNAng.ul, DNA260.230, DNA260.280) %>%
+    mutate_at(c("weight_kg",
+                "tree_cover_1000m", "imperv_1000m", "human_fpi_1000m",
+                "nSeq", "DNAng.ul", "DNA260.230", "DNA260.280"),
+              as.numeric) %>%
+    mutate_at(c("sex", "season", "condition", "area"),
+              as.factor)  -> D
+
+D %>% dplyr::select(tree_cover_1000m, imperv_1000m, human_fpi_1000m, area) %>%
+    ggpairs() -> Dcor
+ggsave("figures/suppl/CorrelatPedictors.png", Dcor,
+        width = 12.5, height = 10.5, units = "in")
+
+## The sampling depth == sequencing thoughput is independent of any
+## technical or biological variables.
+
+TechModAll <- glm.nb(nSeq  ~  area + season + sex +
+                         condition + DNAng.ul + DNA260.230 + DNA260.280, data=D)
+
+TechModSam <- glm.nb(nSeq  ~  condition + DNAng.ul + DNA260.230 + DNA260.280, data=D)
+
+TechModBio <-  glm.nb(nSeq  ~  area + season + sex, data=D)
+
+## This is not nice!
+
+D %>%
+    dplyr::select(where(is.numeric)) %>%
+    gather(-nSeq, key = "var", value = "value") %>%
+    ggplot(aes(x = value, y = nSeq)) +
+    facet_wrap(~ var, scales = "free", ncol=3) +
+    geom_point() +
+    scale_y_continuous("number of sequencing reads for sample") +
+    stat_smooth() -> seqPlotNum
+
+
+
+D %>%
+    dplyr::select(where(is.factor), nSeq) %>%
+    gather(-nSeq, key = "var", value = "value") %>%
+    ggplot(aes(x = value, y = nSeq)) +
+    facet_wrap(~ var, scales = "free", ncol=2) +
+    geom_boxplot(outlier.size=0) + 
+    geom_jitter(width=0.3) +
+    scale_y_continuous("") -> seqPlotFac
+
+
+plot <- cowplot::plot_grid(seqPlotNum, seqPlotFac, nrow = 1, ncol = 2, 
+                           rel_width = c(0.8, 0.2))
+
+
+ggsave("figures/suppl/NumberSeqVar.png", plot,
+        width = 25, height = 10, units = "in")
+
+
+## carcasses in excelent condition are haevier. Autolytic are lighter
+## but have MORE PARASITES!
+weight_condition <- lm(weight_kg ~  area + season + condition + sex, data=D)
+
+
+## in spring winter the condition is less likely to be excellent,
+## still spring and winter have MORE PARASITES!
+summary(glm(I(condition%in%"excellent") ~
+                area + season + sex, data=D, family="binomial"))
+
+
+library(MASS)
+

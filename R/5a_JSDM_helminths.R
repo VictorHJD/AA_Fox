@@ -96,22 +96,6 @@ foxes <- foxes %>%
                              coords.x1+1, coords.x1)) 
 nrow(foxes) # [1] 131
 
-### now we need to know how the environmental data for the foxes is
-### correlated
-
-### THIS IS SLIGHTLY MISPLACED HERE, SHOULD BE BEFORE ANY OTHER
-### STATISTICAL ANALYSIS, but I'll leave it here now! 
-
-foxes %>%
-    dplyr::select(weight_kg, sex, season,
-                  area, tree_cover_1000m, imperv_1000m, human_fpi_1000m) %>%
-    mutate_all(as.numeric) %>%
-    cbind(foxes$area) %>%
-    ggpairs() -> Cor_Plot
-
-ggsave("figures/suppl/CorrelatPedictors.png", Cor_Plot,
-       width = 12.5, height = 10.5, units = "in")
-
 ### and then create a predictor dataset (without non-predictor
 ### variables) and we leave out imperv_1000m as it's highly correlated
 ### with human_fpi_1000m, which is more relevant (for diversity at least)
