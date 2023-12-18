@@ -648,15 +648,6 @@ ggsave("figures/suppl/CorrelatPedictors.png", Dcor,
 ## The sampling depth == sequencing thoughput is independent of any
 ## technical or biological variables.
 
-TechModAll <- glm.nb(nSeq  ~  area + season + sex +
-                         condition + DNAng.ul + DNA260.230 + DNA260.280, data=D)
-
-TechModSam <- glm.nb(nSeq  ~  condition + DNAng.ul + DNA260.230 + DNA260.280, data=D)
-
-TechModBio <-  glm.nb(nSeq  ~  area + season + sex, data=D)
-
-## This is not nice!
-
 D %>%
     dplyr::select(where(is.numeric)) %>%
     gather(-nSeq, key = "var", value = "value") %>%
@@ -665,7 +656,6 @@ D %>%
     geom_point() +
     scale_y_continuous("number of sequencing reads for sample") +
     stat_smooth() -> seqPlotNum
-
 
 
 D %>%
@@ -678,24 +668,34 @@ D %>%
     scale_y_continuous("") -> seqPlotFac
 
 
-plot <- cowplot::plot_grid(seqPlotNum, seqPlotFac, nrow = 1, ncol = 2, 
+NumberSeqVarPlot <- cowplot::plot_grid(seqPlotNum, seqPlotFac, nrow = 1, ncol = 2, 
                            rel_width = c(0.8, 0.2))
 
 
-ggsave("figures/suppl/NumberSeqVar.png", plot,
+ggsave("figures/suppl/NumberSeqVar.png", NumberSeqVarPlot,
         width = 25, height = 10, units = "in")
 
 
-## carcasses in excelent condition are haevier. Autolytic are lighter
-## but have MORE PARASITES!
-weight_condition <- lm(weight_kg ~  area + season + condition + sex, data=D)
+D %>%
+    ggplot(aes(x = season)) +
+    geom_bar() + 
+    facet_wrap(~ condition) -> conditionSeason
 
 
-## in spring winter the condition is less likely to be excellent,
-## still spring and winter have MORE PARASITES!
-summary(glm(I(condition%in%"excellent") ~
-                area + season + sex, data=D, family="binomial"))
+D %>%
+    ggplot(aes(x = area)) +
+    geom_bar() + 
+    facet_wrap(~ condition) -> conditionArea
 
 
-library(MASS)
+D %>%
+    ggplot(aes(x = condition , y = weight_kg)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter()  -> conditionWeight
 
+conditionPlotFac <- cowplot::plot_grid(conditionSeason, conditionArea,
+                                       conditionWeight,
+                                       nrow=3, rel_heights=c(0.6, 0.6, 1))
+
+ggsave("figures/suppl/conditionVar.png", conditionPlotFac,
+       width = 8, height = 16, units = "in")
