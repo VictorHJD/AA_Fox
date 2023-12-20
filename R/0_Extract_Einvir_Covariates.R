@@ -7,11 +7,12 @@ library(patchwork)
 library(ggplot2)
 library(systemfonts)
 library(scico)
+library(ggspatial)
 #library(tmap)
 
-source("./R/plot_setup.R")
-
 #devtools::install_github("EcoDynIZW/d6berlin")
+
+source("./R/plot_setup.R")
 
 
 ## the required raw data
@@ -25,9 +26,9 @@ filter(foxsample_data, !is.na(location_long) & !is.na(location_lat)) %>%
   fox_sp 
 
 
-#########################################################################
-## THIS IS THE CODE TO CREATE THE TREE COVER RASTER FOR THE STUDY AREA ##
-#########################################################################
+######################################################################################################
+## THIS IS THE CODE TO CREATE THE TREE COVER RASTER FOR THE STUDY AREA - NOT INCLUDED IN REPOSITORY ##
+######################################################################################################
 
 ## Original raster not included in github because it is ~600Mb
 ## to download it got to:
@@ -171,7 +172,7 @@ map_study <- map_study_base +
   ) +
   ggspatial::annotation_north_arrow(location = "tr")
 
-ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
+# ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
 
 
 ## map Berlin
@@ -181,7 +182,7 @@ map_berlin <- map_study_base +
   theme(legend.position = "none", 
         panel.border = element_rect(color = "black", fill = NA, size = .8))
 
-ggsave("figures/raw/map_berlin.png", width = 4, height = 3.7, dpi = 600)
+# ggsave("figures/raw/map_berlin.png", width = 4, height = 3.7, dpi = 600)
 
 
 ## overview map
@@ -218,7 +219,7 @@ map_europe <-
         panel.grid.major = element_line(color = "grey75", linetype = "15", size = .3))
 
 #map_europe
-ggsave("figures/raw/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
+# ggsave("figures/raw/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
 
 
 map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey96", bg = TRUE)
@@ -276,5 +277,5 @@ hfpi <- plot_corr_buffer(
 
 panel <- tree_cover + imperv + hfpi + plot_layout(guides = "collect")
 
-## Not explored in the currently submitted version (Februrary 2023)
+## Not explored in the currently submitted version (December 2023)
 ## ggsave("figures/suppl/Env100_1000Cors.png", width = 18, height = 7, bg = "white", dpi = 600)
