@@ -60,7 +60,7 @@ psmelt(PSGHelm) %>%
         prevalence_Berlin = html("% prevalence <br> Berlin (n=98)"),
         prevalence_Brandenburg = html("% prevalence <br> Brandenburg (n=43)"),
         prevalence_total = html("% prevalence <br> Total (n=141)"),
-        CI = html("5% confidence <br> interval in %")
+        CI = html("95% confidence <br> interval in %")
     ) %>%
     tab_style(
         style = cell_text(style = "italic"),
