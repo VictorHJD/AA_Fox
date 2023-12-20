@@ -10,7 +10,7 @@ library(scico)
 library(ggspatial)
 #library(tmap)
 
-#devtools::install_github("EcoDynIZW/d6berlin")
+## devtools::install_github("EcoDynIZW/d6berlin")
 
 source("./R/plot_setup.R")
 
@@ -127,8 +127,7 @@ fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs 
 
 
 ## static map with ggplot2 + sf 
-## External circle represents the values at the 1000m buffer, the inner circle 
-## represents the values at the 100m buffer
+## External circle represents the values at the 1000m buffer
 b <- as(extent(4400000, 4700000, 3100000, 3400000), 'SpatialPolygons')
 crs(b) <- crs(imperv)
 human_fpi_crop <-  st_as_stars(crop(human_fpi, b))
@@ -148,23 +147,21 @@ map_study_base <-
   ## state boundaries
   geom_sf(data = boundaries, fill = NA, color = "black") +
   ## 1000m buffer
-  geom_sf(size = 5, shape = 21, stroke = 1.2, fill = "white", color = "white") +
-  geom_sf(size = 5, shape = 21, stroke = 0, fill = "white") +
-  geom_sf(aes(color = human_fpi_1000m), shape = 16, size = 5, alpha = .7) +
-  ## 100m buffer
-  geom_sf(size = 1.2, shape = 21, stroke = .8, fill = "white", color = "black") +
-  geom_sf(size = 1.2, shape = 21, stroke = 0, fill = "white") +
-  geom_sf(aes(color = human_fpi_100m), shape = 16, size = 1.2, alpha = .7) +
+  geom_sf(size = 3, shape = 21, stroke = 1.2, fill = "white", color = "white") +
+  geom_sf(size = 3, shape = 21, stroke = 0, fill = "white") +
+  geom_sf(aes(color = human_fpi_1000m), shape = 16, size = 3, alpha = .7) +
+  ## ## middle, collection point
+  geom_sf(size = 0.6, shape = 21, stroke = .8, fill = "white", color = "black") +
+  geom_sf(size = 0.6, shape = 21, stroke = 0, aes(fill = human_fpi_1000m)) +
   coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
   scale_fill_gradient(low = "grey30", high = "grey96", guide = "none") +
   scale_color_scico(
     palette = "batlow", begin = .1,
     name = "Human Footprint Index (2009)", limits = c(0, 50), breaks = 1:9*5, 
     guide = guide_colorsteps(barwidth = unit(18, "lines"), barheight = unit(.6, "lines"),
-                             title.position = "top", title.hjust = 0, show.limits = TRUE)
-  ) +
-  labs(x = NULL, y = NULL) +
-  theme_map()
+                             title.position = "top", title.hjust = 0, show.limits = TRUE)) +
+    labs(x = NULL, y = NULL) +
+    theme_map()
 
 map_study <- map_study_base +
   ggspatial::annotation_scale(
@@ -172,18 +169,12 @@ map_study <- map_study_base +
   ) +
   ggspatial::annotation_north_arrow(location = "tr")
 
-# ggsave("figures/raw/map_study_area.png", width = 6.6, height = 7, bg = "white", dpi = 600)
-
-
 ## map Berlin
 map_berlin <- map_study_base +
   coord_sf(xlim = c(4531042, 4576603), ylim = c(3253866, 3290780)) +
   theme_void() + 
   theme(legend.position = "none", 
         panel.border = element_rect(color = "black", fill = NA, size = .8))
-
-# ggsave("figures/raw/map_berlin.png", width = 4, height = 3.7, dpi = 600)
-
 
 ## overview map
 sf_world <- 
@@ -216,28 +207,27 @@ map_europe <-
   labs(x = NULL, y = NULL) +
   theme_map() +
   theme(panel.ontop = FALSE,
-        panel.grid.major = element_line(color = "grey75", linetype = "15", size = .3))
-
-#map_europe
-# ggsave("figures/raw/map_europe.png", width = 5, height = 7, bg = "white", dpi = 600)
-
+        panel.grid.major = element_line(color = "grey75", linetype = "15", linewidth = .3))
 
 map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey96", bg = TRUE)
 
-#map_globe
-ggsave("figures/raw/map_globe.png", width = 2.2, height = 2.2, dpi = 600)
-
 
 ### combined map
-# map_overview <- map_europe + labs(tag = "A.") + inset_element(map_globe, .14, .75, .59, 1.2, align_to = "plot")
-# m <- map_overview + (map_study + labs(tags = "B."))
-# 
-# ggsave(""figures/raw/study_overview.png", width = 11.5, height = 7, bg = "white", dpi = 600)
+map_overview <- map_europe +
+    labs(tag = "A.") +
+    inset_element(map_globe, .02, .75, .59, 1, align_to = "plot")
 
+map_foo <- map_study +
+    labs(tags = "B.") +
+    inset_element(map_berlin + ggtitle("Berlin"), .14, .1, .5, 0.48,
+                  align_to = "plot")
 
+m <- map_overview + map_foo
 
+ggsave("figures/map_study_overview_multi.png", width = 11.5,
+       height = 7, bg = "white", dpi = 600)
 
-###################################################
+    ###################################################
 ### Plots comparing values at the two buffers 
 
 
