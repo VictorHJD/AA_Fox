@@ -34,6 +34,8 @@ if(recomputeBioinfo){
 
 ## Table 1 of helminth prevalences ##
 ## 98 samples for Berlin, 43 for Brandenburg
+library(interpretCI)
+
 psmelt(PSGHelm) %>%
     group_by(genus, area) %>%
     summarise(prevalence = sum(Abundance > 0) / n() *100,
@@ -46,22 +48,28 @@ psmelt(PSGHelm) %>%
     dplyr::select(starts_with(c("prevalence", "genus"))) %>%
     arrange(desc(prevalence_total)) %>%
     relocate(starts_with("prevalence"), .after = genus) %>%
-    mutate(across(where(is.numeric), round, 2))%>%
+    mutate(across(where(is.numeric), round, 2)) %>%
+    mutate(CI = paste0("+/", round(
+                                 prevalence_total -
+                                 propCI(n = 141, p = prevalence_total/100,
+                                        alpha = 0.05)$
+                                 result[, "upper"] * 100,
+                                 2))) %>%
     gt() %>%
     cols_label( 
         prevalence_Berlin = html("% prevalence <br> Berlin (n=98)"),
         prevalence_Brandenburg = html("% prevalence <br> Brandenburg (n=43)"),
-        prevalence_total = html("% prevalence <br> Total (n=141)")
+        prevalence_total = html("% prevalence <br> Total (n=141)"),
+        CI = html("5% confidence <br> interval in %")
     ) %>%
     tab_style(
         style = cell_text(style = "italic"),
         locations = cells_body(columns = genus)
     ) -> prevtab
 
+
 gtsave(prevtab, "tables/prevalences.html")
     
-    
-
 getAllDiversity <- function (ps) {
     Counts <- as.data.frame(t(unclass(otu_table(ps))))
     rownames(Counts) <- make.unique(tax_table(ps)[, "genus"])
