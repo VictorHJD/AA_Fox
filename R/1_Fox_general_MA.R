@@ -14,6 +14,7 @@ library(parallel)
 library(tidyr)
 library(dplyr)
 library(stargazer)
+library(GGally)
 
 ## re-run or use pre-computed results for different parts of the pipeline:
 ## Set to FALSE to use pre-computed and saved results, TRUE to redo analyses.
@@ -699,3 +700,148 @@ conditionPlotFac <- cowplot::plot_grid(conditionSeason, conditionArea,
 
 ggsave("figures/suppl/conditionVar.png", conditionPlotFac,
        width = 8, height = 16, units = "in")
+
+
+### Plot the mapping area (Figure 1)
+source("R/0_Extract_Einvir_Covariates.R")
+## we need fox_evncov and imperv from this first script, won't dabble
+## with the details now
+fox_envcov$FoxID <- paste("Fox", fox_envcov$IZW_ID)
+fox_envcov <- fox_envcov[fox_envcov$FoxID%in%sample_data(PSGHelm)$ID,]
+
+
+sample_data(PSGHelm)$IZW_ID[!(sample_data(PSGHelm)$IZW_ID%in%fox_envcov$IZW_ID)]
+
+nrow(fox_envcov) ## == 141
+
+## double check values make sense in a map
+## make env cov spatial
+fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs = 3035)
+
+## static map with ggplot2 + sf 
+## External circle represents the values at the 1000m buffer
+b <- as(extent(4400000, 4700000, 3100000, 3400000), 'SpatialPolygons')
+crs(b) <- crs(imperv)
+human_fpi_crop <-  st_as_stars(crop(human_fpi, b))
+human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b),
+                                                    fact = 10, fun = "mean"))
+
+## shape of federal states
+boundaries <- 
+  st_read("input_data/VG250_Bundeslaender_esri.geojson") %>% 
+  st_transform(crs = st_crs(fox_envcov_sf)) %>% 
+  filter(GEN %in% c("Berlin", "Brandenburg"))
+
+
+## map study area
+map_study_base <- 
+  ggplot(fox_envcov_sf) +
+  geom_stars(data = human_fpi_crop) +
+  ## state boundaries
+  geom_sf(data = boundaries, fill = NA, color = "black") +
+  ## 1000m buffer
+  geom_sf(size = 3, shape = 21, stroke = 1.2, fill = "white", color = "white") +
+  geom_sf(size = 3, shape = 21, stroke = 0, fill = "white") +
+  geom_sf(aes(color = human_fpi_1000m), shape = 16, size = 3, alpha = .7) +
+  ## ## middle, collection point
+  geom_sf(size = 0.6, shape = 21, stroke = .8, fill = "white", color = "black") +
+  geom_sf(size = 0.6, shape = 21, stroke = 0, aes(fill = human_fpi_1000m)) +
+  coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
+  scale_fill_gradient(low = "grey30", high = "grey96", guide = "none") +
+  scale_color_scico(
+    palette = "batlow", begin = .1,
+    name = "Human Footprint Index (2009)", limits = c(0, 50), breaks = 1:9*5, 
+    guide = guide_colorsteps(barwidth = unit(18, "lines"), barheight = unit(.6, "lines"),
+                             title.position = "top", show.limits = TRUE,
+                             title.hjust = 0,
+                             label = FALSE)) +
+    labs(x = NULL, y = NULL) +
+    theme_map()
+
+col_legend <- cowplot::get_legend(map_study_base)
+
+fill_plot_tmp <- map_study_base +
+    scale_color_scico(guide="none") + 
+    scale_fill_gradient(low = "grey30", high = "grey96",
+                        limits = c(0, 50), breaks = 1:9*5, 
+                        guide = guide_colorsteps(barwidth = unit(18, "lines"),
+                                                 barheight = unit(.6, "lines"),
+                                                 title = NULL,
+                                                 title.hjust = 0, show.limits = TRUE))
+
+
+fill_legend <- cowplot::get_legend(fill_plot_tmp)
+
+
+map_study <- map_study_base + theme(legend.position = "none") +
+  ggspatial::annotation_scale(
+    location = "bl", text_family = "Open Sans", text_cex = 1.2
+  ) +
+  ggspatial::annotation_north_arrow(location = "tr")
+
+## map Berlin
+map_berlin <- map_study_base +
+  coord_sf(xlim = c(4531042, 4576603), ylim = c(3253866, 3290780)) +
+  theme_void() + 
+  theme(legend.position = "none", 
+        panel.border = element_rect(color = "black", fill = NA, size = .8))
+
+## overview map
+sf_world <- 
+  st_as_sf(rworldmap::getMap(resolution = "low")) %>% 
+  st_transform(crs = st_crs(fox_envcov_sf)) %>% 
+  st_buffer(dist = 0) %>% 
+  dplyr::select(ISO_A2, SOVEREIGNT, LON, continent) %>% 
+  mutate(area = st_area(.))
+
+map_europe <- 
+  ggplot(sf_world) +
+  geom_sf(fill = "grey80", color = "grey96", lwd = .1) +
+  geom_rect(
+    xmin = 4430000, xmax = 4640000, ymin = 3160000, ymax = 3385000,
+    color = "#212121", fill = "#a4cbb6", size = .7
+  ) +
+  geom_sf_text(
+    data = filter(sf_world, ISO_A2 %in% c(
+      "DE", "SE", "FR", "PL", "CZ", "IT", "ES", "AT", "CH", "GB", "PT", "NL", "BE", "IR", "IS"
+    )),
+    aes(label = ISO_A2),
+    family = "Open Sans", color = "grey40", fontface = "bold", size = 4.5,
+    nudge_x = 20000, nudge_y = -10000
+  ) +
+  ggspatial::annotation_scale(
+    location = 'tr', text_family = "Open Sans", text_cex = 1.2
+  ) +
+  coord_sf(xlim = c(2650000, 5150000), ylim = c(1650000, 5100000)) +
+  scale_x_continuous(expand = c(0, 0), breaks = seq(-10, 30, by = 10)) +
+  labs(x = NULL, y = NULL) +
+  theme_map() +
+  theme(panel.ontop = FALSE,
+        panel.grid.major = element_line(color = "grey75", linetype = "15", linewidth = .3))
+
+map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey96", bg = TRUE)
+
+### combined map
+map_overview <- map_europe +
+    labs(tag = "a") +
+    inset_element(map_globe, .02, .75, .59, 1, align_to = "plot")
+
+map_foo <- map_study +
+    inset_element(map_berlin + ggtitle("Berlin"), .14, .1, .5, 0.48,
+                  align_to = "plot")
+
+final_legend <- cowplot::plot_grid(NULL, col_legend, NULL, 
+                                   NULL, fill_legend, NULL,
+                                   rel_widths = c(0.13, 0.87, 0.13),
+                                   nrow=2)
+
+map_bar <- cowplot::plot_grid(final_legend,  map_foo, 
+                              ncol = 1, rel_heights = c(0.15, 1.2)) +
+    labs(tags = "b")
+
+m <- cowplot::plot_grid(map_overview, map_bar,
+                        ncol = 2, rel_widths = c(0.78, 1),
+                        align = "h", axis = "t")
+
+ggsave("figures/map_study_overview_multi.png", m,
+       width = 11.5, height = 7, bg = "white", dpi = 600)

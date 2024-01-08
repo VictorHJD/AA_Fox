@@ -13,6 +13,7 @@ library(ggspatial)
 ## devtools::install_github("EcoDynIZW/d6berlin")
 
 source("./R/plot_setup.R")
+extrafont::loadfonts(device = "all") ## run every time
 
 
 ## the required raw data
@@ -121,113 +122,8 @@ if(!file.exists(filepath)) {
   fox_envcov <- readr::read_rds(filepath)
 }
 
-## double check values make sense in a map
-## make env cov spatial
-fox_envcov_sf <- st_as_sf(fox_envcov, coords = c("coords.x1", "coords.x2"), crs = 3035)
 
-
-## static map with ggplot2 + sf 
-## External circle represents the values at the 1000m buffer
-b <- as(extent(4400000, 4700000, 3100000, 3400000), 'SpatialPolygons')
-crs(b) <- crs(imperv)
-human_fpi_crop <-  st_as_stars(crop(human_fpi, b))
-human_fpi_agg_1000m <- st_as_stars(terra::aggregate(crop(human_fpi, b), fact = 10, fun = "mean"))
-
-## shape of federal states
-boundaries <- 
-  st_read("input_data/VG250_Bundeslaender_esri.geojson") %>% 
-  st_transform(crs = st_crs(fox_envcov_sf)) %>% 
-  filter(GEN %in% c("Berlin", "Brandenburg"))
-
-
-## map study area
-map_study_base <- 
-  ggplot(fox_envcov_sf) +
-  geom_stars(data = human_fpi_crop) +
-  ## state boundaries
-  geom_sf(data = boundaries, fill = NA, color = "black") +
-  ## 1000m buffer
-  geom_sf(size = 3, shape = 21, stroke = 1.2, fill = "white", color = "white") +
-  geom_sf(size = 3, shape = 21, stroke = 0, fill = "white") +
-  geom_sf(aes(color = human_fpi_1000m), shape = 16, size = 3, alpha = .7) +
-  ## ## middle, collection point
-  geom_sf(size = 0.6, shape = 21, stroke = .8, fill = "white", color = "black") +
-  geom_sf(size = 0.6, shape = 21, stroke = 0, aes(fill = human_fpi_1000m)) +
-  coord_sf(xlim = c(4410000, 4650000), ylim = c(3150000, 3387000)) +
-  scale_fill_gradient(low = "grey30", high = "grey96", guide = "none") +
-  scale_color_scico(
-    palette = "batlow", begin = .1,
-    name = "Human Footprint Index (2009)", limits = c(0, 50), breaks = 1:9*5, 
-    guide = guide_colorsteps(barwidth = unit(18, "lines"), barheight = unit(.6, "lines"),
-                             title.position = "top", title.hjust = 0, show.limits = TRUE)) +
-    labs(x = NULL, y = NULL) +
-    theme_map()
-
-map_study <- map_study_base +
-  ggspatial::annotation_scale(
-    location = "bl", text_family = "Open Sans", text_cex = 1.2
-  ) +
-  ggspatial::annotation_north_arrow(location = "tr")
-
-## map Berlin
-map_berlin <- map_study_base +
-  coord_sf(xlim = c(4531042, 4576603), ylim = c(3253866, 3290780)) +
-  theme_void() + 
-  theme(legend.position = "none", 
-        panel.border = element_rect(color = "black", fill = NA, size = .8))
-
-## overview map
-sf_world <- 
-  st_as_sf(rworldmap::getMap(resolution = "low")) %>% 
-  st_transform(crs = st_crs(fox_envcov_sf)) %>% 
-  st_buffer(dist = 0) %>% 
-  dplyr::select(ISO_A2, SOVEREIGNT, LON, continent) %>% 
-  mutate(area = st_area(.))
-
-map_europe <- 
-  ggplot(sf_world) +
-  geom_sf(fill = "grey80", color = "grey96", lwd = .1) +
-  geom_rect(
-    xmin = 4430000, xmax = 4640000, ymin = 3160000, ymax = 3385000,
-    color = "#212121", fill = "#a4cbb6", size = .7
-  ) +
-  geom_sf_text(
-    data = filter(sf_world, ISO_A2 %in% c(
-      "DE", "SE", "FR", "PL", "CZ", "IT", "ES", "AT", "CH", "GB", "PT", "NL", "BE", "IR", "IS"
-    )),
-    aes(label = ISO_A2),
-    family = "Open Sans", color = "grey40", fontface = "bold", size = 4.5,
-    nudge_x = 20000, nudge_y = -10000
-  ) +
-  ggspatial::annotation_scale(
-    location = 'tr', text_family = "Open Sans", text_cex = 1.2
-  ) +
-  coord_sf(xlim = c(2650000, 5150000), ylim = c(1650000, 5100000)) +
-  scale_x_continuous(expand = c(0, 0), breaks = seq(-10, 30, by = 10)) +
-  labs(x = NULL, y = NULL) +
-  theme_map() +
-  theme(panel.ontop = FALSE,
-        panel.grid.major = element_line(color = "grey75", linetype = "15", linewidth = .3))
-
-map_globe <- d6berlin::globe(col_earth = "grey80", col_water = "grey96", bg = TRUE)
-
-
-### combined map
-map_overview <- map_europe +
-    labs(tag = "A.") +
-    inset_element(map_globe, .02, .75, .59, 1, align_to = "plot")
-
-map_foo <- map_study +
-    labs(tags = "B.") +
-    inset_element(map_berlin + ggtitle("Berlin"), .14, .1, .5, 0.48,
-                  align_to = "plot")
-
-m <- map_overview + map_foo
-
-ggsave("figures/map_study_overview_multi.png", width = 11.5,
-       height = 7, bg = "white", dpi = 600)
-
-    ###################################################
+###################################################
 ### Plots comparing values at the two buffers 
 
 
@@ -249,7 +145,6 @@ plot_corr_buffer <- function(x, y, label) {
     scale_color_manual(values = colors_regions, name = "Study area:") +
     scale_fill_manual(values = colors_regions, name = "Study area:") +
     labs(x = paste(label, "(1000 m buffer)"), y = paste(label, "(100 m buffer)"))
-  
   return(g)
 }
 
