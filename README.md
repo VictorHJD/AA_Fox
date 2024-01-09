@@ -28,7 +28,7 @@ methods and code an to reproduce the results.
 
 | File reference  | Created in                      | File in ropository                               |
 |:----------------|---------------------------------|:-------------------------------------------------|
-| Figure 1        | R/0_Extract_Einvir_Covariates.R | figures/map_study_overview_multi.png             |
+| Figure 1        | R/1_Fox_general_MA.R            | figures/map_study_overview_multi.png             |
 | suppl. table 1  | outside, manually               | input_data/primer_file_foxes.csv                 |
 | Table 1         | outside, manually               | text only                                        |
 | suppl. figure 1 | R/2_iNEXT_fox.R                 | figures/suppl/CorrelatPedictors.png              |

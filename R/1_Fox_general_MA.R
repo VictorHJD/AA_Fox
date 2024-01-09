@@ -845,3 +845,7 @@ m <- cowplot::plot_grid(map_overview, map_bar,
 
 ggsave("figures/map_study_overview_multi.png", m,
        width = 11.5, height = 7, bg = "white", dpi = 600)
+
+## pdf for manual editing (giving up on the color legend alignment)
+ggsave("figures/map_study_overview_multi.pdf", m,
+       width = 11.5, height = 7)
