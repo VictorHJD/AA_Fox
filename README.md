@@ -119,13 +119,7 @@ phyloseq object.
 Performs community analyses using the vegan package
 
 
-## 4) Generalized linear models for helminth abundance
-
--> R/4_abu_models.R (by Emanuel Heitlinger)
-
-Runs generalized linear models on the abundance of individual helminth species
-
-## 5) jSDM analysis 
+## 4) jSDM analysis 
 
 
 -> 4a_JSDM_helminths.R (by Aimara Planillo)
