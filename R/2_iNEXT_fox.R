@@ -48,7 +48,7 @@ psmelt(PSGHelm) %>%
     dplyr::select(starts_with(c("prevalence", "genus"))) %>%
     arrange(desc(prevalence_total)) %>%
     relocate(starts_with("prevalence"), .after = genus) %>%
-    mutate(across(where(is.numeric), round, 2)) %>%
+    mutate(across(where(is.numeric), \(x) round(x, 2))) %>%
     mutate(CI = paste0("+/", round(
                                  prevalence_total -
                                  propCI(n = 141, p = prevalence_total/100,
@@ -190,12 +190,14 @@ alphaDivFox <-
     geom_point(data = subset(zet, Method %in% "Observed"), shape = 21,
                fill = "transparent", size = 2.7, stroke = .8) + 
     coord_cartesian(clip = "off") +
-    scale_colour_manual(values = colors_regions, guide = "none") +
+    scale_colour_manual(values = colors_regions,
+                        labels = c("Berlin", "Brandenburg")) +
     scale_x_continuous(labels = scales::label_comma(),
                        expand = c(0, 0), limits = c(0, NA)) +
     scale_y_continuous(breaks = 0:10, expand = c(0, 0)) +
     labs(x = "Number of sequence reads",
          y = "Helminth species richness",
+         colour="Administrative\narea:",
          title = "") +
     theme(plot.margin = margin(rep(20, 4)))
 
@@ -211,7 +213,7 @@ modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "ar
     scale_color_manual(values = colors_seasons, 
                        labels = c("Spring", "Summer + Autumn", "Winter"),
                        name = "Season:") +
-    scale_fill_manual(values = colors_seasons, guide = "none") +
+    scale_fill_manual(values = colors_seasons) +
     scale_y_continuous(breaks = 0:10, expand = c(0, 0)) +
     ## need to repeat theme because it is overwritten by the wrapper
     theme_custom() +
