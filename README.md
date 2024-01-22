@@ -40,12 +40,12 @@ methods and code an to reproduce the results.
 | Figure 4        | R/3_compositionHelm.R           | figures/CompositionEnvHelm.png                   |
 | Table 3         | R/3_compositionHelm.R           | tables/Permanova.csv                             |
 | suppl. table 4  | R/3_compositionHelm.R           | tables/PermanovaConti.csv                        |
-| Figure 5        | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                 |
-| Figure 6        | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png               |
-| Figure 7        | R/5b_JSDM_helmAnalysis.R        | figures/PAModel_area_GammaCoefs_traits.png       |
-| suppl figure 4  | R/5b_JSDM_helmAnalysis.R        | figures/suppl/VarPart_PAModel_grad.png           |
-| Suppl.figure 5  | R/5b_JSDM_helmAnalysis.R        | figures/suppl/PAModel_grad_BetaCoefs.png         |
-| Suppl.figure 6  | R/5b_JSDM_helmAnalysis.R        | figures/suppl/PAModel_grad_GammaCoefs_traits.png |
+| Figure 5        | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_varpart.png                 |
+| Figure 6        | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_BetaCoefs.png               |
+| Figure 7        | R/4b_JSDM_helmAnalysis.R        | figures/PAModel_area_GammaCoefs_traits.png       |
+| suppl figure 4  | R/4b_JSDM_helmAnalysis.R        | figures/suppl/VarPart_PAModel_grad.png           |
+| Suppl.figure 5  | R/4b_JSDM_helmAnalysis.R        | figures/suppl/PAModel_grad_BetaCoefs.png         |
+| Suppl.figure 6  | R/4b_JSDM_helmAnalysis.R        | figures/suppl/PAModel_grad_GammaCoefs_traits.png |
 
 
 ## 0) Environmental variables
@@ -128,10 +128,10 @@ Runs generalized linear models on the abundance of individual helminth species
 ## 5) jSDM analysis 
 
 
--> 5a_JSDM_helminths.R (by Aimara Planillo)
+-> 4a_JSDM_helminths.R (by Aimara Planillo)
 Runs the JSDM models 
 
--> 5b_JSDM_helmAnalysis.R
+-> 4b_JSDM_helmAnalysis.R
 Evaluates the models and extract posterior effects and plot in 
 
  

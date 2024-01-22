@@ -23,7 +23,7 @@ newConvergenceTest <- FALSE
 
 if(!exists("PAModel_area") | !exists("PAModel_grad")){
     if(recomputejSDMModels){
-        source("R/5a_JSDM_helminths.R")
+        source("R/4a_JSDM_helminths.R")
     } else {
         PAModel_area <- readRDS(file="JSDM_models/PAModel_area_jSDM_DNA.rds")
         PAModel_grad <- readRDS(file="JSDM_models/PAModel_grad_jSDM_DNA.rds")
