@@ -1115,9 +1115,6 @@ multihost_sp <- species_order %>%
            )) %>% 
     dplyr::select(Species, colour_text)
 
-## load theme for the plot
-source("./R/plot_setup.R")
-
 ## plot
 vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = Variable)) +
     geom_bar(stat = 'identity', colour = "grey40", alpha = 0.3) +
@@ -1160,9 +1157,6 @@ vp_plot_area <- ggplot(VP_toplot_area2, aes(x = Species_ord, y = value, fill = V
 ggsave(plot = vp_plot_area, "./figures/PAModel_area_varpart.png",  
        dpi = 600, width = 6, height = 5,
        bg = "white")
-
-
-
 
 
 ## gradient model
@@ -1262,7 +1256,7 @@ vp_plot_grad <- ggplot(VP_toplot_grad2, aes(x = Species_ord, y = value, fill = V
         panel.grid.major = ggplot2::element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, 
-                                   size=12, colour = multihost_sp$colour_text, face = "italic"),
+                                   size=12, colour = multihost_sp_grad$colour_text, face = "italic"),
         plot.margin = ggplot2::margin(4,1, 1, 1),
         legend.text = element_text(margin = margin(t = 5, b = 5), size = 12),
         axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 6)),
