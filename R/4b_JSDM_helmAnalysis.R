@@ -370,7 +370,7 @@ plot_beta_area <- toplot_ModelFrame_area %>%
     legend.text = element_text(size = 12))
 
 beta_plot <- plot_grid(plot_beta_area, plot_beta_weight,
-          ncol = 2, 
+          ncol = 2, labels = c('a', 'b'),
           rel_widths = c(1,1.4))
 
 beta_plot <- ggdraw(add_sub(beta_plot,
