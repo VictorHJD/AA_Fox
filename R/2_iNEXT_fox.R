@@ -211,7 +211,9 @@ modelFig <- plot(ggeffect(model = AreaRich, terms = c("weight_kg", "season", "ar
          title = "") +
     coord_cartesian(expand = FALSE, clip = "off") +
     scale_color_manual(values = colors_seasons, 
-                       labels = c("Spring", "Summer + Autumn", "Winter"),
+                       labels = c("Summer + Autumn",
+                                  "Spring", "Winter"
+                                  ),
                        name = "Season:") +
     scale_fill_manual(values = colors_seasons) +
     scale_y_continuous(breaks = 0:10, expand = c(0, 0)) +
