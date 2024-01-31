@@ -243,3 +243,7 @@ ggsave("figures/Fig2_DivModel.png", width = 12.5, height = 10.5, units = "in")
 
 stargazer(lapply(models, "[[", 1), type="html",
           out="tables/HelmDiversityq0.html")
+
+as_tibble(zet) %>% filter(datatype %in% "abundance") %>%
+    summarize(min = min(nSeq),
+              mean = mean(nSeq))
